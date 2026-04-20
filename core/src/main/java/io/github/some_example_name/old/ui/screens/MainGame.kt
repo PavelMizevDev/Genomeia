@@ -30,15 +30,21 @@ import io.github.some_example_name.old.ui.screens.GlobalSettings.MSAA
 import io.github.some_example_name.old.ui.screens.GlobalSettings.MUSIC_VOLUME
 import io.github.some_example_name.old.ui.screens.GlobalSettings.UI_SCALE
 import io.github.some_example_name.old.core.FileProvider
+import io.github.some_example_name.old.systems.render.ShaderManager
 import kotlin.math.max
 
 interface KeyBoardListener {
     fun showNativeInput(default: String, callback: (Float) -> Unit)
 }
 var openKeyBoardListenerGlobal: KeyBoardListener? = null
+var androidRendererFactory: (() -> ShaderManager)? = null
 
 //Entry point
-class MyGame(val multiPlatformFileProvider: FileProvider, val openKeyBoardListener: KeyBoardListener? = null) : Game() {
+class MyGame(
+    val multiPlatformFileProvider: FileProvider,
+    val openKeyBoardListener: KeyBoardListener? = null,
+    private val rendererFactory: (() -> ShaderManager)? = null
+) : Game() {
 
     lateinit var pikSounds: List<Sound>
     private val trackFiles = listOf(
@@ -56,6 +62,10 @@ class MyGame(val multiPlatformFileProvider: FileProvider, val openKeyBoardListen
     lateinit var largeFont: BitmapFont  // Кастомный большой шрифт для передачи в экраны
     lateinit var mediumFont: BitmapFont  // Кастомный большой шрифт для передачи в экраны
     lateinit var smallFont: BitmapFont  // Кастомный большой шрифт для передачи в экраны
+
+    init {
+        androidRendererFactory = rendererFactory
+    }
 
     override fun create() {
         VisUI.load()  // Загружаем дефолтный VisUI

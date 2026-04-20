@@ -16,8 +16,6 @@ import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.ParticleEntity
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.cos
-import kotlin.math.sin
 
 class RenderSystem(
     val cellEntity: CellEntity,
@@ -69,8 +67,11 @@ class RenderSystem(
     }
 
     fun render() {
+        val cellBuf = renderBufferManager.getCurrentCellBuffer()
+        val linkBuf = renderBufferManager.getCurrentLinkBuffer()
+        val spec = renderBufferManager.getCurrentSpecificBufferData()
         if (zoom != camera.zoom || cameraX != camera.position.x || cameraY != camera.position.y) {
-            if (!renderBufferManager.renderSpecificBufferData.isCellSelected) {
+            if (!spec.isCellSelected) {
                 blurLevel = 4.0f
                 cameraX = camera.position.x
                 cameraY = camera.position.y
@@ -78,16 +79,16 @@ class RenderSystem(
             }
         }
         ensureCapacityForWrite(particleEntity.aliveList.size)
-        drawShader()
-        synchronized(renderBufferManager.renderSpecificBufferData) {
-            moveCameraAndDrawSelected()
+        drawShader(cellBuf, linkBuf)
 
-            Gdx.gl.glDisable(GL20.GL_DEPTH_TEST)      // обязательно!
-            Gdx.gl.glDepthMask(false)                 // чтобы UI не портил depth buffer
-            Gdx.gl.glEnable(GL20.GL_BLEND)            // на всякий случай (stage любит blend)
+        moveCameraAndDrawSelected(spec)
 
-            drawTextSimInfo()
-        }
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST)      // обязательно!
+        Gdx.gl.glDepthMask(false)                 // чтобы UI не портил depth buffer
+        Gdx.gl.glEnable(GL20.GL_BLEND)            // на всякий случай (stage любит blend)
+
+        drawTextSimInfo(spec)
+
         if (blurLevel > 0) {
             blurLevel -= 0.09f
         }
@@ -110,26 +111,24 @@ class RenderSystem(
         buffer = allocateBuffer(finalCapacity)
     }
 
-    private fun drawShader() {
+    private fun drawShader(cellBuf: RenderCellBufferData, linkBuf: RenderLinkBufferData) {
         buffer.clear()
-        synchronized(renderBufferManager.renderCellBufferData) {
-            with(renderBufferManager.renderCellBufferData) {
-                for (i in 0..<renderCellBufferSize) {
-                    buffer.putFloat(x[i])
-                    buffer.putFloat(y[i])
-                    buffer.putInt(color[i])
-                    buffer.putInt(packed1[i])
-                    buffer.putInt(packed2[i])
-                    buffer.putInt(0)
-                }
-                repeat(10) {
-                    buffer.putFloat(-100f)
-                    buffer.putFloat(-100f)
-                    buffer.putInt(0)
-                    buffer.putInt(0)
-                    buffer.putInt(0)
-                    buffer.putInt(0)
-                }
+        with(cellBuf) {
+            for (i in 0..<renderCellBufferSize) {
+                buffer.putFloat(x[i])
+                buffer.putFloat(y[i])
+                buffer.putInt(color[i])
+                buffer.putInt(packed1[i])
+                buffer.putInt(packed2[i])
+                buffer.putInt(0)
+            }
+            repeat(10) {
+                buffer.putFloat(-100f)
+                buffer.putFloat(-100f)
+                buffer.putInt(0)
+                buffer.putInt(0)
+                buffer.putInt(0)
+                buffer.putInt(0)
             }
         }
         buffer.flip()
@@ -162,82 +161,76 @@ class RenderSystem(
         )
 
         if (!usePostProcess) {
-            synchronized(renderBufferManager.renderCellBufferData) {
-                with(renderBufferManager.renderCellBufferData) {
-                    shapeRenderer.color = Color.WHITE
-                    for (i in 0..<renderCellBufferSize) {
-                        if (directedAngleCos[i] != 0f || directedAngleSin[i] != 0f) {
-                            shapeRenderer.line(
-                                x[i],
-                                y[i],
-                                x[i] + directedAngleCos[i],
-                                y[i] + directedAngleSin[i]
-                            )
-                        }
+            with(cellBuf) {
+                shapeRenderer.color = Color.WHITE
+                for (i in 0..<renderCellBufferSize) {
+                    if (directedAngleCos[i] != 0f || directedAngleSin[i] != 0f) {
+                        shapeRenderer.line(
+                            x[i],
+                            y[i],
+                            x[i] + directedAngleCos[i],
+                            y[i] + directedAngleSin[i]
+                        )
                     }
                 }
             }
 
             shapeRenderer.color = Color.GREEN
 
-            synchronized(renderBufferManager.renderCellBufferData) {
-                synchronized(renderBufferManager.renderLinkBufferData) {
-                    with(renderBufferManager.renderLinkBufferData) {
-                        for (linkId in 0..<renderLinkAmount) {
+            with(linkBuf) {
+                for (linkId in 0..<renderLinkAmount) {
 
-                            val cellAIndex = cellA[linkId]
-                            val cellBIndex = cellB[linkId]
-                            shapeRenderer.color = when (isNeuralDirected[linkId].toInt()) {
-                                0,1 -> Color.CYAN
-                                -1 -> Color.GREEN
-                                3 -> Color.PURPLE
-                                else -> Color.RED
-                            }
-
-                            if ((isNeuralDirected[linkId].toInt() == 0)) {
-                                shapeRenderer.drawTriangleMiddle(
-                                    renderBufferManager.renderCellBufferData.x[cellAIndex],
-                                    renderBufferManager.renderCellBufferData.y[cellAIndex],
-                                    renderBufferManager.renderCellBufferData.x[cellBIndex],
-                                    renderBufferManager.renderCellBufferData.y[cellBIndex],
-                                    arrowSize = 0.1f
-                                )
-                            } else if ((isNeuralDirected[linkId].toInt() == 1)) {
-                                shapeRenderer.drawTriangleMiddle(
-                                    renderBufferManager.renderCellBufferData.x[cellBIndex],
-                                    renderBufferManager.renderCellBufferData.y[cellBIndex],
-                                    renderBufferManager.renderCellBufferData.x[cellAIndex],
-                                    renderBufferManager.renderCellBufferData.y[cellAIndex],
-                                    arrowSize = 0.1f
-                                )
-                            }
-
-                            shapeRenderer.line(
-                                renderBufferManager.renderCellBufferData.x[cellAIndex],
-                                renderBufferManager.renderCellBufferData.y[cellAIndex],
-                                renderBufferManager.renderCellBufferData.x[cellBIndex],
-                                renderBufferManager.renderCellBufferData.y[cellBIndex],
-                            )
-                        }
+                    val cellAIndex = cellA[linkId]
+                    val cellBIndex = cellB[linkId]
+                    shapeRenderer.color = when (isNeuralDirected[linkId].toInt()) {
+                        0, 1 -> Color.CYAN
+                        -1 -> Color.GREEN
+                        3 -> Color.PURPLE
+                        else -> Color.RED
                     }
+
+                    if ((isNeuralDirected[linkId].toInt() == 0)) {
+                        shapeRenderer.drawTriangleMiddle(
+                            cellBuf.x[cellAIndex],
+                            cellBuf.y[cellAIndex],
+                            cellBuf.x[cellBIndex],
+                            cellBuf.y[cellBIndex],
+                            arrowSize = 0.1f
+                        )
+                    } else if ((isNeuralDirected[linkId].toInt() == 1)) {
+                        shapeRenderer.drawTriangleMiddle(
+                            cellBuf.x[cellBIndex],
+                            cellBuf.y[cellBIndex],
+                            cellBuf.x[cellAIndex],
+                            cellBuf.y[cellAIndex],
+                            arrowSize = 0.1f
+                        )
+                    }
+
+                    shapeRenderer.line(
+                        cellBuf.x[cellAIndex],
+                        cellBuf.y[cellAIndex],
+                        cellBuf.x[cellBIndex],
+                        cellBuf.y[cellBIndex],
+                    )
                 }
             }
         }
         shapeRenderer.end()
     }
 
-    private fun moveCameraAndDrawSelected() = with(renderBufferManager) {
-        if (renderSpecificBufferData.isCellSelected) {
+    private fun moveCameraAndDrawSelected(spec: RenderSpecificBufferData) = with(renderBufferManager) {
+        if (spec.isCellSelected) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
 
             shapeRenderer.color = Color.GOLD
             Gdx.gl.glLineWidth(5f)
 
             with(renderBufferManager) {
-                if (renderSpecificBufferData.isCellSelected) {
+                if (spec.isCellSelected) {
                     shapeRenderer.circle(
-                        renderSpecificBufferData.grabbedCellX ?: 0f,
-                        renderSpecificBufferData.grabbedCellY ?: 0f,
+                        spec.grabbedCellX ?: 0f,
+                        spec.grabbedCellY ?: 0f,
                         0.55f
                     )
                 }
@@ -245,8 +238,8 @@ class RenderSystem(
 
             shapeRenderer.end()
 
-            val targetX = renderSpecificBufferData.grabbedCellX ?: return
-            val targetY = renderSpecificBufferData.grabbedCellY ?: return
+            val targetX = spec.grabbedCellX ?: return
+            val targetY = spec.grabbedCellY ?: return
 
             val lerpSpeed = 1f
             val delta = Gdx.graphics.deltaTime
@@ -258,21 +251,21 @@ class RenderSystem(
         }
     }
 
-    private fun drawTextSimInfo() = with(renderBufferManager) {
+    private fun drawTextSimInfo(spec: RenderSpecificBufferData) = with(renderBufferManager) {
         spriteBatch.begin()
         font.draw(
             spriteBatch,
             """
                     FPS: ${Gdx.graphics.framesPerSecond}
-                    UPS: ${renderSpecificBufferData.ups}
-                    Update Time: ${renderSpecificBufferData.updateTime} ms
-                    Cells: ${renderSpecificBufferData.cellsAmount}
-                    Particles: ${renderSpecificBufferData.particleAmount}
-                    Links ${renderSpecificBufferData.linksAmount}
-                    NeuronImpulseInput ${renderSpecificBufferData.neuronImpulseInput}
-                    NeuronImpulseOutput ${renderSpecificBufferData.neuronImpulseOutput}
-                    Cell type ${renderSpecificBufferData.cellName}
-                    Selected cell index ${renderSpecificBufferData.selectedCellIndex}
+                    UPS: ${spec.ups}
+                    Update Time: ${spec.updateTime} ms
+                    Cells: ${spec.cellsAmount}
+                    Particles: ${spec.particleAmount}
+                    Links ${spec.linksAmount}
+                    NeuronImpulseInput ${spec.neuronImpulseInput}
+                    NeuronImpulseOutput ${spec.neuronImpulseOutput}
+                    Cell type ${spec.cellName}
+                    Selected cell index ${spec.selectedCellIndex}
                 """.trimIndent(),
             30f,
             200f

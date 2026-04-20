@@ -8,6 +8,7 @@ import io.github.some_example_name.old.entities.ParticleEntity
 import io.github.some_example_name.old.entities.SpecialEntity
 import io.github.some_example_name.old.systems.simulation.SimulationData
 import kotlin.math.round
+import java.util.concurrent.atomic.AtomicInteger
 
 class RenderBufferManager(
     val simulationData: SimulationData,
@@ -15,160 +16,205 @@ class RenderBufferManager(
     val particleEntity: ParticleEntity,
     val linkEntity: LinkEntity,
     val cellList: List<Cell>,
-    val specialEntity: SpecialEntity
+    val specialEntity: SpecialEntity,
+    initialCellCapacity: Int = 50_000,
+    initialLinkCapacity: Int = 50_000
 ) {
 
-    val renderSpecificBufferData = RenderSpecificBufferData()
-    val renderCellBufferData = RenderCellBufferData(2500_000)
-    val renderLinkBufferData = RenderLinkBufferData(2500_000)
+    // Двойные буферы
+    private val cellBuffers = arrayOf(
+        RenderCellBufferData(initialCellCapacity),
+        RenderCellBufferData(initialCellCapacity)
+    )
+    private val linkBuffers = arrayOf(
+        RenderLinkBufferData(initialLinkCapacity),
+        RenderLinkBufferData(initialLinkCapacity)
+    )
+    private val specificBuffer0 = RenderSpecificBufferData()
+    private val specificBuffer1 = RenderSpecificBufferData()
 
-    //TODO resize
-    //TODO parallel updateBuffer
-    //TODO Triple buffer
+    private val cellFrontIndex = AtomicInteger(0)
+    private val linkFrontIndex = AtomicInteger(0)
+    private val specificFrontIndex = AtomicInteger(0)
+
+    fun getCurrentCellBuffer(): RenderCellBufferData = cellBuffers[cellFrontIndex.get()]
+    fun getCurrentLinkBuffer(): RenderLinkBufferData = linkBuffers[linkFrontIndex.get()]
+    fun getCurrentSpecificBufferData(): RenderSpecificBufferData =
+        if (specificFrontIndex.get() == 0) specificBuffer0 else specificBuffer1
 
     fun updateBuffer() {
-        synchronized(renderCellBufferData) {
-            with(particleEntity) {
+        // ==================== CELL ====================
+        with(particleEntity) {
+            val needed = aliveList.size
+            val backIndex = 1 - cellFrontIndex.get()
+            val back = cellBuffers[backIndex]
+
+            back.ensureCapacity(needed)
+
+            for (bufIndex in 0..<aliveList.size) {
+                val i = aliveList.getInt(bufIndex)
+                back.x[bufIndex] = x[i]
+                back.y[bufIndex] = y[i]
+                back.color[bufIndex] = color[i]
+
+                if (isCell[i]) {
+                    val cellIndex = holderEntityIndex[i]
+
+                    val cd = cellEntity.angleDiffCos[cellIndex]
+                    val sd = cellEntity.angleDiffSin[cellIndex]
+
+                    val cos = cellEntity.angleCos[cellIndex] * cd + cellEntity.angleSin[cellIndex] * sd
+                    val sin = cellEntity.angleSin[cellIndex] * cd - cellEntity.angleCos[cellIndex] * sd
+
+                    val cosByte = ((cos * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val sinByte = ((sin * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+
+                    val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bEnergy = 0//((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bCell = cellEntity.cellType[cellIndex].toInt().coerceIn(0, 255)
+
+                    back.packed1[bufIndex] = cosByte or (sinByte shl 8) or (bRadius shl 24)
+                    back.packed2[bufIndex] = bEnergy or (bCell shl 8)
+
+                    if (!usePostProcess) {
+                        val length = when (cellEntity.cellType[cellIndex].toInt()) {
+                            14 -> specialEntity.getVisibilityRange(cellIndex)
+                            3 -> 1f
+                            9 -> 1f
+                            else -> 0f
+                        }
+                        back.directedAngleCos[bufIndex] = cellEntity.angleCos[cellIndex] * length
+                        back.directedAngleSin[bufIndex] = cellEntity.angleSin[cellIndex] * length
+                    }
+                } else {
+                    val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bCell = (cellList.size + 1).coerceIn(0, 255)
+
+                    back.packed1[bufIndex] = bRadius shl 24
+                    back.packed2[bufIndex] = bCell shl 8
+
+                    if (!usePostProcess) {
+                        back.directedAngleCos[bufIndex] = 0f
+                        back.directedAngleSin[bufIndex] = 0f
+                    }
+                }
+            }
+            back.renderCellBufferSize = aliveList.size
+        }
+        cellFrontIndex.set(1 - cellFrontIndex.get())   // swap
+
+        // ==================== LINK ====================
+        if (!usePostProcess) {
+            val needed = linkEntity.aliveList.size
+            val backIndex = 1 - linkFrontIndex.get()
+            val back = linkBuffers[backIndex]
+
+            back.ensureCapacity(needed)
+
+            with(linkEntity) {
                 for (bufIndex in 0..<aliveList.size) {
                     val i = aliveList.getInt(bufIndex)
-                    renderCellBufferData.x[bufIndex] = x[i]
-                    renderCellBufferData.y[bufIndex] = y[i]
-                    renderCellBufferData.color[bufIndex] = color[i]
-                    if (isCell[i]) {
-                        val cellIndex = holderEntityIndex[i]
+                    val particleAIndex = cellEntity.getParticleIndex(links1[i])
+                    val particleBIndex = cellEntity.getParticleIndex(links2[i])
 
-//                        val bAngle = ((cellEntity.angle[cellIndex] / (2f * Math.PI.toFloat())) * 255f + 0.5f).toInt().coerceIn(0, 255)
-//                        val bAx = (/*cellEntity.ax[cellIndex]*/0 * 255f + 0.5f).toInt().coerceIn(0, 255)
-//                        val bAy = (/*cellEntity.ay[cellIndex]*/0 * 255f + 0.5f).toInt().coerceIn(0, 255)
-//                        val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-//                        val bEnergy = ((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-//                        val bCell = cellEntity.cellType[cellIndex].toInt().coerceIn(0, 255)
-//
-//                        renderCellBufferData.packed1[bufIndex] = bAngle or (bAx shl 8) or (bAy shl 16) or (bRadius shl 24)
-//                        renderCellBufferData.packed2[bufIndex] = bEnergy or (bCell shl 8)
+                    back.cellA[bufIndex] = particleEntity.positionInAlive[particleAIndex]
+                    back.cellB[bufIndex] = particleEntity.positionInAlive[particleBIndex]
 
-
-                        val cd = cellEntity.angleDiffCos[cellIndex]
-                        val sd = cellEntity.angleDiffSin[cellIndex]
-
-                        val cos = cellEntity.angleCos[cellIndex] * cd + cellEntity.angleSin[cellIndex] * sd
-                        val sin = cellEntity.angleSin[cellIndex] * cd - cellEntity.angleCos[cellIndex] * sd
-
-                        // нормализация [-1;1] → [0;255]
-                        val cosByte = ((cos * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-                        val sinByte = ((sin * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-
-                        // bAx и bAy больше не нужны — они были 0
-                        val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-                        val bEnergy = ((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-                        val bCell   = cellEntity.cellType[cellIndex].toInt().coerceIn(0, 255)
-
-                        // packed1:
-                        //   биты  0-15  → угол 16 бит
-                        //   биты 16-23  → 0 (бывший bAy)
-                        //   биты 24-31  → radius (остаётся на своём месте)
-                        renderCellBufferData.packed1[bufIndex] = /*bAngle16*/(cosByte) or (sinByte shl 8) or (bRadius shl 24)
-
-                        // packed2 остаётся без изменений
-                        renderCellBufferData.packed2[bufIndex] = bEnergy or (bCell shl 8)
-
-                        if (!usePostProcess) {
-
-                            val length = when (cellEntity.cellType[cellIndex].toInt()) {
-                                14 -> specialEntity.getVisibilityRange(cellIndex)
-                                3 -> 1f
-                                else -> 0f
-                            }
-
-                            renderCellBufferData.directedAngleCos[bufIndex] = cellEntity.angleCos[cellIndex] * length
-                            renderCellBufferData.directedAngleSin[bufIndex] = cellEntity.angleSin[cellIndex] * length
-                        }
+                    back.isNeuralDirected[bufIndex] = if (isNeuronLink[i]) {
+                        if (isLink1NeuralDirected[i]) 1 else 0
                     } else {
-                        val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-                        val bCell = (cellList.size + 1).coerceIn(0, 255)
-
-                        renderCellBufferData.packed1[bufIndex] = 0 or (bRadius shl 24)
-                        renderCellBufferData.packed2[bufIndex] = 0 or (bCell shl 8)
-
-                        if (!usePostProcess) {
-                            renderCellBufferData.directedAngleCos[bufIndex] = 0f
-                            renderCellBufferData.directedAngleSin[bufIndex] = 0f
-                        }
+                        if (isStickyLink[i]) 3 else -1
                     }
                 }
-                renderCellBufferData.renderCellBufferSize = aliveList.size
+                back.renderLinkAmount = aliveList.size
             }
+            linkFrontIndex.set(backIndex)
         }
 
-        if (!usePostProcess) {
-            synchronized(renderLinkBufferData) {
-                with(linkEntity) {
-                    for (bufIndex in 0..<aliveList.size) {
-                        val i = aliveList.getInt(bufIndex)
-                        val particleAIndex = cellEntity.getParticleIndex(links1[i])
-                        val particleBIndex = cellEntity.getParticleIndex(links2[i])
-                        renderLinkBufferData.cellA[bufIndex] =
-                            particleEntity.positionInAlive[particleAIndex]
-                        renderLinkBufferData.cellB[bufIndex] =
-                            particleEntity.positionInAlive[particleBIndex]
+        // ==================== SPECIFIC ====================
+        val specificBackIndex = 1 - specificFrontIndex.get()
+        val specificBack = if (specificBackIndex == 0) specificBuffer0 else specificBuffer1
 
-                        renderLinkBufferData.isNeuralDirected[bufIndex] = if (isNeuronLink[i]) {
-                            if (isLink1NeuralDirected[i]) 1 else 0
-                        } else {
-                            if (isStickyLink[i]) 3 else -1
-                        }
-                    }
-                    renderLinkBufferData.renderLinkAmount = aliveList.size
-                }
+        with(specificBack) {
+            ups = simulationData.ups
+            updateTime = round(1e5f / simulationData.ups) / 100f
+            cellsAmount = cellEntity.lastId - cellEntity.deadStack.size + 1
+            particleAmount = particleEntity.lastId - particleEntity.deadStack.size + 1
+            linksAmount = linkEntity.lastId - linkEntity.deadStack.size + 1
+
+            val cellIndex = simulationData.selectedCellIndex
+            if (cellIndex != -1) {
+                selectedCellIndex = cellIndex
+                neuronImpulseInput = cellEntity.neuronImpulseInput[cellIndex]
+                neuronImpulseOutput = cellEntity.neuronImpulseOutput[cellIndex]
+                isCellSelected = true
+                grabbedCellX = cellEntity.getX(cellIndex)
+                grabbedCellY = cellEntity.getY(cellIndex)
+                val cellType = cellEntity.cellType[cellIndex].toInt()
+                cellName = cellList[cellType].name +
+                    if (cellEntity.isNeural[cellIndex])
+                        " ${formulaType[cellEntity.getActivationFuncType(cellIndex)]} " +
+                            "${cellEntity.getA(cellIndex)} ${cellEntity.getB(cellIndex)} ${cellEntity.getC(cellIndex)}"
+                    else ""
+            } else {
+                neuronImpulseInput = null
+                neuronImpulseOutput = null
+                isCellSelected = false
+                grabbedCellX = null
+                grabbedCellY = null
+                cellName = null
             }
         }
+        specificFrontIndex.set(specificBackIndex)
+    }
+}
 
-        synchronized(renderSpecificBufferData) {
-            with(renderSpecificBufferData) {
-                ups = simulationData.ups
-                updateTime = round(1e5f / simulationData.ups) / 100f
-                cellsAmount = cellEntity.lastId - cellEntity.deadStack.size + 1
-                particleAmount = particleEntity.lastId - particleEntity.deadStack.size + 1
-                linksAmount = linkEntity.lastId - linkEntity.deadStack.size + 1
-                val cellIndex = simulationData.selectedCellIndex
-                if (cellIndex != -1) {
-                    selectedCellIndex = cellIndex
-                    neuronImpulseInput = cellEntity.neuronImpulseInput[cellIndex]
-                    neuronImpulseOutput = cellEntity.neuronImpulseOutput[cellIndex]
-                    isCellSelected = true
-                    grabbedCellX = cellEntity.getX(cellIndex)
-                    grabbedCellY = cellEntity.getY(cellIndex)
-                    val cellType = cellEntity.cellType[cellIndex].toInt()
-                    cellName = cellList[cellType].name + if (cellEntity.isNeural[cellIndex]) "${formulaType[cellEntity.getActivationFuncType(cellIndex)]} ${cellEntity.getA(cellIndex)} ${cellEntity.getB(cellIndex)} ${cellEntity.getC(cellIndex)}" else ""
-                } else {
-                    neuronImpulseInput = null
-                    neuronImpulseOutput = null
-                    isCellSelected = false
-                    grabbedCellX = null
-                    grabbedCellY = null
-                    cellName = null
-                }
-            }
+class RenderCellBufferData(initialCapacity: Int) {
+    var capacity = initialCapacity
+    var renderCellBufferSize = 0
+
+    var x = FloatArray(capacity)
+    var y = FloatArray(capacity)
+    var color = IntArray(capacity)
+    var packed1 = IntArray(capacity)
+    var packed2 = IntArray(capacity)
+    var directedAngleCos = FloatArray(capacity)
+    var directedAngleSin = FloatArray(capacity)
+
+    fun ensureCapacity(minCapacity: Int) {
+        if (minCapacity > capacity) {
+            val newCapacity = if (capacity == 0) minCapacity else (capacity * 2).coerceAtLeast(minCapacity)
+            capacity = newCapacity
+
+            x = x.copyOf(newCapacity)
+            y = y.copyOf(newCapacity)
+            color = color.copyOf(newCapacity)
+            packed1 = packed1.copyOf(newCapacity)
+            packed2 = packed2.copyOf(newCapacity)
+            directedAngleCos = directedAngleCos.copyOf(newCapacity)
+            directedAngleSin = directedAngleSin.copyOf(newCapacity)
         }
     }
 }
 
-class RenderCellBufferData(maxAmountParticle: Int) {
-    var renderCellBufferSize = 0
-    var x = FloatArray(maxAmountParticle)
-    var y = FloatArray(maxAmountParticle)
-    var color = IntArray(maxAmountParticle)
-    var packed1 = IntArray(maxAmountParticle)
-    var packed2 = IntArray(maxAmountParticle)
-    var directedAngleCos = FloatArray(maxAmountParticle)
-    var directedAngleSin = FloatArray(maxAmountParticle)
-}
-
-class RenderLinkBufferData(maxAmountLink: Int) {
+class RenderLinkBufferData(initialCapacity: Int) {
+    var capacity = initialCapacity
     var renderLinkAmount = 0
-    var cellA = IntArray(maxAmountLink)
-    var cellB = IntArray(maxAmountLink)
-    var isNeuralDirected = ByteArray(maxAmountLink)
+
+    var cellA = IntArray(capacity)
+    var cellB = IntArray(capacity)
+    var isNeuralDirected = ByteArray(capacity)
+
+    fun ensureCapacity(minCapacity: Int) {
+        if (minCapacity > capacity) {
+            val newCapacity = if (capacity == 0) minCapacity else (capacity * 2).coerceAtLeast(minCapacity)
+            capacity = newCapacity
+
+            cellA = cellA.copyOf(newCapacity)
+            cellB = cellB.copyOf(newCapacity)
+            isNeuralDirected = isNeuralDirected.copyOf(newCapacity)
+        }
+    }
 }
 
 data class RenderSpecificBufferData(

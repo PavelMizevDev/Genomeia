@@ -1,27 +1,29 @@
-#version 300 es
+#version 320 es
 precision highp float;
 
-varying vec2 v_texCoord;
+in vec2 v_texCoord;
 uniform sampler2D u_texture;
-//uniform sampler2D u_linesTexture;     // ← НОВОЕ
+//uniform sampler2D u_linesTexture;
 uniform vec2 u_resolution;
-//uniform vec2 u_cameraPos;             // ← НОВОЕ (worldX, worldY)
+//uniform vec2 u_cameraPos;
 //uniform mat4 u_invProj;
-//uniform float u_parallaxStrength;     // ← НОВОЕ (сила параллакса)
+//uniform float u_parallaxStrength;
 uniform float u_zoom;
+
+out vec4 fragColor;
 
 void main() {
 
-    vec4 texture = texture2D(u_texture, v_texCoord) * 1.4;
+    vec4 textureColor = texture(u_texture, v_texCoord) * 1.4;
 
     // размер одного пикселя
     vec2 texel = 1.0 / u_resolution;
 
     // 4 сэмпла (Sobel)
-    float p00 = dot(texture2D(u_texture, v_texCoord - texel).rgb, vec3(0.299, 0.587, 0.114));
-    float p11 = dot(texture2D(u_texture, v_texCoord + texel).rgb, vec3(0.299, 0.587, 0.114));
-    float p10 = dot(texture2D(u_texture, v_texCoord + vec2(texel.x, -texel.y)).rgb, vec3(0.299, 0.587, 0.114));
-    float p01 = dot(texture2D(u_texture, v_texCoord + vec2(-texel.x, texel.y)).rgb, vec3(0.299, 0.587, 0.114));
+    float p00 = dot(texture(u_texture, v_texCoord - texel).rgb, vec3(0.299, 0.587, 0.114));
+    float p11 = dot(texture(u_texture, v_texCoord + texel).rgb, vec3(0.299, 0.587, 0.114));
+    float p10 = dot(texture(u_texture, v_texCoord + vec2(texel.x, -texel.y)).rgb, vec3(0.299, 0.587, 0.114));
+    float p01 = dot(texture(u_texture, v_texCoord + vec2(-texel.x, texel.y)).rgb, vec3(0.299, 0.587, 0.114));
 
     float gx = p00 - p11;
     float gy = p10 - p01;
@@ -32,28 +34,27 @@ void main() {
     vec4 background = vec4(1.0, 0.969, 0.855, 1.0);
 
     // ==================== PARALLAX LINES (ТЕПЕРЬ В МИРОВЫХ КООРДИНАТАХ) ====================
-//    vec2 ndc = v_texCoord * 2.0 - 1.0;
-//
-//    // Преобразуем NDC → мировые координаты через инверсную матрицу камеры
-//    vec4 clipPos = vec4(ndc, 0.0, 1.0);
-//    vec4 worldHom = u_invProj * clipPos;
-//    vec2 worldPos = worldHom.xy;                     // для ortho w = 1
-//
-//    // Параллакс: background двигается медленнее основной сцены
-//    vec2 samplePos = worldPos - u_cameraPos * (1.0 - u_parallaxStrength);
-//
-//    float tileWorldSize = 240.0;                     // ← НАСТРАИВАЙ: больше = крупнее тайлы, меньше видно одновременно
-//    vec2 linesUV = samplePos / tileWorldSize;
-//
-//    vec4 linesSample = texture2D(u_linesTexture, linesUV);
-//
-//    float linesFactor = 1.0 - linesSample.r; // чёрный=1, белый=0
+    // (your commented code left unchanged, just updated texture call for consistency)
+    //    vec2 ndc = v_texCoord * 2.0 - 1.0;
+    //
+    //    vec4 clipPos = vec4(ndc, 0.0, 1.0);
+    //    vec4 worldHom = u_invProj * clipPos;
+    //    vec2 worldPos = worldHom.xy;
+    //
+    //    vec2 samplePos = worldPos - u_cameraPos * (1.0 - u_parallaxStrength);
+    //
+    //    float tileWorldSize = 240.0;
+    //    vec2 linesUV = samplePos / tileWorldSize;
+    //
+    //    vec4 linesSample = texture(u_linesTexture, linesUV);
+    //
+    //    float linesFactor = 1.0 - linesSample.r;
     vec4 finalBackground = background/* * linesFactor*/;
     // =================================================================================
 
-    vec4 textureMixBackground = mix(finalBackground, texture, 0.1875);
+    vec4 textureMixBackground = mix(finalBackground, textureColor, 0.1875);
 
-    float gray = (texture.r + texture.g + texture.b) / 3.0;
+    float gray = (textureColor.r + textureColor.g + textureColor.b) / 3.0;
     gray = step(0.06, gray);
 
     vec4 result = mix(finalBackground, textureMixBackground, gray);
@@ -82,7 +83,7 @@ void main() {
     float softness = 0.8;
     float vignette = smoothstep(radius, radius - softness, normDist);
 
-    vec4 plugColor = pastelColor * vignette * 0.000001;
+//    vec4 plugColor = pastelColor * vignette * 0.000001;
 
-    gl_FragColor = pastelColor * vignette/*vec4(edge) + plugColor*/;
+    fragColor = pastelColor * vignette/*vec4(edge) + plugColor*/;
 }

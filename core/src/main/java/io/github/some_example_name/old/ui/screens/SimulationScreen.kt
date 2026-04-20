@@ -53,6 +53,9 @@ class SimulationScreen(
     private var putOrgs = true
     var onResize: (() -> Unit)? = null
 
+    private var initialZoom = 0f
+    private var currentPinchCenter: Vector2? = null
+
 
     override fun show() {
         spriteBatch = SpriteBatch()
@@ -155,6 +158,13 @@ class SimulationScreen(
 
         stage.act(Gdx.graphics.deltaTime)
         stage.draw()
+
+        if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
+            root.clear()
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.Y)) {
+            rebuildMenu()
+        }
     }
 
     override fun resize(width: Int, height: Int) {
@@ -211,17 +221,42 @@ class SimulationScreen(
         return true
     }
 
-    override fun pinchStop() {
-    }
-
-    override fun pinch(
-        initialPointer1: Vector2, initialPointer2: Vector2,
-        pointer1: Vector2, pointer2: Vector2
-    ): Boolean {
+    override fun zoom(initialDistance: Float, distance: Float): Boolean {
+        if (currentPinchCenter == null) return false
+        val centerX = currentPinchCenter!!.x
+        val centerY = currentPinchCenter!!.y
+        val screenPos = Vector3(centerX, centerY, 0f)
+        val worldBefore = camera.unproject(screenPos.cpy())
+        val ratio = initialDistance / distance
+        camera.zoom = initialZoom * ratio
+        camera.zoom = MathUtils.clamp(camera.zoom, 0.001f, 1000f)
+        camera.update()
+        val worldAfter = camera.unproject(screenPos.cpy())
+        camera.position.add(worldBefore.x - worldAfter.x, worldBefore.y - worldAfter.y, 0f)
         return true
     }
 
-    override fun zoom(initialDistance: Float, distance: Float) = false
+    override fun pinch(
+        initialPointer1: Vector2?,
+        initialPointer2: Vector2?,
+        pointer1: Vector2?,
+        pointer2: Vector2?
+    ): Boolean {
+        if (initialPointer1 != null && initialPointer2 != null && currentPinchCenter == null) {
+            initialZoom = camera.zoom
+        }
+        if (pointer1 == null || pointer2 == null) {
+            currentPinchCenter = null
+            return false
+        }
+        currentPinchCenter = pointer1.cpy().add(pointer2).scl(0.5f)
+        return false
+    }
+
+    override fun pinchStop() {
+        currentPinchCenter = null
+        initialZoom = 0f
+    }
 
     override fun tap(x: Float, y: Float, count: Int, button: Int): Boolean {
         val world = screenToWorld(x, y)

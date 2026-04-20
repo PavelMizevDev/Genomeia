@@ -38,6 +38,9 @@ class ShaderManagerLibgdxApi : ShaderManager {
     private lateinit var fbo: FrameBuffer
     private lateinit var blurShader: ShaderProgram
 
+    private lateinit var distortShader: ShaderProgram
+    private lateinit var distortFbo: FrameBuffer
+
 //    private lateinit var linesTexture: Texture
 
     private lateinit var blurFbo: FrameBuffer
@@ -46,32 +49,31 @@ class ShaderManagerLibgdxApi : ShaderManager {
 
     private fun createTextureArray() {
         val texturePaths = arrayOf(
-            "leaf.png",
-            "fat.png",
-            "bone.png",//Bone
-            "fat.png",//Tail
-            "neuron.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
-            "muscle.png",
+            "leaf.png",         //Leaf(0),
+            "fat.png",          //Fat(1),
+            "bone.png",         //Bone(2),
+            "tail.png",         //Tail(3),
+            "neuron.png",       //Neuron(4),
+            "muscle.png",       //Muscle(5),
+            "sensor.png",       //Sensor(6),
+            "sucker.png",       //Sucker(7),
+            "not_cell.png",     //Mike(8),
+            "excreta.png",      //Excreta(9),
+            "SuctionCup.png",   //SuctionCup(10),
+            "sticky.png",       //Sticky(11),
+            "not_cell.png",     //Pumper(12),
+            "not_cell.png",     //Chameleon(13),
+            "eye.png",          //Eye(14),
+            "not_cell.png",     //Compass(15),
+            "not_cell.png",     //Controller(16),
+            "not_cell.png",     //TouchTrigger(17),
+            "not_cell.png",     //Zygote(18),
+            "not_cell.png",     //Producer(19),
+            "not_cell.png",     //Breakaway(20),
+            "not_cell.png",     //Vascular(21),
+            "not_cell.png",     //PheromoneEmitter(22),
+            "not_cell.png",     //PheromoneSensor(23),
+            "punisher.png",     //Punisher(24)
             "not_cell.png"
             // добавляй сюда сколько угодно (до 64+ легко)
             // порядок = номер ex_cellType
@@ -145,8 +147,8 @@ class ShaderManagerLibgdxApi : ShaderManager {
     }
 
     private fun createFBO() {
-        val width = Gdx.graphics.width / 2
-        val height = Gdx.graphics.height / 2
+        val width = Gdx.graphics.width /// 2
+        val height = Gdx.graphics.height /// 2
         fbo = FrameBuffer(Pixmap.Format.RGBA8888, width, height, true) // true = имеет depth-буфер (для твоего depth-test)
         println("✅ FBO создан: ${width}×${height} (для пост-процессинга)")
     }
@@ -163,11 +165,21 @@ class ShaderManagerLibgdxApi : ShaderManager {
         fbo.getColorBufferTexture().setFilter(
             Texture.TextureFilter.Linear, Texture.TextureFilter.Linear
         )
+
+        distortFbo = FrameBuffer(Pixmap.Format.RGBA8888, w, h, false)
+        distortFbo.colorBufferTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+    }
+
+    private fun createDistortShader() {
+        val vert = Gdx.files.internal("shaders/blur/blur.vert").readString() // тот же вертекс
+        val frag = Gdx.files.internal("shaders/blur/ca_distort.frag").readString()
+        distortShader = ShaderProgram(vert, frag)
+        if (!distortShader.isCompiled) throw RuntimeException("Distort shader failed: ${distortShader.log}")
     }
 
     private fun createBlurShader() {
         val vertexShader = Gdx.files.internal("shaders/blur/blur.vert").readString()
-        val fragmentShader = Gdx.files.internal("shaders/blur/blur.frag").readString()
+        val fragmentShader = Gdx.files.internal("shaders/blur/gaussian_blur.frag").readString()
 
         blurShader = ShaderProgram(vertexShader, fragmentShader)
         if (!blurShader.isCompiled) {
@@ -207,6 +219,7 @@ class ShaderManagerLibgdxApi : ShaderManager {
         createTextureArray()
         createFBO()           // ← НОВОЕ
         createBlurFbo()
+        createDistortShader()
         createBlurShader()    // ← НОВОЕ
         createSobelShader()
 
@@ -259,8 +272,8 @@ class ShaderManagerLibgdxApi : ShaderManager {
         if (::fbo.isInitialized) fbo.dispose()
         fbo = FrameBuffer(
             Pixmap.Format.RGBA8888,
-            (safeW / 2).coerceAtLeast(1),
-            (safeH / 2).coerceAtLeast(1),
+            (safeW/* / 2*/).coerceAtLeast(1),
+            (safeH/* / 2*/).coerceAtLeast(1),
             true
         )
 
@@ -269,9 +282,13 @@ class ShaderManagerLibgdxApi : ShaderManager {
         val bh = (height /*/ 2*/).coerceAtLeast(1)
         blurFbo = FrameBuffer(Pixmap.Format.RGBA8888, bw, bh, false)
 
+        if (::distortFbo.isInitialized) distortFbo.dispose()
+        distortFbo = FrameBuffer(Pixmap.Format.RGBA8888, bw, bh, false)
+
         // Linear фильтрация — обязательно для мягкого upsample и Sobel
         fbo.colorBufferTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
         blurFbo.colorBufferTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+        distortFbo.colorBufferTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
 
         println("✅ FBOs resized → scene: ${width}×${height}, blur: ${bw}×${bh}")
     }
@@ -347,9 +364,9 @@ class ShaderManagerLibgdxApi : ShaderManager {
             sobelShader.bind()
             sobelShader.setUniformi("u_texture", 0)
             sobelShader.setUniformf("u_resolution", fbo.width.toFloat(), fbo.height.toFloat())
-//            val zoomX10 = zoom * 10f
-//            val sobel = if (zoomX10 < 0.12) 0.12f else if (zoomX10 > 0.24) 0.24f else zoomX10
-            sobelShader.setUniformf("u_zoom", 0.12f)
+            val zoomX10 = zoom * 10f
+            val sobel = if (zoomX10 < 0.16) 0.16f else if (zoomX10 > 0.24) 0.24f else zoomX10
+            sobelShader.setUniformf("u_zoom", sobel)
 //            println(zoomX10)
 
 //            sobelShader.setUniformf("u_cameraPos", worldX, worldY)
@@ -370,17 +387,35 @@ class ShaderManagerLibgdxApi : ShaderManager {
 //            }
 
 //            if (blurAmount > 0.001f) {
-                blurShader.bind()
-                blurShader.setUniformi("u_texture", 0)
-                blurShader.setUniformf("u_blurAmount", blurAmount * 0.5f)
-                blurShader.setUniformf("u_resolution", blurFbo.width.toFloat(), blurFbo.height.toFloat())
+            distortFbo.begin()
+            Gdx.gl.glDisable(GL20.GL_DEPTH_TEST)
+            Gdx.gl.glDisable(GL20.GL_BLEND)
 
-                Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0)
-                blurFbo.colorBufferTexture.bind()
+            distortShader.bind()
+            distortShader.setUniformi("u_texture", 0)
+            distortShader.setUniformf("u_resolution", blurFbo.width.toFloat(), blurFbo.height.toFloat())
 
-                mesh.bind(blurShader)
-                Gdx.gl.glDrawArrays(GL20.GL_TRIANGLE_STRIP, 0, 4)
-                mesh.unbind(blurShader)
+            Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0)
+            blurFbo.colorBufferTexture.bind()
+
+            mesh.bind(distortShader)
+            Gdx.gl.glDrawArrays(GL20.GL_TRIANGLE_STRIP, 0, 4)
+            mesh.unbind(distortShader)
+
+            distortFbo.end()
+
+            // === 2. Blur pass ===
+            blurShader.bind()                     // теперь чистый Gaussian
+            blurShader.setUniformi("u_texture", 0)
+            blurShader.setUniformf("u_blurAmount", (blurAmount + 0.01f) * 0.5f)
+            blurShader.setUniformf("u_resolution", blurFbo.width.toFloat(), blurFbo.height.toFloat())
+
+            Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0)
+            distortFbo.colorBufferTexture.bind()
+
+            mesh.bind(blurShader)
+            Gdx.gl.glDrawArrays(GL20.GL_TRIANGLE_STRIP, 0, 4)
+            mesh.unbind(blurShader)
 //            }
         }
 
