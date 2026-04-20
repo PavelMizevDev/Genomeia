@@ -50,7 +50,11 @@ class SimulationSystem(
     fun startThread() {
         if (!threadManager.isRunning) {
             threadManager.isRunning = true
-            simulationThread = Thread { threadManager.runUpdateLoop { updateTick() } }
+
+            simulationThread = Thread { threadManager.runUpdateLoop { updateTick() } }.apply {
+                isDaemon = true
+                name = "Simulation-Main-Thread"
+            }
             simulationThread?.start()
         }
     }

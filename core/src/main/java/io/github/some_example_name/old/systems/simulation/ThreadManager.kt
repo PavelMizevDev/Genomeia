@@ -15,10 +15,19 @@ class ThreadManager(
     val simulationData: SimulationData
 ): WorldResizable {
 
-    var executor = Executors.newFixedThreadPool(threadCount)
+    var executor: ExecutorService = createDaemonFixedThreadPool()
     val futures = mutableListOf<Future<*>>()
 
     var isRunning = false
+
+    private fun createDaemonFixedThreadPool(): ExecutorService {
+        return Executors.newFixedThreadPool(threadCount) { runnable ->
+            val thread = Thread(runnable)
+            thread.isDaemon = true
+            thread.name = "Simulation-Worker-${threadCount}"
+            thread
+        }
+    }
 
     private fun shutdownExecutor(exec: ExecutorService) {
         exec.shutdown()
@@ -138,7 +147,8 @@ class ThreadManager(
 
     override fun resize() {
         val oldExecutor = executor
-        executor = Executors.newFixedThreadPool(threadCount)
+        executor = createDaemonFixedThreadPool()
+
         shutdownExecutor(oldExecutor)
         futures.clear()
     }
