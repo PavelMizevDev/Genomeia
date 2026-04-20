@@ -3,7 +3,7 @@ package io.github.some_example_name.old.systems.physics
 import io.github.some_example_name.old.cells.Cell
 import io.github.some_example_name.old.commands.WorldCommandType
 import io.github.some_example_name.old.commands.WorldCommandsManager
-import io.github.some_example_name.old.core.DISimulationContainer.halfChunkHeight
+import io.github.some_example_name.old.core.DISimulationContainer.HALF_CHUNK_HEIGHT
 import io.github.some_example_name.old.core.SubstrateSettings
 import io.github.some_example_name.old.entities.ParticleEntity
 import io.github.some_example_name.old.core.utils.invSqrt
@@ -25,7 +25,7 @@ class ParticlePhysicsSystem(
     val substancesEntity: SubstancesEntity
 ) {
 
-    val halfChunkHeight2 = halfChunkHeight * halfChunkHeight
+    val halfChunkHeight2 = HALF_CHUNK_HEIGHT * HALF_CHUNK_HEIGHT
 
     fun processGridChunkPhysics(start: Int, end: Int, threadId: Int, isOdd: Boolean) {
         for (i in start until end) {
@@ -261,7 +261,7 @@ class ParticlePhysicsSystem(
 
         val speed2 = vxv * vxv + vyv * vyv
         if (speed2 > halfChunkHeight2) {
-            val invLen = halfChunkHeight / sqrt(speed2)
+            val invLen = HALF_CHUNK_HEIGHT * invSqrt(speed2)
             vx[particleIndex] *= invLen
             vy[particleIndex] *= invLen
         }

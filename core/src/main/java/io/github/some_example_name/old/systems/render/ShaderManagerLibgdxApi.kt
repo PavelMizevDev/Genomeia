@@ -19,7 +19,7 @@ import java.nio.ByteBuffer
 import kotlin.math.sin
 
 
-var usePostProcess = false
+var usePostProcess = true
 
 class ShaderManagerLibgdxApi : ShaderManager {
     //TODO вернуть 2 SSBO для интерполяции
@@ -407,7 +407,7 @@ class ShaderManagerLibgdxApi : ShaderManager {
             // === 2. Blur pass ===
             blurShader.bind()                     // теперь чистый Gaussian
             blurShader.setUniformi("u_texture", 0)
-            blurShader.setUniformf("u_blurAmount", (blurAmount + 0.01f) * 0.5f)
+            blurShader.setUniformf("u_blurAmount", (blurAmount + 0.04f) * 0.5f)
             blurShader.setUniformf("u_resolution", blurFbo.width.toFloat(), blurFbo.height.toFloat())
 
             Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0)

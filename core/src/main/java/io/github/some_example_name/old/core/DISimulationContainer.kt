@@ -31,16 +31,19 @@ import io.github.some_example_name.old.systems.render.RenderBufferManager
 import io.github.some_example_name.old.systems.render.RenderSystem
 import io.github.some_example_name.old.systems.simulation.SimulationSystem
 import io.github.some_example_name.old.systems.simulation.ThreadManager
+import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_HEIGHT
+import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_WIDTH
 import kotlin.getValue
 
 object DISimulationContainer:  DIContext, Disposable {
 
-    override var gridWith = 1024
-    override var gridHeight = 1024
-    var halfChunkHeight = 4 // Also max particle speed
-    var chunkHeight = halfChunkHeight * 2
-    var gridSize = gridWith * gridHeight
-    var threadCount = (gridHeight / chunkHeight) / 2
+    override var gridWidth = 64
+    override var gridHeight = 64
+    const val HALF_CHUNK_HEIGHT = 4 // Also max particle speed
+    var chunkHeight = HALF_CHUNK_HEIGHT * 2
+    var heightMultiplier = chunkHeight * 2
+    var gridSize = gridWidth * gridHeight
+    override var threadCount = (gridHeight / chunkHeight) / 2
     var totalChunks = threadCount * 2
     var chunkSize = gridSize / totalChunks
     override val substrateSettings = SubstrateSettings()
@@ -50,14 +53,13 @@ object DISimulationContainer:  DIContext, Disposable {
     var cellsSettings = substrateSettings.cellsSettings
 
     init {
-        val heightMultiplier = chunkHeight * 2
         if (gridHeight % heightMultiplier != 0) throw Exception("gridHeight should be a multiple of (halfChunkHeight * 2 * 2)")
         println("thread count: $threadCount")
         println("thread count: $heightMultiplier")
     }
 
     override val gridManager = GridManager(
-        gridWidth = gridWith,
+        gridWidth = gridWidth,
         gridHeight = gridHeight
     )
     private val cellListBuilder = CellListBuilder(this)
@@ -169,8 +171,7 @@ object DISimulationContainer:  DIContext, Disposable {
         simulationData = simulationData,
         gridManager = gridManager,
         particleEntity = particleEntity,
-        zygote = zygote,
-        renderSystem = renderSystem
+        zygote = zygote
     )
 
     override val worldCommandsManager = WorldCommandsManager(
@@ -186,8 +187,8 @@ object DISimulationContainer:  DIContext, Disposable {
         cellList = cellList,
         substancesEntity = substancesEntity,
         specialEntity = specialEntity,
-        threadCount = threadCount,
-        userCommandManager = userCommandManager
+        userCommandManager = userCommandManager,
+        diContext = this
     )
 
     val particlePhysicsSystem = ParticlePhysicsSystem(
@@ -272,5 +273,23 @@ object DISimulationContainer:  DIContext, Disposable {
 
     override fun dispose() {
         TODO("Not yet implemented")
+    }
+
+    fun resizeWorld() {
+        if (GRID_WIDTH == gridWidth && GRID_HEIGHT == gridHeight) return
+        gridWidth = GRID_WIDTH
+        gridHeight = GRID_HEIGHT
+
+        chunkHeight = HALF_CHUNK_HEIGHT * 2
+        heightMultiplier = chunkHeight * 2
+        gridSize = gridWidth * gridHeight
+        threadCount = (gridHeight / chunkHeight) / 2
+        totalChunks = threadCount * 2
+        chunkSize = gridSize / totalChunks
+        if (gridHeight % heightMultiplier != 0) throw Exception("gridHeight should be a multiple of (halfChunkHeight * 2 * 2)")
+        gridManager.resize()
+        cellListBuilder.resize()
+        threadManager.resize()
+        worldCommandsManager.resize()
     }
 }

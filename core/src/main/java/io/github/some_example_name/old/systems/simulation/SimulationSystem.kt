@@ -45,12 +45,13 @@ class SimulationSystem(
     val renderBufferManager: RenderBufferManager
 ) {
 
-    val simulationThread = Thread { threadManager.runUpdateLoop { updateTick() } }
+    private var simulationThread: Thread? = null
 
     fun startThread() {
         if (!threadManager.isRunning) {
             threadManager.isRunning = true
-            simulationThread.start()
+            simulationThread = Thread { threadManager.runUpdateLoop { updateTick() } }
+            simulationThread?.start()
         }
     }
 
@@ -114,13 +115,18 @@ class SimulationSystem(
     }
 
     fun stopUpdateThread() {
-        simulationThread.interrupt()
-        try {
-            simulationThread.join(1000) // ждём до 1 секунды // wait up to 1 second
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
+        threadManager.stopSimulationLoop()
+
+        simulationThread?.let { thread ->
+            thread.interrupt()
+            try {
+                thread.join(1000)
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
         }
-        threadManager.dispose()
+
+        threadManager.futures.clear()
     }
 
     fun dispose() {

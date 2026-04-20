@@ -31,12 +31,12 @@ import io.github.some_example_name.old.systems.physics.GridManager
 import io.github.some_example_name.old.systems.simulation.SimulationData
 
 object DIGenomeEditorContainer: DIContext, Disposable {
-    override var gridWith = 128
+    override var gridWidth = 128
     override var gridHeight = 128
-    const val THREAD_COUNT = 1
+    override var threadCount = 1
 
     override val gridManager = GridManager(
-        gridWidth = gridWith,
+        gridWidth = gridWidth,
         gridHeight = gridHeight
     )
 
@@ -129,7 +129,7 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         cellList = cellList,
         substancesEntity = substancesEntity,
         specialEntity = specialEntity,
-        threadCount = THREAD_COUNT
+        diContext = this
     )
 
     val divideManager = DivideManager(

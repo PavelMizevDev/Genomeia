@@ -11,11 +11,11 @@ import io.github.some_example_name.old.entities.SubstancesEntity
 import io.github.some_example_name.old.systems.genomics.OrganManager
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
 import io.github.some_example_name.old.systems.physics.GridManager
-import io.github.some_example_name.old.systems.simulation.SimulationData
 
 interface DIContext {
-    var gridWith: Int
+    var gridWidth: Int
     var gridHeight: Int
+    var threadCount: Int
     val particleEntity: ParticleEntity
     val cellEntity: CellEntity
     val linkEntity: LinkEntity

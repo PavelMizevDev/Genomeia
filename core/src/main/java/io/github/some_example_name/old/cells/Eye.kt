@@ -13,7 +13,7 @@ import kotlin.math.round
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class Eye(cellTypeId: Int, val visitedBits: Array<BitSet>): Cell(
+class Eye(cellTypeId: Int, var visitedBits: Array<BitSet>): Cell(
     defaultColor = skyBlueColors[2],
     cellTypeId = cellTypeId,
     isNeural = true,
@@ -264,6 +264,6 @@ class Eye(cellTypeId: Int, val visitedBits: Array<BitSet>): Cell(
     }
 
 
-    private val checkedObjectListId =  Array(threadCount) { IntArray(16) { -1 } }  // Увеличен размер для безопасности
+    var checkedObjectListId = Array(threadCount) { IntArray(16) { -1 } }  // Увеличен размер для безопасности
 
 }

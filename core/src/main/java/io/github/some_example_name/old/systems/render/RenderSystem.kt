@@ -156,7 +156,7 @@ class RenderSystem(
         shapeRenderer.rect(
             0f,
             0f,
-            diContext.gridWith.toFloat(),
+            diContext.gridWidth.toFloat(),
             diContext.gridHeight.toFloat()
         )
 

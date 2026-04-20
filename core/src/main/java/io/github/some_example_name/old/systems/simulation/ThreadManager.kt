@@ -4,33 +4,42 @@ import io.github.some_example_name.old.core.DISimulationContainer.chunkSize
 import io.github.some_example_name.old.core.DISimulationContainer.gridSize
 import io.github.some_example_name.old.core.DISimulationContainer.threadCount
 import io.github.some_example_name.old.core.DISimulationContainer.totalChunks
+import io.github.some_example_name.old.core.WorldResizable
 import io.github.some_example_name.old.systems.simulation.SimulationSystem.Companion.DELTA_SIM_TICK_TIME
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 class ThreadManager(
     val simulationData: SimulationData
-) {
+): WorldResizable {
 
-    val executor = Executors.newFixedThreadPool(threadCount)
+    var executor = Executors.newFixedThreadPool(threadCount)
     val futures = mutableListOf<Future<*>>()
 
     var isRunning = false
 
-    fun dispose() {
-        isRunning = false
-
-        executor.shutdown()
+    private fun shutdownExecutor(exec: ExecutorService) {
+        exec.shutdown()
         try {
-            if (!executor.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
-                executor.shutdownNow()
+            if (!exec.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
+                exec.shutdownNow()
             }
         } catch (e: InterruptedException) {
-            executor.shutdownNow()
+            exec.shutdownNow()
+            Thread.currentThread().interrupt()
         }
+    }
 
+    fun dispose() {
+        isRunning = false
+        shutdownExecutor(executor)
         futures.clear()
+    }
+
+    fun stopSimulationLoop() {
+        isRunning = false
     }
 
     inline fun runUpdateLoop(onUpdateTick: () -> Unit) {
@@ -124,6 +133,13 @@ class ThreadManager(
             futures.add(executor.submit { job(start, end, threadId) })
         }
         futures.forEach { it.get() }   // <- barrier for this stage
+        futures.clear()
+    }
+
+    override fun resize() {
+        val oldExecutor = executor
+        executor = Executors.newFixedThreadPool(threadCount)
+        shutdownExecutor(oldExecutor)
         futures.clear()
     }
 }

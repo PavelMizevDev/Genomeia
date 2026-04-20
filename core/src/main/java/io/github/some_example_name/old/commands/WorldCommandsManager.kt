@@ -2,7 +2,9 @@ package io.github.some_example_name.old.commands
 
 import io.github.some_example_name.old.cells.Cell
 import io.github.some_example_name.old.cells.Zygote
+import io.github.some_example_name.old.core.DIContext
 import io.github.some_example_name.old.core.SubstrateSettings
+import io.github.some_example_name.old.core.WorldResizable
 import io.github.some_example_name.old.core.utils.OrderedIntPairMap
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.LinkEntity
@@ -30,20 +32,20 @@ class WorldCommandsManager(
     val simulationData: SimulationData,
     val cellList: List<Cell>,
     val substancesEntity: SubstancesEntity,
-    threadCount: Int,
-    val userCommandManager: UserCommandManager? = null
-) {
-    val worldCommandBuffer = Array(threadCount) { WorldCommandBuffer() }
-    val worldCommandSecondBuffer = Array(threadCount) { WorldCommandBuffer(100) }
+    val userCommandManager: UserCommandManager? = null,
+    val diContext: DIContext
+): WorldResizable {
+    var worldCommandBuffer = Array(diContext.threadCount) { WorldCommandBuffer() }
+    var worldCommandSecondBuffer = Array(diContext.threadCount) { WorldCommandBuffer(100) }
     private val worldCommandLastBuffer = WorldCommandBuffer(100)
 
-    private val lastAddedCellIndexBuffer = IntArray(threadCount) { -1 }
+    private var lastAddedCellIndexBuffer = IntArray(diContext.threadCount) { -1 }
     private val organIndexCellIdMapIndex = OrderedIntPairMap()
 
-    val evenChunkPositionStack = Array(threadCount) { IntArray(5_000) }
-    val oddChunkPositionStack = Array(threadCount) { IntArray(5_000) }
-    val evenCounter = IntArray(threadCount)
-    val oddCounter = IntArray(threadCount)
+    var evenChunkPositionStack = Array(diContext.threadCount) { IntArray(5_000) }
+    var oddChunkPositionStack = Array(diContext.threadCount) { IntArray(5_000) }
+    var evenCounter = IntArray(diContext.threadCount)
+    var oddCounter = IntArray(diContext.threadCount)
 
     fun executingCommandsFromTheWorld() {
         worldCommandBuffer.forEachIndexed { threadId, worldCommandBuffer ->
@@ -322,5 +324,15 @@ class WorldCommandsManager(
                 else -> {}
             }
         }
+    }
+
+    override fun resize() {
+        worldCommandBuffer = Array(diContext.threadCount) { WorldCommandBuffer() }
+        worldCommandSecondBuffer = Array(diContext.threadCount) { WorldCommandBuffer(100) }
+        lastAddedCellIndexBuffer = IntArray(diContext.threadCount) { -1 }
+        evenChunkPositionStack = Array(diContext.threadCount) { IntArray(5_000) }
+        oddChunkPositionStack = Array(diContext.threadCount) { IntArray(5_000) }
+        evenCounter = IntArray(diContext.threadCount)
+        oddCounter = IntArray(diContext.threadCount)
     }
 }

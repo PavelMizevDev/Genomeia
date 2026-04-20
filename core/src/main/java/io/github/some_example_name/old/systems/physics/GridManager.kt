@@ -1,19 +1,21 @@
 package io.github.some_example_name.old.systems.physics
+import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.DISimulationContainer.chunkSize
 import io.github.some_example_name.old.core.DISimulationContainer.totalChunks
+import io.github.some_example_name.old.core.WorldResizable
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.ints.IntArrayList
 
 class GridManager (
-    val gridWidth: Int,
-    val gridHeight: Int
-) {
+    var gridWidth: Int,
+    var gridHeight: Int
+): WorldResizable {
     var gridSize = gridWidth * gridHeight
-    val grid = IntArray(gridSize * MAX_AMOUNT_OF_PARTICLES) { -1 }
-    val particleCounts = IntArray(gridSize)
-    val mapMoreThenMax = Array(totalChunks * 2) { Int2ObjectOpenHashMap<IntArrayList>() }
+    var grid = IntArray(gridSize * MAX_AMOUNT_OF_PARTICLES) { -1 }
+    var particleCounts = IntArray(gridSize)
+    var mapMoreThenMax = Array(totalChunks * 2) { Int2ObjectOpenHashMap<IntArrayList>() }
 
-    private val halfChunkSize = chunkSize / 2
+    private var halfChunkSize = chunkSize / 2
     private fun getHalfChunkId(gridIndex: Int) = gridIndex / halfChunkSize
 
     fun addParticle(x: Int, y: Int, value: Int): Int {
@@ -126,6 +128,16 @@ class GridManager (
     fun clearAll() {
         particleCounts.fill(0)
         mapMoreThenMax.forEach { it.clear() }
+    }
+
+    override fun resize() {
+        gridWidth = DISimulationContainer.gridWidth
+        gridHeight = DISimulationContainer.gridHeight
+        gridSize = gridWidth * gridHeight
+        grid = IntArray(gridSize * MAX_AMOUNT_OF_PARTICLES) { -1 }
+        particleCounts = IntArray(gridSize)
+        halfChunkSize = chunkSize / 2
+        mapMoreThenMax = Array(totalChunks * 2) { Int2ObjectOpenHashMap<IntArrayList>() }
     }
 
     companion object {

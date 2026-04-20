@@ -16,7 +16,12 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.utils.I18NBundle
+import io.github.some_example_name.old.core.DISimulationContainer.gridHeight
+import io.github.some_example_name.old.core.DISimulationContainer.gridWidth
+import io.github.some_example_name.old.core.DISimulationContainer.heightMultiplier
 import io.github.some_example_name.old.core.FileProvider
+import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_HEIGHT
+import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_WIDTH
 
 class SettingsScreen(
     val game: MyGame,
@@ -144,6 +149,42 @@ class SettingsScreen(
         table.add(soundSlider).fillX()
         table.row()
 
+        val gridWidthLabel = VisLabel("World width: $GRID_WIDTH")
+        game.applyCustomFontMedium(gridWidthLabel)
+        val gridWidthSlider = VisSlider(16f, 3440f, heightMultiplier.toFloat(), false).apply {
+            value = GRID_WIDTH.toFloat()
+            addListener { e ->
+                if (valueChanged(e)) {
+                    GRID_WIDTH = value.toInt()
+                    gridWidthLabel.setText("World width: $GRID_WIDTH")
+                }
+                false
+            }
+            invalidateHierarchy()
+        }
+        table.add(gridWidthLabel).left()
+        table.row()
+        table.add(gridWidthSlider).fillX()
+        table.row()
+
+        val gridHeightLabel = VisLabel("World height: $GRID_HEIGHT")
+        game.applyCustomFontMedium(gridHeightLabel)
+        val gridHeightSlider = VisSlider(16f, 3440f, heightMultiplier.toFloat(), false).apply {
+            value = GRID_HEIGHT.toFloat()
+            addListener { e ->
+                if (valueChanged(e)) {
+                    GRID_HEIGHT = value.toInt()
+                    gridHeightLabel.setText("World height: $GRID_HEIGHT")
+                }
+                false
+            }
+            invalidateHierarchy()
+        }
+        table.add(gridHeightLabel).left()
+        table.row()
+        table.add(gridHeightSlider).fillX()
+        table.row()
+
         // === Кнопка назад ===
         val backButton = VisTextButton(bundle.get("button.back")).apply {
             game.applyCustomFont(this)
@@ -195,6 +236,8 @@ object GlobalSettings {
     var HYDRO_VISUALIZATION = false
     var MUSIC_VOLUME = 0
     var SOUND_VOLUME = 50
+    var GRID_WIDTH = gridWidth
+    var GRID_HEIGHT = gridHeight
 
 //    var WORLD_SIZE_TYPE = WorldSize.XL
 //    var WORLD_CELL_WIDTH = WORLD_SIZE_TYPE.size

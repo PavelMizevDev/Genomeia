@@ -15,7 +15,6 @@ import io.github.some_example_name.old.systems.simulation.SimulationData
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
 import io.github.some_example_name.old.systems.physics.GridManager
 import io.github.some_example_name.old.systems.physics.ParticlePhysicsSystem.Companion.PARTICLE_MAX_RADIUS
-import io.github.some_example_name.old.systems.render.RenderSystem
 import kotlin.collections.forEach
 import kotlin.math.cos
 import kotlin.math.sin
@@ -30,8 +29,7 @@ class UserCommandManager(
     val simulationData: SimulationData,
     val gridManager: GridManager,
     val particleEntity: ParticleEntity,
-    val zygote: Zygote,
-    val renderSystem: RenderSystem
+    val zygote: Zygote
 ): Disposable {
     private val bufferA = mutableListOf<PlayerCommand>()
     private val bufferB = mutableListOf<PlayerCommand>()

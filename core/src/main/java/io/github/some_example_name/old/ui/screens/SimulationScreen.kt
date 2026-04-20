@@ -20,6 +20,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextButton.VisTextButtonStyle
 import io.github.some_example_name.old.commands.PlayerCommand
 import io.github.some_example_name.old.core.DISimulationContainer
+import io.github.some_example_name.old.core.DISimulationContainer.gridHeight
+import io.github.some_example_name.old.core.DISimulationContainer.gridWidth
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.systems.render.usePostProcess
 import io.github.some_example_name.old.ui.dialogs.GenomeListDialog
@@ -106,6 +108,7 @@ class SimulationScreen(
         // Масштабируем шрифт симуляционной информации под DPI (density)
         // Это обеспечивает корректный размер текста при любом разрешении/DPI
         font.data.setScale(Gdx.graphics.density)
+        DISimulationContainer.resizeWorld()
 
         simulationSystem.startThread()
         root = Table()
@@ -131,7 +134,8 @@ class SimulationScreen(
         )
 
         camera.zoom = 0.08f
-        camera.translate(-430f, -430f)
+        camera.position.x = gridWidth / 2f
+        camera.position.y = gridHeight / 2f
         camera.update()
     }
 

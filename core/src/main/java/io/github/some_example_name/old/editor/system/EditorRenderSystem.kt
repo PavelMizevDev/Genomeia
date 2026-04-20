@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import io.github.some_example_name.old.core.DIGenomeEditorContainer.gridHeight
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.gridWith
+import io.github.some_example_name.old.core.DIGenomeEditorContainer.gridWidth
 import io.github.some_example_name.old.editor.entities.ReplayEntity
 import io.github.some_example_name.old.systems.render.RenderSystem.Companion.INITIAL_PARTICLE_CAPACITY
 import io.github.some_example_name.old.systems.render.RenderSystem.Companion.PARTICLE_STRUCT_SIZE
@@ -92,7 +92,7 @@ class EditorRenderSystem(
         shapeRenderer.rect(
             0f,
             0f,
-            gridWith.toFloat(),
+            gridWidth.toFloat(),
             gridHeight.toFloat()
         )
 
