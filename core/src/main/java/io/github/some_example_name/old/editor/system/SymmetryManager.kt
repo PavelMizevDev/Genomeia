@@ -342,13 +342,13 @@ sealed class SymmetryMode
 object NoSymmetry : SymmetryMode()
 data class SquareGrid(
     val step: Float,
-    val offsetX: Float = 64f,   // ← было 0f, теперь 64f
-    val offsetY: Float = 64f    // ← было 0f, теперь 64f
+    val offsetX: Float = 64f,
+    val offsetY: Float = 64f
 ) : SymmetryMode()
 
 object Axial : SymmetryMode()
 data class TriangleGrid(
     val step: Float,
-    val offsetX: Float = 64f,   // ← было 0f, теперь 64f
-    val offsetY: Float = 64f    // ← было 0f, теперь 64f
+    val offsetX: Float = 64f,
+    val offsetY: Float = 64f
 ) : SymmetryMode()

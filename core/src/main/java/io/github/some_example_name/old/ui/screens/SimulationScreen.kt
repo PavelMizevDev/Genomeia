@@ -28,6 +28,7 @@ import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.editor.ui.GenomeEditorScreen
 import io.github.some_example_name.old.systems.render.usePostProcess
 import io.github.some_example_name.old.ui.dialogs.GenomeListDialog
+import io.github.some_example_name.old.ui.dialogs.SpeedUpDialog
 
 var isRenderUi = true
 
@@ -348,8 +349,7 @@ class SimulationScreen(
         val putOrganismToggle = VisTextButton(bundle.get("button.putOrganism"), "toggle")
         putOrganismToggle.isChecked = putOrgs
         val selectGenomeButton = VisTextButton(bundle.get("button.selectGenome"))
-        val speedUpSimToggle = VisTextButton(bundle.get("button.speedUp"), "toggle")
-        speedUpSimToggle.isChecked = simEntity.maxSpeed
+        val speedUpSimToggle = VisTextButton(bundle.get("button.speedUp"))
         val pauseSimToggle = VisTextButton(bundle.get("button.pause"), "toggle")
         pauseSimToggle.isChecked = !simEntity.isPlay
         val restartSimulationButton = VisTextButton(bundle.get("button.restart"))
@@ -415,7 +415,9 @@ class SimulationScreen(
 
         speedUpSimToggle.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                simEntity.maxSpeed = speedUpSimToggle.isChecked
+                SpeedUpDialog(
+                    game, bundle
+                ).show(stage)
             }
         })
 
@@ -460,9 +462,8 @@ class SimulationScreen(
 
         selectGenomeButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                val genomes = genomeJsonReader.getGenomeFileNamesFromFolder("user_genomes")
                 GenomeListDialog(
-                    genomesList = genomes,
+                    genomesList = genomeManager.genomes.map { it.name },
                     selectedGenomeIndex = simulationSystem.simulationData.currentGenomeIndex,
                     title = bundle.get("button.selectGenome"),
                     new = bundle.get("button.new"),

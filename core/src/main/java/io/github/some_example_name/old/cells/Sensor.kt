@@ -11,14 +11,16 @@ class Sensor(cellTypeId: Int): Cell(
 ) {
 
     override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
-        energy[cellIndex] -= substrateSettings.cellsSettings[cellType[cellIndex].toInt()].energyActionCost
-        if (simulationData.tickCounter % 48 == 0) {
-            //TODO сделаю через ферамоны
-            var senseValue = 0f//subManager.sensor(getX(index), getY(index))
-            if (senseValue.isNaN()) throw Exception("TODO потом убрать")
-            if (senseValue > 1f) senseValue = 1f
-            neuronImpulseOutput[cellIndex] = activation(cellIndex, senseValue)
-        }
+        neuronImpulseOutput[cellIndex] = neuronImpulseInput[cellIndex]
+        //TODO плюсовать neuronImpulseInput с значениями полученными в сенсоре для neuronImpulseOutput[cellIndex]
+//        energy[cellIndex] -= substrateSettings.cellsSettings[cellType[cellIndex].toInt()].energyActionCost
+//        if (simulationData.tickCounter % 48 == 0) {
+//            //TODO сделаю через ферамоны
+//            var senseValue = 0f//subManager.sensor(getX(index), getY(index))
+//            if (senseValue.isNaN()) throw Exception("TODO потом убрать")
+//            if (senseValue > 1f) senseValue = 1f
+//            neuronImpulseOutput[cellIndex] = activation(cellIndex, senseValue)
+//        }
     }
 
 }

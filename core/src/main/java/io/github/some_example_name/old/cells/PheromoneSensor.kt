@@ -11,23 +11,25 @@ class PheromoneSensor(cellTypeId: Int) : Cell(
 ) {
 
     override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
-        val gridId = getGridId(cellIndex)
-
-        //TODO PheromoneManager
-        //TODO map color
-        val intColor = getColor(cellIndex)
-        val r = 0
-        val g = 0
-        val b = 0
-
-        val impulse = 0f
-//            r * pheromoneEntity.pheromoneR[gridId] +
-//            g * pheromoneEntity.pheromoneG[gridId] +
-//            b * pheromoneEntity.pheromoneB[gridId]
-
-        neuronImpulseOutput[cellIndex] = activation(cellIndex, impulse)
-
-        energy[cellIndex] -= 0.0001f
+        neuronImpulseOutput[cellIndex] = neuronImpulseInput[cellIndex]
+        //TODO плюсовать neuronImpulseInput с значениями полученными в сенсоре для neuronImpulseOutput[cellIndex]
+//        val gridId = getGridId(cellIndex)
+//
+//        //TODO PheromoneManager
+//        //TODO map color
+//        val intColor = getColor(cellIndex)
+//        val r = 0
+//        val g = 0
+//        val b = 0
+//
+//        val impulse = 0f
+////            r * pheromoneEntity.pheromoneR[gridId] +
+////            g * pheromoneEntity.pheromoneG[gridId] +
+////            b * pheromoneEntity.pheromoneB[gridId]
+//
+//        neuronImpulseOutput[cellIndex] = activation(cellIndex, impulse)
+//
+//        energy[cellIndex] -= 0.0001f
     }
 
 }

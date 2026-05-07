@@ -13,6 +13,11 @@ class SimulationData {
 
     var isPlay = true
     var maxSpeed = false
+
+    var targetUPS: Int = 60
+        set(value) {
+            field = value.coerceIn(1, 1000)
+        }
     var ups = 60
     var selectedCellIndex = -1
 
