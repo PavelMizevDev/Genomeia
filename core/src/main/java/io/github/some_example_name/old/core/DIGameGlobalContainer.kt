@@ -5,6 +5,7 @@ import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.Json
+import io.github.some_example_name.old.systems.genomics.Morphogenesis
 import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
 import io.github.some_example_name.old.systems.render.ShaderManager
 import io.github.some_example_name.old.systems.render.ShaderManagerLibgdxApi
@@ -34,4 +35,6 @@ object DIGameGlobalContainer {
         Application.ApplicationType.WebGL -> TODO()
         Application.ApplicationType.iOS -> TODO()
     }
+
+    val morphogenesis = Morphogenesis()
 }

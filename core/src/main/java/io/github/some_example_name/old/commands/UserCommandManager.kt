@@ -1,5 +1,6 @@
 package io.github.some_example_name.old.commands
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.Cell
@@ -62,7 +63,7 @@ class UserCommandManager(
         swapAndConsume { cmd ->
             when (cmd) {
                 PlayerCommand.StopDrag -> {
-                    println("StopDrag")
+//                    println("StopDrag")
                     grabbedParticleIndex = -1
                     simulationData.selectedCellIndex = -1
                     isDragging = false
@@ -88,7 +89,7 @@ class UserCommandManager(
                     tapY = cmd.y
                     simulationData.selectedCellIndex = -1
 
-                    println("TouchDown (${cmd.x}, ${cmd.y} ${cmd.isLeftButton} ${grabbedParticleIndex})")
+//                    println("TouchDown (${cmd.x}, ${cmd.y} ${cmd.isLeftButton} ${grabbedParticleIndex})")
                 }
 
                 is PlayerCommand.Drag -> {
@@ -109,7 +110,7 @@ class UserCommandManager(
                         simulationData.selectedCellIndex = -1
                     }
 
-                    println("Drag (${cmd.x}, ${cmd.y} ${cmd.dx} ${cmd.dy} ${grabbedParticleIndex})")
+//                    println("Drag (${cmd.x}, ${cmd.y} ${cmd.dx} ${cmd.dy} ${grabbedParticleIndex})")
                 }
 
                 is PlayerCommand.Tap -> {
@@ -159,7 +160,7 @@ class UserCommandManager(
                             }
                         } else {
                             val radius = 7.0f
-                            repeat(500) {
+                            repeat(10) {
                                 val angle = MathUtils.random(0f, MathUtils.PI2)
 
                                 val r = radius * sqrt(MathUtils.random())
@@ -184,12 +185,12 @@ class UserCommandManager(
                                     }
 
                                     if (neighborIndex == null) {
-                                        val r = Random.nextInt(255)
-                                        val g = Random.nextInt(255)
-                                        val b = Random.nextInt(255)
-                                        val a = 255
+//                                        val r = Random.nextInt(255)
+//                                        val g = Random.nextInt(255)
+//                                        val b = Random.nextInt(255)
+//                                        val a = 255
 
-                                        val color = (a shl 24) or (r shl 16) or (g shl 8) or b
+                                        val color = Color.RED.toIntBits()//124124//(a shl 24) or (r shl 16) or (g shl 8) or b
                                         val radius = Random.nextFloat() * (0.5f - 0.1f) + 0.1f
 
                                         worldCommandsManager.worldCommandBuffer[Random.nextInt(
@@ -206,7 +207,7 @@ class UserCommandManager(
                         }
                     }
 
-                    println("Tap (${cmd.x}, ${cmd.y} ${cmd.isLeftButton} ${grabbedParticleIndex})")
+//                    println("Tap (${cmd.x}, ${cmd.y} ${cmd.isLeftButton} ${grabbedParticleIndex})")
                 }
             }
         }

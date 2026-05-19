@@ -1,6 +1,7 @@
 package io.github.some_example_name.old.entities
 
 import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.core.DISimulationContainer.cellsSettings
 import io.github.some_example_name.old.core.SubstrateSettings
 import io.github.some_example_name.old.systems.genomics.genome.CellAction
@@ -62,6 +63,7 @@ class CellEntity(
     var isNeural = BooleanArray(maxAmount)
     var neuronImpulseInput = FloatArray(maxAmount)
     var neuronImpulseOutput = FloatArray(maxAmount)
+    var isOnEdge = BooleanArray(maxAmount)
 
     //Neural entity
     var neuralIndexes = IntArray(maxAmount) { -1 }
@@ -175,6 +177,8 @@ class CellEntity(
             isCollidable = cellList[cellType].isCollidable,
             cellStiffness = cellsSettings[cellType].cellStiffness,
             isCell = true,
+            isSub = false,
+            isPheromoneEmitter = cellList[cellType] is PheromoneEmitter,
             holderEntityIndex = cellIndex
         )
         this.cellGenomeId[cellIndex] = cellGenomeId
@@ -195,6 +199,7 @@ class CellEntity(
         energy[cellIndex] = 0f
         maxEnergy[cellIndex] = cellsSettings[cellType].maxEnergy
         linksAmount[cellIndex] = 0
+        isOnEdge[cellIndex] = true
         val cell = cellList[cellType]
 
         if (cell.isNeural) {
@@ -245,6 +250,7 @@ class CellEntity(
         neuronImpulseInput[cellIndex] = 0f
         neuronImpulseOutput[cellIndex] = 0f
         linksAmount[cellIndex] = 0
+        isOnEdge[cellIndex] = true
         val base = cellIndex * MAX_LINK_AMOUNT
         links.fill(-1, base, base + MAX_LINK_AMOUNT)
 
@@ -285,6 +291,7 @@ class CellEntity(
         neuronImpulseOutput.clear()
         neuralIndexes.clear()
         linksAmount.clear()
+        isOnEdge.clear(true)
         links.fill(-1, 0, bound * MAX_LINK_AMOUNT)
     }
 
@@ -316,6 +323,7 @@ class CellEntity(
         neuronImpulseOutput = neuronImpulseOutput.resize()
         neuralIndexes = neuralIndexes.resize()
         linksAmount = linksAmount.resize()
+        isOnEdge = isOnEdge.resize(true)
         run {
             val oldLinks = links
             links = IntArray(maxAmount * MAX_LINK_AMOUNT) { -1 }

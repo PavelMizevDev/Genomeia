@@ -6,11 +6,11 @@ data class Point(val x: Float, val y: Float)
 const val START_EDITOR_CELL_X = 64f
 const val START_EDITOR_CELL_Y = 64f
 
-const val MIN_DISTANCE_TO_CENTER = 24f / 40f
-const val MAX_DISTANCE_TO_CENTER = 36f / 40f
+const val MIN_DISTANCE_TO_CENTER = 0.6f
+const val MAX_DISTANCE_TO_CENTER = 0.9f
 //const val TARGET_X = 240f
 //const val TARGET_Y = 160f
-const val MIN_DISTANCE_TO_OTHERS = 24f / 40f
+const val MIN_DISTANCE_TO_OTHERS = 0.6
 
 fun findNewOptimalCellPosition(x: Float, y: Float, xs: List<Float>, ys: List<Float>): Pair<Float, Float>? {
     if (xs.size != ys.size) {

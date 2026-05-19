@@ -81,9 +81,11 @@ class DivideManager(
                 val isSum: Boolean = action.isSum ?: true
                 val activationFuncType: Int = action.funActivation ?: 0
 
+                val isMorphogenesis = false
+
                 worldCommandsManager.worldCommandBuffer[threadId].push(
                     type = WorldCommandType.ADD_CELL,
-                    booleans = booleanArrayOf(isSum),
+                    booleans = booleanArrayOf(isSum, isMorphogenesis),
                     floats = floatArrayOf(x, y, radius, finalCos, finalSin, angleDiffCos, angleDiffSin, visibilityRange, a, b, c),
                     ints = intArrayOf(
                         color,

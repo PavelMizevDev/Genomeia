@@ -4,7 +4,7 @@ enum class WorldCommandType(val intParamsCount: Int, val floatParamsCount: Int, 
     ADD_CELL(
         intParamsCount = 7,
         floatParamsCount = 11,
-        booleanParamsCount = 1
+        booleanParamsCount = 2
     ),
     ADD_LINK(
         intParamsCount = 2,
@@ -121,6 +121,26 @@ enum class WorldCommandType(val intParamsCount: Int, val floatParamsCount: Int, 
         booleanParamsCount = 0
     ),
     ADD_PRODUCER(
+        intParamsCount = 1,
+        floatParamsCount = 0,
+        booleanParamsCount = 0
+    ),
+    ADD_PHEROMONE(
+        intParamsCount = 2,
+        floatParamsCount = 2,
+        booleanParamsCount = 0
+    ),
+    DELETE_PHEROMONE(
+        intParamsCount = 2,
+        floatParamsCount = 0,
+        booleanParamsCount = 0
+    ),
+    DELETE_PHEROMONE_EMITTER(
+        intParamsCount = 2,
+        floatParamsCount = 0,
+        booleanParamsCount = 0
+    ),
+    ADD_PHEROMONE_EMITTER(
         intParamsCount = 1,
         floatParamsCount = 0,
         booleanParamsCount = 0

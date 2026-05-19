@@ -55,9 +55,11 @@ class Producer(cellTypeId: Int): Cell(
         val x = getX(cellIndex) + finalCos * 0.05f
         val y = getY(cellIndex) + finalSin * 0.05f
 
+        val isMorphogenesis = false
+
         worldCommandsManager.worldCommandBuffer[threadId].push(
             type = WorldCommandType.ADD_CELL,
-            booleans = booleanArrayOf(isSum),
+            booleans = booleanArrayOf(isSum, isMorphogenesis),
             floats = floatArrayOf(x, y, radius, finalCos, finalSin, angleDiffCosDefault, angleDiffSinDefault, visibilityRange, a, b, c),
             ints = intArrayOf(
                 color,

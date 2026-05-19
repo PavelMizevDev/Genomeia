@@ -24,8 +24,10 @@ import io.github.some_example_name.old.editor.entities.EyeReplay
 import io.github.some_example_name.old.editor.entities.LinkReplay
 import io.github.some_example_name.old.editor.entities.NeuralReplay
 import io.github.some_example_name.old.editor.system.SymmetryManager
+import io.github.some_example_name.old.entities.PheromoneEmitterEntity
 import io.github.some_example_name.old.entities.PheromoneEntity
 import io.github.some_example_name.old.entities.ProducerEntity
+import io.github.some_example_name.old.systems.pheromone.PheromonesManager
 import io.github.some_example_name.old.systems.genomics.CellSystem
 import io.github.some_example_name.old.systems.genomics.DivideManager
 import io.github.some_example_name.old.systems.genomics.MutateManager
@@ -89,12 +91,17 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         tailStartMaxAmount = 5
     )
 
+    val pheromoneEmitterEntity = PheromoneEmitterEntity(
+        pheromoneEmitterStartMaxAmount = 1
+    )
+
     override val specialEntity = SpecialEntity(
         cellsStartMaxAmount = 10,
         eyeEntity = eyeEntity,
         tailEntity = tailEntity,
         specialModDataEntity = specialModDataEntity,
-        producerEntity = producerEntity
+        producerEntity = producerEntity,
+        pheromoneEmitterEntity = pheromoneEmitterEntity
     )
 
     override val cellEntity = CellEntity(
@@ -138,7 +145,15 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         substancesEntity = substancesEntity,
         specialEntity = specialEntity,
         diContext = this,
-        isEditor = true
+        isEditor = true,
+        pheromoneEntity = pheromoneEntity
+    )
+
+    override val pheromonesManager = PheromonesManager(
+        pheromoneEntity = pheromoneEntity,
+        particleEntity = particleEntity,
+        worldCommandsManager = worldCommandsManager,
+        cellEntity = cellEntity
     )
 
     val divideManager = DivideManager(
@@ -205,7 +220,9 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         cellEntity,
         linkEntity,
         substancesEntity,
-        producerEntity
+        producerEntity,
+        pheromoneEntity,
+        pheromoneEmitterEntity
     )
 
     val editorSimulationSystem = EditorSimulationSystem(

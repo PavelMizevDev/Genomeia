@@ -77,9 +77,13 @@ class WorldEditorScreen(
             field = value
             updateSeedText()
         }
-    private var worldSize = 1024//WORLD_SIZE_TYPE.generateWorldSize
+//    private var worldSize = 64//WORLD_SIZE_TYPE.generateWorldSize
     private var worldLifeGame = GENERATOR_DAY_NIGHT
     private var worldSmoothing = GENERATOR_INTERPOLATE
+
+    var GRID_WIDTH = (GlobalSettings.GRID_WIDTH * 1.5).toInt()
+    var GRID_HEIGHT = (GlobalSettings.GRID_HEIGHT * 1.5).toInt()
+
     private lateinit var seedLabel: VisLabel
     private lateinit var lifeGameLabel: VisLabel
     private lateinit var smoothingLabel: VisLabel
@@ -110,7 +114,7 @@ class WorldEditorScreen(
     }
 
     private fun setupCanvas() {
-        canvasPixmap = Pixmap(worldSize, worldSize, Pixmap.Format.RGBA8888).apply {
+        canvasPixmap = Pixmap(GRID_WIDTH, GRID_HEIGHT, Pixmap.Format.RGBA8888).apply {
             setColor(Color.WHITE)
             fill()
         }
@@ -167,8 +171,8 @@ class WorldEditorScreen(
             game.applyCustomFont(this)
             addListener(object : ChangeListener() {
                 override fun changed(event: ChangeEvent, actor: Actor) {
-                    for (y in 0 until worldSize) {
-                        for (x in 0 until worldSize) {
+                    for (y in 0 until GRID_HEIGHT) {
+                        for (x in 0 until GRID_WIDTH) {
                             map[y][x] = false
                         }
                     }
@@ -370,17 +374,17 @@ class WorldEditorScreen(
     }
 
     private fun createNewWorld() {
-        map = worldGenerator.generateWorld(worldSeed.hashCode().toLong()) // Получаем карту
+        map = worldGenerator.generateWorld(GRID_WIDTH, GRID_HEIGHT, worldSeed.hashCode().toLong())
         updateCanvasFromMap()
     }
 
     private fun updateCanvasFromMap() {
         canvasPixmap.setColor(Color.WHITE)
         canvasPixmap.fill()
-        for (y in 0 until worldSize) {
-            for (x in 0 until worldSize) {
+        for (y in 0 until GRID_HEIGHT) {
+            for (x in 0 until GRID_WIDTH) {
                 canvasPixmap.setColor(if (map[y][x]) wallColor else leafColor)
-                canvasPixmap.drawPixel(x, worldSize - 1 - y)
+                canvasPixmap.drawPixel(x, GRID_HEIGHT - 1 - y)
             }
         }
         needTextureUpdate = true
@@ -414,8 +418,8 @@ class WorldEditorScreen(
             if (isMouseInsideEditor()) {
                 updateMousePosition()
                 if (isSettingStartPoint) {
-                    val cx = (mousePos.x * worldSize / editorWidth).toInt().coerceIn(0, worldSize - 1)
-                    val cy = (mousePos.y * worldSize / editorHeight).toInt().coerceIn(0, worldSize - 1)
+                    val cx = (mousePos.x * GRID_WIDTH / editorWidth).toInt().coerceIn(0, GRID_WIDTH - 1)
+                    val cy = (mousePos.y * GRID_HEIGHT / editorHeight).toInt().coerceIn(0, GRID_HEIGHT - 1)
                     map[cy][cx] = false // Set to erased (leaf)
                     isSettingStartPoint = false
                     setStartPointCheckBox.isChecked = false
@@ -449,8 +453,8 @@ class WorldEditorScreen(
     }
 
     private fun drawOnCanvas() {
-        val cx = (mousePos.x * worldSize / editorWidth).toInt().coerceIn(0, worldSize - 1)
-        val cy = (mousePos.y * worldSize / editorHeight).toInt().coerceIn(0, worldSize - 1)
+        val cx = (mousePos.x * GRID_WIDTH / editorWidth).toInt().coerceIn(0, GRID_WIDTH - 1)
+        val cy = (mousePos.y * GRID_HEIGHT / editorHeight).toInt().coerceIn(0, GRID_HEIGHT - 1)
         val value = !isErasing
 
         val r2 = brushSize * brushSize
@@ -459,7 +463,7 @@ class WorldEditorScreen(
                 if (useCircleBrush && dx * dx + dy * dy > r2) continue // круглая кисть
                 val x = cx + dx
                 val y = cy + dy
-                if (x in 0 until worldSize && y in 0 until worldSize) {
+                if (x in 0 until GRID_WIDTH && y in 0 until GRID_HEIGHT) {
                     map[y][x] = value
                 }
             }
@@ -520,12 +524,28 @@ class WorldEditorScreen(
     override fun resize(width: Int, height: Int) {
         stage.viewport.update(width, height, true)
 
-        val editorSize = Math.min(width, height).toFloat()
-        editorWidth = editorSize
-        editorHeight = editorSize
-        editorX = (width - editorSize) / 2f
-        editorY = (height - editorSize) / 2f
+        val screenW = width.toFloat()
+        val screenH = height.toFloat()
 
+        // Соотношение сторон карты (например 128x64 = 2.0)
+        val gridAspect = GRID_WIDTH.toFloat() / GRID_HEIGHT.toFloat()
+
+        // Подгоняем размер редактора под экран с сохранением пропорций
+        if (screenW / screenH > gridAspect) {
+            // Экран шире, чем карта → ограничиваем по высоте
+            editorHeight = screenH
+            editorWidth = editorHeight * gridAspect
+        } else {
+            // Экран выше, чем карта → ограничиваем по ширине
+            editorWidth = screenW
+            editorHeight = editorWidth / gridAspect
+        }
+
+        // Центрируем
+        editorX = (screenW - editorWidth) / 2f
+        editorY = (screenH - editorHeight) / 2f
+
+        // Позиционирование UI-кнопок (остаётся без изменений)
         val scale = Gdx.graphics.density * 2f
         val buttonWidth = 100f * scale
         val buttonHeight = 25f * scale
@@ -543,7 +563,8 @@ class WorldEditorScreen(
         clearButton.setSize(buttonWidth, buttonHeight)
         clearButton.setPosition(padding, padding)
 
-        dialog.setSize(300f * scale, 400f * scale) // Фиксированный размер для диалога, чтобы скролл появлялся если нужно
+        // Диалог
+        dialog.setSize(300f * scale, 400f * scale)
         dialog.pack()
     }
 

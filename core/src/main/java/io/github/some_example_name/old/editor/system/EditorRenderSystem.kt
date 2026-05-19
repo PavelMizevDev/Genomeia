@@ -287,7 +287,7 @@ class EditorRenderSystem(
             val y = particleEntity.y[editorLogicSystem.previousCtrlClicked]
 
             shapeRenderer.color = Color.CYAN
-            shapeRenderer.circle(x, y,  5f / 40f)
+            shapeRenderer.circle(x, y,  5f / 40f, 32)
         } else {
             editorLogicSystem.previousCtrlClicked = -1
         }

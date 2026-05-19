@@ -111,7 +111,7 @@ class LinkPhysicsSystem(
                     )
                     return
                 }
-                // TODO: for physical accuracy this should be changed to a harmonic mean
+
                 val stiffnessA = cellStiffness[linkParticleA]
                 val stiffnessB = cellStiffness[linkParticleB]
                 val stiffness = 2 * stiffnessA * stiffnessB / (stiffnessA + stiffnessB)

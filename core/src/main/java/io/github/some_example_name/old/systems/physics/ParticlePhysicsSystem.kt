@@ -10,6 +10,7 @@ import io.github.some_example_name.old.core.utils.invSqrt
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.SubstancesEntity
+import io.github.some_example_name.old.systems.pheromone.PheromonesManager
 import io.github.some_example_name.old.systems.simulation.SimulationData
 import io.github.some_example_name.old.ui.screens.GlobalSettings.GRAVITATION
 import kotlin.math.sqrt
@@ -23,7 +24,8 @@ class ParticlePhysicsSystem(
     val cellEntity: CellEntity,
     val linkEntity: LinkEntity,
     val cellList: List<Cell>,
-    val substancesEntity: SubstancesEntity
+    val substancesEntity: SubstancesEntity,
+    val pheromonesManager: PheromonesManager
 ) {
 
     val halfChunkHeight2 = HALF_CHUNK_HEIGHT * HALF_CHUNK_HEIGHT
@@ -136,9 +138,7 @@ class ParticlePhysicsSystem(
             }
 
             if (!isParticleAIsCell && !isParticleBIsCell) {
-                val subAIndex = holderEntityIndex[particleAId]
-                val subBIndex = holderEntityIndex[particleBId]
-                if (subAIndex != -1 && subBIndex != -1) {
+//                if (subAIndex != -1 && subBIndex != -1) {
                     //TODO вынести в SubManager
                     val rA2 = radius[particleAId] * radius[particleAId]
                     val rB2 = radius[particleBId] * radius[particleBId]
@@ -146,8 +146,10 @@ class ParticlePhysicsSystem(
                     if (radiusSumSquared < PARTICLE_MAX_RADIUS_SQUARED) {
 
                         val maxRadius = maxOf(radius[particleAId], radius[particleBId])
-                        if (distance < maxRadius) {
-                            val radius = 1.0f / invSqrt(radiusSumSquared)
+                        if (distance < maxRadius && isSub[particleAId] && isSub[particleBId]) {
+                            val subAIndex = holderEntityIndex[particleAId]
+                            val subBIndex = holderEntityIndex[particleBId]
+                            val radius = sqrt(radiusSumSquared)
                             val deleteIndex = if (this.radius[particleAId] < this.radius[particleBId]) {
                                 this.radius[particleBId] = radius
                                 subAIndex
@@ -205,7 +207,7 @@ class ParticlePhysicsSystem(
                     }
 
                     return@with
-                }
+//                }
             }
 
             if (isCollidable[particleAId] && isCollidable[particleBId]) {
@@ -247,15 +249,16 @@ class ParticlePhysicsSystem(
         }
     }
 
-    fun moveParticle(particleIndex: Int) = with(entity) {
+    fun moveParticle(particleIndex: Int, threadId: Int) = with(entity) {
         val oldX = x[particleIndex].toInt()
         val oldY = y[particleIndex].toInt()
         val gridCellIndex = gridId[particleIndex]
+        vy[particleIndex] -= GRAVITATION
 
         processCellFrictionOld(particleIndex)
 
-//        vx[particleIndex] -= 0.04f * sin((500f - particleIndex) * simulationData.timeSimulation)
-        vx[particleIndex] -= GRAVITATION //* cos((500f - particleIndex) * simulationData.timeSimulation)
+        //-= 0.04f * sin((500f - particleIndex) * simulationData.timeSimulation)
+//        vx[particleIndex] -= GRAVITATION //* cos((500f - particleIndex) * simulationData.timeSimulation)
 
         val vxv = vx[particleIndex]
         val vyv = vy[particleIndex]
@@ -271,9 +274,15 @@ class ParticlePhysicsSystem(
         y[particleIndex] += vy[particleIndex]
 
         processWorldBorders(particleIndex)
-        val newX = x[particleIndex].toInt()
-        val newY = y[particleIndex].toInt()
+        val x = x[particleIndex]
+        val y = y[particleIndex]
+
+        val newX = x.toInt()
+        val newY = y.toInt()
         if (newX != oldX || newY != oldY) {
+            if (isPheromoneEmitter[particleIndex]) {
+                pheromonesManager.newGridCell(x, y, particleIndex, threadId)
+            }
             gridManager.removeParticle(gridCellIndex, particleIndex)
             gridId[particleIndex] = gridManager.addParticle(newX, newY, particleIndex)
         }

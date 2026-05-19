@@ -18,7 +18,8 @@ val formulaType = arrayOf(
     "y = impulse(a), x>=1",
     "y = x in (a, b) else y = c",
     "y = x^(a)",
-    "y = remember(x), 0, 1"
+    "y = remember(x), 0, 1",
+    "y = random(a, b)"
 )
 
 fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
@@ -60,6 +61,12 @@ fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
                 setRemember(cellIndex, 0.0f)
             }
             getRemember(cellIndex)
+        }
+
+        11 -> {
+            val a = getA(cellIndex)
+            val b = getB(cellIndex)
+            kotlin.random.Random.nextFloat() * (b - a) + a
         }
 
         else -> x

@@ -1,5 +1,6 @@
 package io.github.some_example_name.old.cells
 
+import io.github.some_example_name.old.commands.WorldCommandType
 import io.github.some_example_name.old.core.utils.blueColors
 
 class PheromoneEmitter(cellTypeId: Int) : Cell(
@@ -9,22 +10,15 @@ class PheromoneEmitter(cellTypeId: Int) : Cell(
 ) {
 
     override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
+        val lastImpulse = specialEntity.getPheromoneEmitterLastImpulse(cellIndex)
+        if (lastImpulse > 0) return@with
         val impulse = neuronImpulseOutput[cellIndex]
-        val gridId = getGridId(cellIndex)
+        if (impulse <= 0) return@with
 
-        //TODO do checks
-//        if (gridId < 0 || gridId >= cm.gridManager.GRID_SIZE) return
-        //TODO PheromoneManager
-        //TODO map color
-        val intColor = getColor(cellIndex)
-        val r = 0
-        val g = 0
-        val b = 0
-
-//        pheromoneEntity.pheromoneR[gridId] += r * impulse
-//        pheromoneEntity.pheromoneG[gridId] += g * impulse
-//        pheromoneEntity.pheromoneB[gridId] += b * impulse
-
-        energy[cellIndex] -= impulse * 0.01f
+        worldCommandsManager.worldCommandBuffer[threadId].push(
+            type = WorldCommandType.ADD_PHEROMONE,
+            ints = intArrayOf(getParticleIndex(cellIndex), 2 /*todo pheromone type*/),
+            floats = floatArrayOf(getX(cellIndex), getY(cellIndex))
+        )
     }
 }

@@ -1,15 +1,18 @@
 package io.github.some_example_name.old.commands
 
+import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.cells.Cell
 import io.github.some_example_name.old.cells.Zygote
 import io.github.some_example_name.old.core.DIContext
 import io.github.some_example_name.old.core.SubstrateSettings
 import io.github.some_example_name.old.core.WorldResizable
 import io.github.some_example_name.old.core.utils.OrderedIntPairMap
+import io.github.some_example_name.old.core.utils.collectParticles
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.OrganEntity
 import io.github.some_example_name.old.entities.ParticleEntity
+import io.github.some_example_name.old.entities.PheromoneEntity
 import io.github.some_example_name.old.entities.SpecialEntity
 import io.github.some_example_name.old.systems.simulation.SimulationData
 import io.github.some_example_name.old.entities.SubstancesEntity
@@ -17,6 +20,8 @@ import io.github.some_example_name.old.systems.genomics.OrganManager
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
 import io.github.some_example_name.old.systems.physics.GridManager
 import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem.Companion.MAX_LINK_AMOUNT
+import kotlin.collections.map
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 class WorldCommandsManager(
@@ -27,6 +32,7 @@ class WorldCommandsManager(
     val linkEntity: LinkEntity,
     val specialEntity: SpecialEntity,
     val particleEntity: ParticleEntity,
+    val pheromoneEntity: PheromoneEntity,
     val substrateSettings: SubstrateSettings,
     val genomeManager: GenomeManager,
     val simulationData: SimulationData,
@@ -59,14 +65,14 @@ class WorldCommandsManager(
                         organEntity.mutateCounterThisStage[ints[0]]++
                     }
                     WorldCommandType.ADD_PARTICLE -> {
-                        particleEntity.addParticle(
-                            x = floats[0],
-                            y = floats[1],
-                            radius = floats[2],
-                            color = ints[0],
-                            isCell = false,
-                            holderEntityIndex = -1
-                        )
+//                        particleEntity.addParticle(
+//                            x = floats[0],
+//                            y = floats[1],
+//                            radius = floats[2],
+//                            color = ints[0],
+//                            isCell = false,
+//                            holderEntityIndex = -1
+//                        )
                     }
                     WorldCommandType.ADD_LINK -> {
                         val cellIndex = if (ints[0] == -1) {
@@ -92,45 +98,101 @@ class WorldCommandsManager(
                         linkEntity.deleteLink(linkIndex = ints[0], linkGeneration = ints[1])
                     }
                     WorldCommandType.ADD_CELL -> {
-                        val cellType = ints[2]
-                        val newCell = cellList[cellType]
+                        val isMorphogenesis = booleans[1]
+                        var x = floats[0]
+                        var y = floats[1]
 
-                        val cellGenomeId = if (newCell is Zygote && !isEditor) { 0 } else ints[1]
-                        val parentOrganIndex = ints[3]
-                        val parentIndex = ints[4]
-                        val organIndex = if (newCell is Zygote) -1 else parentOrganIndex
+                        val radius = floats[2]
 
-                        val cellIndex = cellEntity.addCell(
-                            x = floats[0],
-                            y = floats[1],
-                            color = ints[0],
-                            radius = floats[2],
-                            cellGenomeId = cellGenomeId,
-                            cellType = cellType,
-                            organIndex = organIndex,
-                            parentIndex = parentIndex,
-                            angleCos = floats[3],
-                            angleSin = floats[4],
-                            angleDiffCos = floats[5],
-                            angleDiffSin = floats[6],
-                            colorDifferentiation = ints[5],
-                            visibilityRange = floats[7],
-                            a = floats[8],
-                            b = floats[9],
-                            c = floats[10],
-                            isSum = booleans[0],
-                            activationFuncType = ints[6].toByte()
-                        )
+                        var isDivide = true
+                        var closestCells: IntArray? = null
 
-                        val genomeIndex = organEntity.genomeIndex[parentOrganIndex]
-                        newCell.onStart(cellIndex, -1, genomeIndex)
-
-                        if (parentIndex != -1 && cellEntity.parentIndex[parentIndex] == -1) {
-                            cellEntity.parentIndex[parentIndex] = cellIndex
+                        if (isMorphogenesis) {
+                            closestCells = gridManager.collectParticles(
+                                gridX = x.toInt(),
+                                gridY = y.toInt(),
+                                radius = 1
+                            )
+                            closestCells
+                                .filter { particleEntity.isCell[it] }
+                                .forEach {
+                                    val dx = particleEntity.x[it] - x
+                                    val dy = particleEntity.y[it] - y
+                                    val squareDist = dx * dx + dy * dy
+                                    if (squareDist < 0.36f) {
+                                        isDivide = false
+                                        return@forEach
+                                    }
+                                }
                         }
+                        if (isDivide) {
+                            val cellType = ints[2]
+                            val newCell = cellList[cellType]
 
-                        lastAddedCellIndexBuffer[threadId] = cellIndex
-                        organIndexCellIdMapIndex.put(parentOrganIndex, cellGenomeId, cellIndex)
+                            val cellGenomeId = if (newCell is Zygote && !isEditor) {
+                                0
+                            } else ints[1]
+                            val parentOrganIndex = ints[3]
+                            val parentIndex = ints[4]
+                            val organIndex = if (newCell is Zygote) -1 else parentOrganIndex
+
+                            val cellIndex = cellEntity.addCell(
+                                x = x,
+                                y = y,
+                                color = ints[0],
+                                radius = radius,
+                                cellGenomeId = cellGenomeId,
+                                cellType = cellType,
+                                organIndex = organIndex,
+                                parentIndex = parentIndex,
+                                angleCos = floats[3],
+                                angleSin = floats[4],
+                                angleDiffCos = floats[5],
+                                angleDiffSin = floats[6],
+                                colorDifferentiation = ints[5],
+                                visibilityRange = floats[7],
+                                a = floats[8],
+                                b = floats[9],
+                                c = floats[10],
+                                isSum = booleans[0],
+                                activationFuncType = ints[6].toByte()
+                            )
+
+                            closestCells?.filter { particleEntity.isCell[it] }
+                                ?.map { particleEntity.holderEntityIndex[it] }
+                                ?.filter { cellEntity.organIndex[it] == cellEntity.organIndex[cellIndex] }
+                                ?.forEach {
+                                    if (cellEntity.linksAmount[cellIndex] < MAX_LINK_AMOUNT
+                                        && cellEntity.linksAmount[it] < MAX_LINK_AMOUNT
+                                    ) {
+                                        val dx = cellEntity.getX(it) - x
+                                        val dy = cellEntity.getY(it) - y
+                                        val rSum = cellEntity.getRadius(it) + radius
+                                        val squareDist = dx * dx + dy * dy
+                                        if (rSum * rSum > squareDist) {
+                                            linkEntity.addLink(
+                                                cellIndex = cellIndex,
+                                                otherCellIndex = it,
+                                                linksLength = sqrt(squareDist),
+                                                degreeOfShortening = 1.0f,
+                                                isStickyLink = false,
+                                                isNeuronLink = false,
+                                                isLink1NeuralDirected = false
+                                            )
+                                        }
+                                    }
+                                }
+
+                            val genomeIndex = organEntity.genomeIndex[parentOrganIndex]
+                            newCell.onStart(cellIndex, -1, genomeIndex)
+
+                            if (parentIndex != -1 && cellEntity.parentIndex[parentIndex] == -1) {
+                                cellEntity.parentIndex[parentIndex] = cellIndex
+                            }
+
+                            lastAddedCellIndexBuffer[threadId] = cellIndex
+                            organIndexCellIdMapIndex.put(parentOrganIndex, cellGenomeId, cellIndex)
+                        }
                     }
                     WorldCommandType.DECREMENT_DIVIDE_COUNTER -> {
                         organEntity.dividedTimes[ints[0]]--
@@ -164,7 +226,15 @@ class WorldCommandsManager(
                             while (cellEntity.linksAmount[cellIndex] > 0) {
                                 val base = cellIndex * MAX_LINK_AMOUNT
                                 val linkIndex = cellEntity.links[base]
+
                                 if (linkIndex != -1) {
+                                    val c1 = linkEntity.links1[linkIndex]
+                                    val c2 = linkEntity.links2[linkIndex]
+
+                                    val edgeCellIndex = if (cellIndex == c1) c2 else c1
+                                    cellEntity.isOnEdge[edgeCellIndex] = true
+                                    cellEntity.setColor(edgeCellIndex, Color.RED.toIntBits())
+
                                     linkEntity.deleteLink(linkIndex)
                                 }
                             }
@@ -234,6 +304,18 @@ class WorldCommandsManager(
                     }
                     WorldCommandType.DELETE_SUBSTANCE -> {
                         substancesEntity.deleteSubstance(subIndex = ints[0], subGeneration = ints[1])
+                    }
+                    WorldCommandType.ADD_PHEROMONE -> {
+                        pheromoneEntity.addPheromone(x = floats[0], y = floats[1], emitterIndex = ints[0], type = ints[1])
+                    }
+                    WorldCommandType.DELETE_PHEROMONE -> {
+                        pheromoneEntity.deletePheromone(pheromoneIndex = ints[0], pheromoneGeneration = ints[1])
+                    }
+                    WorldCommandType.DELETE_PHEROMONE_EMITTER -> {
+                        specialEntity.deletePheromoneEmitter(cellIndex = ints[0], pheromoneEmitterGeneration = ints[1])
+                    }
+                    WorldCommandType.ADD_PHEROMONE_EMITTER -> {
+                        specialEntity.addPheromoneEmitter(index = ints[0])
                     }
                     else -> {}
                 }

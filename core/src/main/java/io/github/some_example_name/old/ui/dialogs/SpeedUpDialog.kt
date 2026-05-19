@@ -10,6 +10,7 @@ import com.kotcrab.vis.ui.widget.VisSlider
 import com.kotcrab.vis.ui.widget.VisTextButton
 import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.ui.screens.MyGame
+import io.github.some_example_name.old.ui.screens.applyCustomFont
 import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
 import io.github.some_example_name.old.ui.screens.valueChanged
 
@@ -43,6 +44,7 @@ class SpeedUpDialog(
         contentTable.row()
 
         val speedUpSimToggle = VisTextButton("max speed", "toggle")
+        game.applyCustomFont(speedUpSimToggle)
         speedUpSimToggle.isChecked = DISimulationContainer.simulationData.maxSpeed
         speedUpSimToggle.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {

@@ -24,7 +24,7 @@ class CellListBuilder(
         Muscle(5),
         Sensor(6),
         Sucker(7),
-        Mike(8),
+        Stem(8),
         Excreta(9),
         SuctionCup(10),
         Sticky(11),

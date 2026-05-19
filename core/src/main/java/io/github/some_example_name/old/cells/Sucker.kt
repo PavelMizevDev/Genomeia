@@ -12,7 +12,7 @@ class Sucker(cellTypeId: Int) : Cell(
 
     override fun onContact(cellIndex: Int, particleIndexCollided: Int, distance: Float, threadId: Int) {
 
-        if (!particleEntity.isCell[particleIndexCollided]) {
+        if (!particleEntity.isCell[particleIndexCollided] && particleEntity.isSub[particleIndexCollided]) {
             val cellRadius = cellEntity.getRadius(cellIndex)
             val subRadius = particleEntity.radius[particleIndexCollided]
 

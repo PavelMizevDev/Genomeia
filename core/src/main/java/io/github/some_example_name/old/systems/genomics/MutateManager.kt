@@ -3,6 +3,7 @@ package io.github.some_example_name.old.systems.genomics
 import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.Eye
 import io.github.some_example_name.old.cells.Muscle
+import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.cells.Producer
 import io.github.some_example_name.old.cells.Tail
 import io.github.some_example_name.old.cells.Zygote
@@ -105,6 +106,18 @@ class MutateManager(
                 if (lastCell !is Producer && newCell is Producer) {
                     worldCommandsManager.worldCommandBuffer[threadId].push(
                         type = WorldCommandType.ADD_PRODUCER,
+                        ints = intArrayOf(index)
+                    )
+                }
+                if (lastCell is PheromoneEmitter && newCell !is PheromoneEmitter) {
+                    worldCommandsManager.worldCommandBuffer[threadId].push(
+                        type = WorldCommandType.DELETE_PHEROMONE_EMITTER,
+                        ints = intArrayOf(index, specialEntity.getPheromoneEmitterGeneration(index))
+                    )
+                }
+                if (lastCell !is PheromoneEmitter && newCell is PheromoneEmitter) {
+                    worldCommandsManager.worldCommandBuffer[threadId].push(
+                        type = WorldCommandType.ADD_PHEROMONE_EMITTER,
                         ints = intArrayOf(index)
                     )
                 }

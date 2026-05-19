@@ -4,6 +4,7 @@ import io.github.some_example_name.old.cells.Cell
 import io.github.some_example_name.old.cells.Controller
 import io.github.some_example_name.old.cells.ControllerData
 import io.github.some_example_name.old.cells.Eye
+import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.cells.Producer
 import io.github.some_example_name.old.cells.Tail
 
@@ -12,7 +13,8 @@ class SpecialEntity(
     private val eyeEntity: EyeEntity,
     private val tailEntity: TailEntity,
     private val specialModDataEntity: SpecialModDataEntity,
-    private val producerEntity: ProducerEntity
+    private val producerEntity: ProducerEntity,
+    private val pheromoneEmitterEntity: PheromoneEmitterEntity
 ): Entity(cellsStartMaxAmount) {
 
     //Special type entities
@@ -87,6 +89,27 @@ class SpecialEntity(
         specialTypeIndexes[index] = producerEntity.addProducer()
     }
 
+    //Special PheromoneEmitter
+    fun getPheromoneEmitterGeneration(index: Int) = pheromoneEmitterEntity.getGeneration(specialTypeIndexes[index])
+    fun getPheromoneEmitterLastImpulse(index: Int) = pheromoneEmitterEntity.lastImpulse[specialTypeIndexes[index]]
+    fun setPheromoneEmitterLastImpulse(index: Int, value: Float) { pheromoneEmitterEntity.lastImpulse[specialTypeIndexes[index]] = value }
+
+    fun deletePheromoneEmitter(cellIndex: Int, pheromoneEmitterGeneration: Int? = null) {
+        val pheromoneEmitterIndex = specialTypeIndexes[cellIndex]
+        if (pheromoneEmitterIndex == -1) return
+        if (pheromoneEmitterEntity.isAlive[pheromoneEmitterIndex] && (pheromoneEmitterGeneration == null
+                || pheromoneEmitterEntity.getGeneration(pheromoneEmitterIndex) == pheromoneEmitterGeneration)) {
+            pheromoneEmitterEntity.deletePheromoneEmitter(pheromoneEmitterIndex)
+            specialTypeIndexes[cellIndex] -= -1
+        }
+    }
+
+    fun addPheromoneEmitter(
+        index: Int
+    ) {
+        specialTypeIndexes[index] = pheromoneEmitterEntity.addPheromoneEmitter()
+    }
+
 
     fun addSpecial(
         cell: Cell,
@@ -104,6 +127,9 @@ class SpecialEntity(
             }
             is Producer -> {
                 addProducer(cellIndex)
+            }
+            is PheromoneEmitter -> {
+                addPheromoneEmitter(cellIndex)
             }
             else -> {
                 specialTypeIndexes[cellIndex] = -1
@@ -131,6 +157,9 @@ class SpecialEntity(
             }
             is Producer -> {
                 deleteProducer(cellIndex)
+            }
+            is PheromoneEmitter -> {
+                deletePheromoneEmitter(cellIndex)
             }
             else -> {}
         }

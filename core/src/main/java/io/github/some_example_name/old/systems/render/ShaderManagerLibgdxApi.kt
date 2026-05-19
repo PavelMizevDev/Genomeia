@@ -29,11 +29,11 @@ val texturePaths = arrayOf(
     "muscle.png",               //Muscle(5),
     "sensor.png",               //Sensor(6),
     "sucker.png",               //Sucker(7),
-    "not_cell.png",             //Mike(8),
+    "Pumper.png",             //Mike(8),
     "excreta.png",              //Excreta(9),
     "SuctionCup.png",           //SuctionCup(10),
     "sticky.png",               //Sticky(11),
-    "Pumper.png",               //Pumper(12),
+    "not_cell.png",               //Pumper(12),
     "Chameleon.png",            //Chameleon(13),
     "eye.png",                  //Eye(14),
     "Compass.png",              //Compass(15),
@@ -46,7 +46,7 @@ val texturePaths = arrayOf(
     "PheromoneEmitter.png",     //PheromoneEmitter(22),
     "PheromoneSensor.png",      //PheromoneSensor(23),
     "punisher.png",             //Punisher(24)
-    "not_cell.png"              //Substance
+    "not_cell.png",              //Substance
 )
 
 class ShaderManagerLibgdxApi : ShaderManager {
@@ -244,7 +244,7 @@ class ShaderManagerLibgdxApi : ShaderManager {
         Gdx.gl31.glBindBuffer(GL31.GL_SHADER_STORAGE_BUFFER, 0)
     }
 
-    private fun resize(dataSize: Int, targetIndex: Int, ssboId: Int) {
+    private fun resizeSSBO(dataSize: Int, targetIndex: Int, ssboId: Int) {
         if (dataSize > ssboCapacities[targetIndex]) {
             var newCapacity = ssboCapacities[targetIndex].toDouble()
             do {
@@ -312,7 +312,7 @@ class ShaderManagerLibgdxApi : ShaderManager {
             val writeIndex = 0//1 - currentReadIndex
 
             if (dataSize > 0) {
-                resize(dataSize, writeIndex, ssbos[writeIndex])
+                resizeSSBO(dataSize, writeIndex, ssbos[writeIndex])
 
                 Gdx.gl31.glBindBuffer(GL31.GL_SHADER_STORAGE_BUFFER, ssbos[writeIndex])
                 Gdx.gl31.glBufferSubData(GL31.GL_SHADER_STORAGE_BUFFER, 0, dataSize, currentRead)
@@ -336,7 +336,7 @@ class ShaderManagerLibgdxApi : ShaderManager {
         shader.setUniformMatrix("u_projTrans", cameraProjection)
 //        shader.setUniformi("u_currentBuffer", currentReadIndex)
         shader.setUniformf("u_textureScale", 1.0f)
-        shader.setUniformf("u_colorScale", if (usePostProcess) 0f else 1.0f)
+        shader.setUniformf("u_colorScale", if (usePostProcess) 1.0f else 1.0f)
         shader.setUniformi("u_textureArray", 0)
 
         Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0)

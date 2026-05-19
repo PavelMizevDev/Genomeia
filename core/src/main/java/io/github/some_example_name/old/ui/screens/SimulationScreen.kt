@@ -135,10 +135,12 @@ class SimulationScreen(
             camera = camera
         )
 
+        DISimulationContainer.simulationSystem.initWorld(map)
+
         camera.zoom = 0.08f
         camera.position.x = gridWidth / 2f
         camera.position.y = gridHeight / 2f
-        camera.rotate(90f)
+//        camera.rotate(90f)
         camera.update()
     }
 
@@ -215,7 +217,7 @@ class SimulationScreen(
     override fun pan(x: Float, y: Float, deltaX: Float, deltaY: Float): Boolean {
         val dx = -deltaX * camera.zoom
         val dy = deltaY * camera.zoom
-        val angle = -90 * MathUtils.degreesToRadians
+        val angle = -0/*90*/ * MathUtils.degreesToRadians
         val cos = MathUtils.cos(angle)
         val sin = MathUtils.sin(angle)
 

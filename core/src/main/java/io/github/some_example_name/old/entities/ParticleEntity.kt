@@ -21,7 +21,9 @@ class ParticleEntity(
     var isCollidable = BooleanArray(maxAmount)
     var cellStiffness = FloatArray(maxAmount) { 0.5f }
     var isCell = BooleanArray(maxAmount) { false }
+    var isSub = BooleanArray(maxAmount) { false }
     var holderEntityIndex = IntArray(maxAmount) { -1 }
+    var isPheromoneEmitter = BooleanArray(maxAmount) { false }
 
     fun addParticle(
         x: Float,
@@ -35,6 +37,8 @@ class ParticleEntity(
         isCollidable: Boolean = true,
         cellStiffness: Float = 0.02f,
         isCell: Boolean,
+        isSub: Boolean,
+        isPheromoneEmitter: Boolean = false,
         holderEntityIndex: Int
     ): Int {
         val particleIndex = add()
@@ -52,7 +56,9 @@ class ParticleEntity(
         this.isCollidable[particleIndex] = isCollidable
         this.cellStiffness[particleIndex] = cellStiffness
         this.isCell[particleIndex] = isCell
+        this.isSub[particleIndex] = isSub
         this.holderEntityIndex[particleIndex] = holderEntityIndex
+        this.isPheromoneEmitter[particleIndex] = isPheromoneEmitter
         return particleIndex
     }
 
@@ -73,7 +79,9 @@ class ParticleEntity(
         isCollidable[particleIndex] = true
         cellStiffness[particleIndex] = 0.5f
         isCell[particleIndex] = false
+        isSub[particleIndex] = false
         holderEntityIndex[particleIndex] = -1
+        isPheromoneEmitter[particleIndex] = false
     }
 
     override fun onCopy() {
@@ -98,7 +106,9 @@ class ParticleEntity(
         isCollidable.clear(true)
         cellStiffness.clear()
         isCell.clear(false)
+        isSub.clear(false)
         holderEntityIndex.clear(-1)
+        isPheromoneEmitter.clear(false)
     }
 
     override fun onResize(oldMax: Int) {
@@ -115,6 +125,8 @@ class ParticleEntity(
         isCollidable = isCollidable.resize(true)
         cellStiffness = cellStiffness.resize()
         isCell = isCell.resize(false)
+        isSub = isSub.resize(false)
         holderEntityIndex = holderEntityIndex.resize(-1)
+        isPheromoneEmitter = isPheromoneEmitter.resize(false)
     }
 }
