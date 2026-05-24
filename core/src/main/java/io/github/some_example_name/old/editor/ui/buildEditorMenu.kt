@@ -2,6 +2,7 @@ package io.github.some_example_name.old.editor.ui
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Table
@@ -12,8 +13,10 @@ import com.badlogic.gdx.utils.Timer
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisSlider
 import com.kotcrab.vis.ui.widget.VisTextButton
+import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.core.DIGameGlobalContainer.bundle
 import io.github.some_example_name.old.core.FileProvider
+import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.editor.commands.CtrlY
 import io.github.some_example_name.old.editor.commands.CtrlZ
 import io.github.some_example_name.old.editor.commands.NextStageButtonTap
@@ -132,6 +135,34 @@ class MenuUiBuilder(
             }
         })
 
+        val colorPicker = ColorPicker(
+            game = game,
+            title = bundle.get("button.chooseColorDialog"),
+            listener = object : ColorPickerAdapter() {
+                override fun changed(newColor: Color) {
+                    val newColor = newColor.cpy()
+                }
+
+                override fun finished(newColor: Color?) {
+                    super.finished(newColor)
+                    if (newColor == null) return
+                    val newColor = newColor.cpy()
+                    editorLogicSystem.linkColor = newColor
+                }
+            },
+            colorInit = editorLogicSystem.linkColor.cpy()
+        )
+
+        val neuralColorLinkButton = VisTextButton("Neural link color")
+
+        // Toggle кнопка
+        neuralColorLinkButton.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                stage.addActor(colorPicker)
+                colorPicker.fadeIn()
+            }
+        })
+
         val symmetryButton = VisTextButton("Symmetry")
         symmetryButton.isChecked = usePostProcess
 
@@ -178,7 +209,7 @@ class MenuUiBuilder(
         })
 
         val buttons = mutableListOf(
-            goToMenuButton, chooseColorButton, showPhysicalLinkButton, usePostProcessLinkButton, symmetryButton
+            goToMenuButton, chooseColorButton, showPhysicalLinkButton, neuralColorLinkButton, usePostProcessLinkButton, symmetryButton
         )
         if (Gdx.app.type == Application.ApplicationType.Android) {
             buttons.add(ctrlZ)

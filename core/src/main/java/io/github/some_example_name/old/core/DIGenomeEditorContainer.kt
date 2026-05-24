@@ -116,7 +116,9 @@ object DIGenomeEditorContainer: DIContext, Disposable {
 
     override val linkEntity = LinkEntity(
         100,
-        cellEntity = cellEntity
+        cellEntity = cellEntity,
+        gridManager = gridManager,
+        particleEntity = particleEntity
     )
     override val substancesEntity = SubstancesEntity(
         startMaxAmount = 1,

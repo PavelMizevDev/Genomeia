@@ -3,7 +3,6 @@ package io.github.some_example_name.old.cells
 import io.github.some_example_name.old.cells.base.activation
 import io.github.some_example_name.old.core.utils.genomeEditorColor
 import io.github.some_example_name.old.core.utils.invSqrt
-import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem.Companion.MAX_LINK_AMOUNT
 
 class TouchTrigger(cellTypeId: Int): Cell(
     defaultColor = genomeEditorColor[6],
@@ -15,8 +14,9 @@ class TouchTrigger(cellTypeId: Int): Cell(
     override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
         var sumStretchingDistance = 0f
 
-        for (i in 0..<cellEntity.linksAmount[cellIndex]) {
-            val linkId = links[cellIndex * MAX_LINK_AMOUNT + i]
+        val links = mapCellLinks[cellIndex]
+
+        links.forEach { linkId ->
             val c1 = linkEntity.links1[linkId]
             val c2 = linkEntity.links2[linkId]
 
@@ -26,11 +26,11 @@ class TouchTrigger(cellTypeId: Int): Cell(
             if (sqrt <= 0) return
             val dist = 1.0f / invSqrt(sqrt)
 
-            val stretchingDistance = linkEntity.linksNaturalLength[linkId] * linkEntity.degreeOfShortening[linkId] - dist
+            val stretchingDistance = linkEntity.linksNaturalLength[linkId] - dist
             sumStretchingDistance += stretchingDistance
         }
 
-        val impulse = (sumStretchingDistance / linksAmount[cellIndex]) * 0.5f
+        val impulse = (sumStretchingDistance / links.size) * 0.5f
 
         neuronImpulseOutput[cellIndex] = activation(cellIndex, impulse)
 

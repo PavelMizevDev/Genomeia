@@ -1,12 +1,15 @@
 package io.github.some_example_name.old.entities
 
 import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.Muscle
 import io.github.some_example_name.old.cells.PheromoneEmitter
+import io.github.some_example_name.old.cells.TouchTrigger
 import io.github.some_example_name.old.core.DISimulationContainer.cellsSettings
 import io.github.some_example_name.old.core.SubstrateSettings
 import io.github.some_example_name.old.systems.genomics.genome.CellAction
-import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem.Companion.MAX_LINK_AMOUNT
 import io.github.some_example_name.old.systems.simulation.SimulationData
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+import it.unimi.dsi.fastutil.ints.IntArrayList
 
 class CellEntity(
     cellsStartMaxAmount: Int,
@@ -64,6 +67,7 @@ class CellEntity(
     var neuronImpulseInput = FloatArray(maxAmount)
     var neuronImpulseOutput = FloatArray(maxAmount)
     var isOnEdge = BooleanArray(maxAmount)
+    var degreeOfShortening = FloatArray(maxAmount) { 1f }
 
     //Neural entity
     var neuralIndexes = IntArray(maxAmount) { -1 }
@@ -110,35 +114,40 @@ class CellEntity(
         neuralIndexes[index] = neuralEntity.addNeural(cellType, a, b, c, isSum, activationFuncType)
     }
 
+    val mapCellLinks = Int2ObjectOpenHashMap<IntArrayList>(1000)
 
-    //Link
-    var linksAmount = IntArray(maxAmount)
-    var links = IntArray(maxAmount * MAX_LINK_AMOUNT) { -1 }
+    fun addLink(cellIndex: Int, linkId: Int) {
+        val cell = cellList[cellType[cellIndex].toInt()]
+        if (cell is TouchTrigger) {
+            var list = mapCellLinks.get(cellIndex)
 
-    fun addLink(cellId: Int, linkId: Int) {
-        val base = cellId * MAX_LINK_AMOUNT
-        if (cellId < 0) return
-        val amount = linksAmount[cellId]
-        if (amount >= MAX_LINK_AMOUNT) {
-            links[base + MAX_LINK_AMOUNT - 1] = linkId
-        } else {
-            links[base + amount] = linkId
-            linksAmount[cellId] += 1
+            if (list == null) {
+                list = IntArrayList()
+                mapCellLinks.put(cellIndex, list)
+            }
+
+            list.add(linkId)
         }
     }
 
-    fun deleteLinkedCellLink(cellId: Int, linkId: Int) {
-        val base = cellId * MAX_LINK_AMOUNT
-        val amount = linksAmount[cellId]
-        if (amount == 0) return
+    fun deleteLinkedCellLink(cellIndex: Int, linkId: Int) {
+        val cell = cellList[cellType[cellIndex].toInt()]
+        if (cell is TouchTrigger) {
+            val list = mapCellLinks.get(cellIndex) ?: return
+            val size = list.size
 
-        for (i in 0 until amount) {
-            val idx = base + i
-            if (links[idx] == linkId) {
-                links[idx] = links[base + amount - 1]
-                links[base + amount - 1] = -1
-                linksAmount[cellId] -= 1
-                return
+            for (i in 0 until size) {
+                if (list.getInt(i) == linkId) {
+                    val lastIndex = size - 1
+                    if (i != lastIndex) {
+                        list.set(i, list.getInt(lastIndex))
+                    }
+                    list.removeInt(lastIndex)
+                    if (list.isEmpty()) {
+                        mapCellLinks.remove(cellIndex)
+                    }
+                    return
+                }
             }
         }
     }
@@ -198,8 +207,9 @@ class CellEntity(
         this.cellType[cellIndex] = cellType.toByte()
         energy[cellIndex] = 0f
         maxEnergy[cellIndex] = cellsSettings[cellType].maxEnergy
-        linksAmount[cellIndex] = 0
+        mapCellLinks.put(cellIndex, IntArrayList())
         isOnEdge[cellIndex] = true
+        this.degreeOfShortening[cellIndex] = 1f
         val cell = cellList[cellType]
 
         if (cell.isNeural) {
@@ -249,10 +259,9 @@ class CellEntity(
         isNeural[cellIndex] = false
         neuronImpulseInput[cellIndex] = 0f
         neuronImpulseOutput[cellIndex] = 0f
-        linksAmount[cellIndex] = 0
         isOnEdge[cellIndex] = true
-        val base = cellIndex * MAX_LINK_AMOUNT
-        links.fill(-1, base, base + MAX_LINK_AMOUNT)
+        this.degreeOfShortening[cellIndex] = 1f
+        mapCellLinks.remove(cellIndex)
 
         deleteNeural(cellIndex = cellIndex)
 
@@ -290,9 +299,9 @@ class CellEntity(
         neuronImpulseInput.clear()
         neuronImpulseOutput.clear()
         neuralIndexes.clear()
-        linksAmount.clear()
         isOnEdge.clear(true)
-        links.fill(-1, 0, bound * MAX_LINK_AMOUNT)
+        degreeOfShortening.clear(1f)
+        mapCellLinks.clear()
     }
 
     override fun onResize(oldMax: Int) {
@@ -322,14 +331,7 @@ class CellEntity(
         neuronImpulseInput = neuronImpulseInput.resize()
         neuronImpulseOutput = neuronImpulseOutput.resize()
         neuralIndexes = neuralIndexes.resize()
-        linksAmount = linksAmount.resize()
         isOnEdge = isOnEdge.resize(true)
-        run {
-            val oldLinks = links
-            links = IntArray(maxAmount * MAX_LINK_AMOUNT) { -1 }
-            for (i in 0 until oldMax) {
-                System.arraycopy(oldLinks, i * MAX_LINK_AMOUNT, links, i * MAX_LINK_AMOUNT, MAX_LINK_AMOUNT)
-            }
-        }
+        degreeOfShortening = degreeOfShortening.resize(1f)
     }
 }

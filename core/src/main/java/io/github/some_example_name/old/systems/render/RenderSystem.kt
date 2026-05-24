@@ -253,6 +253,16 @@ class RenderSystem(
     }
 
     private fun moveCameraAndDrawSelected(spec: RenderSpecificBufferData) = with(renderBufferManager) {
+//        shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
+//
+//        shapeRenderer.color = Color.WHITE
+//        Gdx.gl.glLineWidth(1f)
+//        for (i in 0..totalChunks) {
+//            shapeRenderer.line(0f, i * chunkHeight.toFloat(), gridWidth.toFloat(), i * chunkHeight.toFloat())
+//        }
+//        shapeRenderer.end()
+
+
         if (spec.isCellSelected) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
 

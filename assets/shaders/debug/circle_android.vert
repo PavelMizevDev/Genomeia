@@ -31,7 +31,7 @@ void main() {
     float cosA = v1.x * 2.0 - 1.0;
     float sinA = v1.y * 2.0 - 1.0;
 
-    ex_R = 0.1 + v1.w * 0.4;
+    ex_R = 0.05 + v1.w * 0.7;
     int cellType = int(round(v2.y * 255.0));
 
     vec2 worldPos = a_position * ex_R + a_pos;

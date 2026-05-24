@@ -49,7 +49,7 @@ void main() {
     float ax = v1.y;
     float ay = v1.z;
 
-    ex_R     = 0.1 + v1.w * 0.4;
+    ex_R = 0.05 + v1.w * 0.7;
     float energy   = v2.x * 10.0 * 0.0;
     int   cellType = int(round(v2.y * 255.0));
 

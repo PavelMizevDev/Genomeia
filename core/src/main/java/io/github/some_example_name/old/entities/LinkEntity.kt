@@ -1,43 +1,53 @@
 package io.github.some_example_name.old.entities
 
 import io.github.some_example_name.old.core.utils.UnorderedIntPairMap
-import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem.Companion.MAX_LINK_AMOUNT
+import io.github.some_example_name.old.systems.physics.GridManager
 import kotlin.math.sqrt
 
 class LinkEntity(
     linksStartMaxAmount: Int,
-    val cellEntity: CellEntity
+    val cellEntity: CellEntity,
+    val gridManager: GridManager,
+    val particleEntity: ParticleEntity
 ) : Entity(linksStartMaxAmount) {
     var links1 = IntArray(maxAmount) { -1 }
     var links2 = IntArray(maxAmount) { -1 }
+    var linksGeneration1 = IntArray(maxAmount) { -1 }
+    var linksGeneration2 = IntArray(maxAmount) { -1 }
     var linksNaturalLength = FloatArray(maxAmount) { -10f }
     var isNeuronLink = BooleanArray(maxAmount)
     var isLink1NeuralDirected = BooleanArray(maxAmount)
-    var degreeOfShortening = FloatArray(maxAmount) { 1f }
     var isStickyLink = BooleanArray(maxAmount) { false }
+    var color = IntArray(maxAmount)
     val linkIndexMap = UnorderedIntPairMap(1_000_000)
 
     fun addLink(
         cellIndex: Int,
         otherCellIndex: Int,
         linksLength: Float,
-        degreeOfShortening: Float,
         isStickyLink: Boolean,
         isNeuronLink: Boolean,
         isLink1NeuralDirected: Boolean,
+        color: Int
     ) {
         val addLinkId = add()
 
         links1[addLinkId] = cellIndex
         links2[addLinkId] = otherCellIndex
+        linksGeneration1[addLinkId] = cellEntity.getGeneration(cellIndex)
+        linksGeneration2[addLinkId] = cellEntity.getGeneration(otherCellIndex)
+
         this.linksNaturalLength[addLinkId] = linksLength
         this.isNeuronLink[addLinkId] = isNeuronLink
         this.isLink1NeuralDirected[addLinkId] = isLink1NeuralDirected
-        this.degreeOfShortening[addLinkId] = degreeOfShortening
         this.isStickyLink[addLinkId] = isStickyLink
-        linkIndexMap.put(cellIndex, otherCellIndex, addLinkId)
-        cellEntity.addLink(cellIndex, addLinkId)
-        cellEntity.addLink(otherCellIndex, addLinkId)
+        this.color[addLinkId] = color
+
+        if (linksLength > 0) {
+            linkIndexMap.put(cellIndex, otherCellIndex, addLinkId)
+            cellEntity.addLink(cellIndex, addLinkId)
+            cellEntity.addLink(otherCellIndex, addLinkId)
+        }
     }
 
     fun deleteLink(linkIndex: Int, linkGeneration: Int? = null) {
@@ -47,9 +57,12 @@ class LinkEntity(
 
             val cellA = links1[linkIndex]
             val cellB = links2[linkIndex]
-            linkIndexMap.remove(cellA, cellB)
-            cellEntity.deleteLinkedCellLink(cellA, linkIndex)
-            cellEntity.deleteLinkedCellLink(cellB, linkIndex)
+
+            if (linksNaturalLength[linkIndex] > 0) {
+                linkIndexMap.remove(cellA, cellB)
+                cellEntity.deleteLinkedCellLink(cellA, linkIndex)
+                cellEntity.deleteLinkedCellLink(cellB, linkIndex)
+            }
 
             if (isNeuronLink[linkIndex]) {
                 val cellIndex = if (isLink1NeuralDirected[linkIndex]) cellA else cellB
@@ -59,50 +72,44 @@ class LinkEntity(
 
             links1[linkIndex] = -1
             links2[linkIndex] = -1
+            linksGeneration1[linkIndex] = -1
+            linksGeneration2[linkIndex] = -1
 
             linksNaturalLength[linkIndex] = -10f
             isNeuronLink[linkIndex] = false
             isLink1NeuralDirected[linkIndex] = false
-            degreeOfShortening[linkIndex] = 1f
             isStickyLink[linkIndex] = false
-
-            if (cellEntity.parentIndex[cellA] == cellB) {
-                reinitParentIndex(cellA)
-            }
-
-            if (cellEntity.parentIndex[cellB] == cellA) {
-                reinitParentIndex(cellB)
-            }
+            color[linkIndex] = 0
         }
     }
 
-    private fun reinitParentIndex(cellId: Int) = with(cellEntity) {
-        val base = cellId * MAX_LINK_AMOUNT
-        val amount = linksAmount[cellId]
-        if (amount == 0) {
-            parentIndex[cellId] = -1
-            return
-        } else {
-            val idx = base + 0
-            val linkId = links[idx]
-            val c1 = links1[linkId]
-            val c2 = links2[linkId]
-            val otherCellId = if (c1 != cellId) c1 else if (c2 != cellId) c2 else {
-                parentIndex[cellId] = -1
-                return
-            }
+    fun reinitParentLink(linkIndex: Int) {
+        val cellA = links1[linkIndex]
+        val cellB = links2[linkIndex]
 
-            val dx = getX(cellId) - getX(otherCellId)
-            val dy = getY(cellId) - getY(otherCellId)
-            val len = sqrt(dx * dx + dy * dy)
-            val dirCos = dx / len
-            val dirSin = dy / len
-
-            parentIndex[cellId] = otherCellId
-
-            angleCompensationCos[cellId] = angleCos[cellId] * dirCos + angleSin[cellId] * dirSin
-            angleCompensationSin[cellId] = angleSin[cellId] * dirCos - angleCos[cellId] * dirSin
+        if (cellEntity.parentIndex[cellA] == cellB) {
+            cellEntity.parentIndex[cellA] = -1
         }
+
+        if (cellEntity.parentIndex[cellB] == cellA) {
+            cellEntity.parentIndex[cellB] = -1
+        }
+    }
+
+    fun reinitParentIndex(cellIndex: Int, newParentIndex: Int) = with(cellEntity) {
+        parentIndex[cellIndex] = newParentIndex
+        val otherCellIndex = parentIndex[cellIndex]
+
+        val dx = getX(cellIndex) - getX(otherCellIndex)
+        val dy = getY(cellIndex) - getY(otherCellIndex)
+        val len = sqrt(dx * dx + dy * dy)
+        val dirCos = dx / len
+        val dirSin = dy / len
+
+        parentIndex[cellIndex] = otherCellIndex
+
+        angleCompensationCos[cellIndex] = angleCos[cellIndex] * dirCos + angleSin[cellIndex] * dirSin
+        angleCompensationSin[cellIndex] = angleSin[cellIndex] * dirCos - angleCos[cellIndex] * dirSin
     }
 
     override fun onCopy() {
@@ -116,21 +123,25 @@ class LinkEntity(
     override fun onClear(bound: Int) {
         links1.clear(-1)
         links2.clear(-1)
+        linksGeneration1.clear(-1)
+        linksGeneration2.clear(-1)
         linksNaturalLength.clear(-10f)
         isNeuronLink.clear(false)
         isLink1NeuralDirected.clear(false)
-        degreeOfShortening.clear(1f)
         isStickyLink.clear(false)
+        color.clear()
         linkIndexMap.clear()
     }
 
     override fun onResize(oldMax: Int) {
         links1 = links1.resize(-1)
         links2 = links2.resize(-1)
+        linksGeneration1 = linksGeneration1.resize(-1)
+        linksGeneration2 = linksGeneration2.resize(-1)
         linksNaturalLength = linksNaturalLength.resize(-10f)
         isNeuronLink = isNeuronLink.resize(false)
         isLink1NeuralDirected = isLink1NeuralDirected.resize(false)
-        degreeOfShortening = degreeOfShortening.resize(1f)
         isStickyLink = isStickyLink.resize(false)
+        color = color.resize()
     }
 }

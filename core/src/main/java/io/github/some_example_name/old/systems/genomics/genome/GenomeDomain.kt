@@ -148,6 +148,7 @@ data class Action(
 data class LinkData(
     val length: Float? = null,
     val isNeuronal: Boolean = false,
+    val color: Color? = null,
     val weight: Float? = null,
     val directedNeuronLink: Int? = null,
     val isExtra: Boolean = false
@@ -156,6 +157,7 @@ data class LinkData(
         return LinkData(
             length = length,
             isNeuronal = isNeuronal,
+            color = color,
             weight = weight,
             directedNeuronLink = directedNeuronLink,
             isExtra = isExtra

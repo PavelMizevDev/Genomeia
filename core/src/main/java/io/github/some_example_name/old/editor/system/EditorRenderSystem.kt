@@ -19,9 +19,9 @@ import io.github.some_example_name.old.systems.render.RenderSystem.Companion.PAR
 import io.github.some_example_name.old.systems.render.ShaderManager
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 class EditorRenderSystem(
     val shaderManager: ShaderManager,
@@ -100,7 +100,7 @@ class EditorRenderSystem(
         buffer.putInt(0)
     }
 
-    fun render() {
+    fun render(touchedCellX: Float, touchedCellY: Float) {
         if (isUpdateBuffer) {
             (buffer as java.nio.Buffer).clear()
             cellReplay.forEachInTick(editorLogicSystem.currentTick) { cellType, index, _, angleCos, angleSin, color ->
@@ -196,7 +196,7 @@ class EditorRenderSystem(
             }
         }
 
-        linkReplay.forEachInTick(nextStageTick) { isNeural, isLink1NeuralDirected, i ->
+        linkReplay.forEachInTick(nextStageTick) { isNeural, isLink1NeuralDirected, i, color ->
             val cellA = linkEntity.links1[i]
             val cellB = linkEntity.links2[i]
 
@@ -219,23 +219,27 @@ class EditorRenderSystem(
 
             if (isDrawLinkByDistance) {
                 if (isNeural) {
+                    val colorOfLink = Color().also {
+                        val argb = color
+                        val rgba = ((argb shr 16) and 0xFF) or (argb and 0xFF00) or ((argb shl 16) and 0xFF0000) or (argb and -0x1000000)
+                        Color.argb8888ToColor(it,  rgba)
+                    }
+                    shapeRenderer.color = colorOfLink
                     if (isLink1NeuralDirected) {
-                        shapeRenderer.color = Color.CYAN
                         shapeRenderer.drawTriangleMiddle(
                             particleEntity.x[cellB],
                             particleEntity.y[cellB],
                             particleEntity.x[cellA],
                             particleEntity.y[cellA],
-                            2f / 20f
+                            0.1f
                         )
                     } else {
-                        shapeRenderer.color = Color.CYAN
                         shapeRenderer.drawTriangleMiddle(
                             particleEntity.x[cellA],
                             particleEntity.y[cellA],
                             particleEntity.x[cellB],
                             particleEntity.y[cellB],
-                            2f / 20f
+                            0.1f
                         )
                     }
                 } else {
@@ -275,7 +279,7 @@ class EditorRenderSystem(
                             startY = particleEntity.y[index],
                             angleCos = angleCos,
                             angleSin = angleSin,
-                            length = 15f / 40f
+                            length = 0.375f
                         )
                     }
                 }
@@ -287,7 +291,46 @@ class EditorRenderSystem(
             val y = particleEntity.y[editorLogicSystem.previousCtrlClicked]
 
             shapeRenderer.color = Color.CYAN
-            shapeRenderer.circle(x, y,  5f / 40f, 32)
+            shapeRenderer.circle(x, y,  0.125f, 32)
+            shapeRenderer.circle(x, y,  3.0f, 64)
+
+            val dx = touchedCellX - x
+            val dy = touchedCellY - y
+
+            val dist = sqrt(dx * dx + dy * dy)
+
+            val maxDist = 3f
+
+            shapeRenderer.color = editorLogicSystem.linkColor
+
+            var endX = touchedCellX
+            var endY = touchedCellY
+
+            if (dist > maxDist) {
+                val scale = maxDist / dist
+                val clampedX = x + dx * scale
+                val clampedY = y + dy * scale
+
+                shapeRenderer.line(x, y, clampedX, clampedY)
+                endX = clampedX
+                endY = clampedY
+            } else {
+                shapeRenderer.line(x, y, touchedCellX, touchedCellY)
+            }
+
+            val clickedCell = editorSimulationSystem.getClickedCellIndex(
+                clickX = endX,
+                clickY = endY,
+                currentTick = editorLogicSystem.currentTick,
+                nextStageTick = nextStageTick
+            )
+
+            if (clickedCell != null) {
+                shapeRenderer.color = Color.CYAN
+                val x = particleEntity.x[clickedCell.first]
+                val y = particleEntity.y[clickedCell.first]
+                shapeRenderer.circle(x, y,  0.125f, 32)
+            }
         } else {
             editorLogicSystem.previousCtrlClicked = -1
         }

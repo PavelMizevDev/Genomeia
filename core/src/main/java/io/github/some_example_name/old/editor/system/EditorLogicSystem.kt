@@ -2,6 +2,7 @@ package io.github.some_example_name.old.editor.system
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.scenes.scene2d.Stage
 import io.github.some_example_name.old.core.DIGameGlobalContainer.bundle
@@ -84,6 +85,7 @@ class EditorLogicSystem(
     private lateinit var camera: OrthographicCamera
     private lateinit var game: MyGame
     private var stage: Stage? = null
+    var linkColor: Color = Color.CYAN
 
     init {
         commandEditorStackManager.bind(this)
@@ -429,20 +431,25 @@ class EditorLogicSystem(
                 val cellFrom = toEditorData(previousCtrlClicked)
                 val cellTo = toEditorData(clickedIndex)
                 val linkId = linkEntity.linkIndexMap.get(previousCtrlClicked, clickedIndex)
-                if (linkId != -1) {
-                    val nextStageTick = editorSimulationSystem.tickByStage[(currentStage + 1).coerceIn(0, lastStage)]
-                    commandEditorStackManager.executeCommand(
-                        command = AddNeuralLinkCommand(
-                            currentStage = currentStage,
-                            cellFrom = cellFrom,
-                            cellTo = cellTo,
-                            genomeStageInstruction = genomeStageInstruction,
-                            doesNeedAddNewStage = genomeStageInstruction.size <= currentStage,
-                            isNeural = linkReplay.getLinkIsNeural(nextStageTick, linkId) ?: false,
-                            parentId = cellEntity.cellGenomeId[linkEntity.links2[linkId]]//Не важно какой links2 или же link1, это нужно для выбора из какой клетки будет action мутации
-                        )
+
+                val nextStageTick = editorSimulationSystem.tickByStage[(currentStage + 1).coerceIn(0, lastStage)]
+
+                val isNeural = if (linkId != -1) { linkReplay.getLinkIsNeural(nextStageTick, linkId) ?: false } else false
+                val parentId = cellFrom.id
+                val isNeuralPhantom = linkId == -1
+                commandEditorStackManager.executeCommand(
+                    command = AddNeuralLinkCommand(
+                        currentStage = currentStage,
+                        cellFrom = cellFrom,
+                        cellTo = cellTo,
+                        genomeStageInstruction = genomeStageInstruction,
+                        doesNeedAddNewStage = genomeStageInstruction.size <= currentStage,
+                        isNeural = isNeural,
+                        parentId = parentId,
+                        isNeuralPhantom = isNeuralPhantom,
+                        color = linkColor
                     )
-                }
+                )
             }
             previousCtrlClicked = clickedIndex
         }

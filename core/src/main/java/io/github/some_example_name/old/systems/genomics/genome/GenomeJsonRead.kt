@@ -44,6 +44,7 @@ class LinkDataJsonRead(
     val length: Float? = null,
     val isNeuronal: Boolean? = null,
     val weight: Float? = null,
+    val color: String? = null,
     val directedNeuronLink: Int? = null
 )
 
@@ -135,9 +136,10 @@ private fun ActionJsonRead.toDomain(): Action {
 
 private fun LinkDataJsonRead.toDomain(): LinkData {
     return LinkData(
-        length = (length ?: 10f) / 40f,
+        length = if(length != null) (length / 40f) else null,
         isNeuronal = directedNeuronLink != null,
         weight = weight,
+        color = if (color != null) Color.valueOf(color) else null,
         directedNeuronLink = directedNeuronLink
     )
 }

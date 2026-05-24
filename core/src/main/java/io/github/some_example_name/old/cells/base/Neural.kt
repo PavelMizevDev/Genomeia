@@ -19,7 +19,10 @@ val formulaType = arrayOf(
     "y = x in (a, b) else y = c",
     "y = x^(a)",
     "y = remember(x), 0, 1",
-    "y = random(a, b)"
+    "y = random(a, b)",
+    "y = r(x)",
+    "y = g(x)",
+    "y = b(x)"
 )
 
 fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
@@ -67,6 +70,18 @@ fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
             val a = getA(cellIndex)
             val b = getB(cellIndex)
             kotlin.random.Random.nextFloat() * (b - a) + a
+        }
+
+        12 -> {
+            (x * 255f).toInt().toFloat()
+        }
+
+        13 -> {
+            ((x * 255f).toInt() * 256).toFloat()
+        }
+
+        14 -> {
+            ((x * 255f).toInt() * 65536).toFloat()
         }
 
         else -> x

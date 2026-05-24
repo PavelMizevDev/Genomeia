@@ -116,14 +116,15 @@ class DivideManager(
 
                 action.physicalLink.forEach { (cellGenomeIdToConnectWith, linkData) ->
                     val otherCellIndex = idToIndexAssociation[cellGenomeIdToConnectWith]
-                    if (linkData != null && linkData.length != null) {
+                    if (linkData != null) {
 
                         val cellIndex: Int = -1
-                        val linksLength: Float = linkData.length
+                        val linksLength: Float = linkData.length ?: -1f
                         val degreeOfShortening: Float = 1f
                         val isStickyLink: Boolean = false
                         val isNeuronLink: Boolean = linkData.isNeuronal
                         val isLink1NeuralDirected: Boolean = linkData.directedNeuronLink == action.id
+                        val linkColor = (linkData.color ?: if (linkData.isNeuronal) Color.CYAN else Color.RED).toIntBits()
 
                         if (otherCellIndex != null) {
                             if (linkData.isNeuronal && linkData.directedNeuronLink != action.id
@@ -140,7 +141,7 @@ class DivideManager(
                                     isLink1NeuralDirected
                                 ),
                                 floats = floatArrayOf(linksLength, degreeOfShortening),
-                                ints = intArrayOf(cellIndex, otherCellIndex)
+                                ints = intArrayOf(cellIndex, otherCellIndex, linkColor)
                             )
                         } else {
                             val cellId: Int = cellGenomeId
@@ -150,7 +151,7 @@ class DivideManager(
                                 type = WorldCommandType.ADD_LINK_BY_ID,
                                 booleans = booleanArrayOf(isNeuronLink, isLink1NeuralDirected),
                                 floats = floatArrayOf(linksLength),
-                                ints = intArrayOf(cellId, otherCellId, parentOrganIndex)
+                                ints = intArrayOf(cellId, otherCellId, parentOrganIndex, linkColor)
                             )
                         }
                     }

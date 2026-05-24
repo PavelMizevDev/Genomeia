@@ -51,10 +51,10 @@ class ParticlePhysicsSystem(
         threadId: Int,
         isOdd: Boolean
     ) {
-        val stacks = if (isOdd) worldCommandsManager.oddChunkPositionStack
-        else worldCommandsManager.evenChunkPositionStack
-        val counters = if (isOdd) worldCommandsManager.oddCounter
-        else worldCommandsManager.evenCounter
+        val stacks = if (isOdd) worldCommandsManager.oddCellChunkPositionStack
+        else worldCommandsManager.evenCellChunkPositionStack
+        val counters = if (isOdd) worldCommandsManager.oddCellCounter
+        else worldCommandsManager.evenCellCounter
 
         val index = counters[threadId]
         var arr = stacks[threadId]
@@ -93,12 +93,6 @@ class ParticlePhysicsSystem(
     }
 
     private fun repulse(particleAId: Int, particleBId: Int, threadId: Int) = with(entity) {
-        val isParticleAIsCell = isCell[particleAId]
-        val isParticleBIsCell = isCell[particleBId]
-        if (isParticleAIsCell && isParticleBIsCell) {
-            if (linkEntity.linkIndexMap.get(holderEntityIndex[particleAId], holderEntityIndex[particleBId]) != -1) return@with
-        }
-
         val dx = x[particleAId] - x[particleBId]
         val dy = y[particleAId] - y[particleBId]
         val dx2 = dx * dx
@@ -112,6 +106,9 @@ class ParticlePhysicsSystem(
         val distanceSquared = dx2 + dy2
         if (distanceSquared < radiusSquared) {
             val distance = 1.0f / invSqrt(distanceSquared)
+
+            val isParticleAIsCell = isCell[particleAId]
+            val isParticleBIsCell = isCell[particleBId]
             if (isParticleAIsCell) {
                 if (effectOnContact[particleAId]) {
                     val cellAIndex = holderEntityIndex[particleAId]

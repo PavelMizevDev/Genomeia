@@ -80,11 +80,13 @@ class ActionJsonWrite(
 class LinkDataJsonWrite(
     val length: Float? = null,
     val weight: Float? = null,
+    val color: Color? = null,
     val directedNeuronLink: Int? = null
 ): Json.Serializable {
     override fun write(json: Json) {
         if (length != null) json.writeValue("length", length) // всегда пишем
         if (weight != null) json.writeValue("weight", weight)
+        if (color != null) json.writeValue("color", color.toString())
         if (directedNeuronLink != null) json.writeValue("directedNeuronLink", directedNeuronLink)
     }
 
@@ -141,6 +143,7 @@ private fun LinkData.toJson(): LinkDataJsonWrite {
     return LinkDataJsonWrite(
         length = this.length?.times(40f),
         weight = this.weight,
+        color = this.color,
         directedNeuronLink = this.directedNeuronLink
     )
 }

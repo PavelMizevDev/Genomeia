@@ -76,23 +76,18 @@ class SimulationSystem(
         simulationData.tickCounter++
         simulationData.timeSimulation += DELTA_SIM_TICK_TIME
 
-        processParticleCollision()
         linkPhysicsSystem.iterateLinks()
+        processParticleCollision()
         cellSystem.iterateCell()
-
         pheromonesManager.iterate()
-
         arrangementOfPositionsInTheGrid()
+        linkPhysicsSystem.distributeLinksIndicesAcrossChunks()
+
 
         worldCommandsManager.executingCommandsFromTheWorld()
         organManager.performOrgansNextStage()
         userCommandManager.processingCommandsFromUser()
         worldCommandsManager.executingLastCommandsFromTheWorld()
-        var counter = 0
-        cellEntity.aliveList.forEach {
-            if (cellEntity.cellType[it] == 8.toByte() && cellEntity.isOnEdge[it]) counter++
-        }
-        println(counter)
 
         renderBufferManager.updateBuffer()
     }
@@ -109,8 +104,8 @@ class SimulationSystem(
     fun arrangementOfPositionsInTheGrid() {
         for (chunk in 0..<threadCount) {
             threadManager.futures.add(threadManager.executor.submit {
-                for (i in 0..<worldCommandsManager.oddCounter[chunk]) {
-                    particlePhysicsSystem.moveParticle(worldCommandsManager.oddChunkPositionStack[chunk][i], chunk)
+                for (i in 0..<worldCommandsManager.oddCellCounter[chunk]) {
+                    particlePhysicsSystem.moveParticle(worldCommandsManager.oddCellChunkPositionStack[chunk][i], chunk)
                 }
             })
         }
@@ -119,16 +114,16 @@ class SimulationSystem(
 
         for (chunk in 0..<threadCount) {
             threadManager.futures.add(threadManager.executor.submit {
-                for (i in 0..<worldCommandsManager.evenCounter[chunk]) {
-                    particlePhysicsSystem.moveParticle(worldCommandsManager.evenChunkPositionStack[chunk][i], chunk)
+                for (i in 0..<worldCommandsManager.evenCellCounter[chunk]) {
+                    particlePhysicsSystem.moveParticle(worldCommandsManager.evenCellChunkPositionStack[chunk][i], chunk)
                 }
             })
         }
         threadManager.futures.forEach { it.get() }
         threadManager.futures.clear()
 
-        worldCommandsManager.oddCounter.fill(0)
-        worldCommandsManager.evenCounter.fill(0)
+        worldCommandsManager.oddCellCounter.fill(0)
+        worldCommandsManager.evenCellCounter.fill(0)
     }
 
     fun stopUpdateThread() {

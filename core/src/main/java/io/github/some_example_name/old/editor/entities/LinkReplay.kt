@@ -13,6 +13,7 @@ class LinkReplay(
     var isNeuronLink = BooleanArray(startCapacity)
     var isLink1NeuralDirected = BooleanArray(startCapacity)
     var index = IntArray(startCapacity)
+    var color = IntArray(startCapacity)
 
     val replayCellsCounterInTick = IntArrayList(10)
     val tickStartIndices = IntArrayList(10)   // ← НОВОЕ: стартовые индексы для каждого тика
@@ -23,6 +24,7 @@ class LinkReplay(
             isNeuronLink = isNeuronLink.copyOf(newCapacity)
             isLink1NeuralDirected = isLink1NeuralDirected.copyOf(newCapacity)
             index = index.copyOf(newCapacity)
+            color = color.copyOf(newCapacity)
             capacity = newCapacity
         }
     }
@@ -39,11 +41,12 @@ class LinkReplay(
         System.arraycopy(linkEntity.isNeuronLink, 0, isNeuronLink, size, cellsAmount)
         System.arraycopy(linkEntity.isLink1NeuralDirected, 0, isLink1NeuralDirected, size, cellsAmount)
         linkEntity.aliveList.getElements(0, index, size, cellsAmount)
+        System.arraycopy(linkEntity.color, 0, color, size, cellsAmount)
 
         size += cellsAmount
     }
 
-    inline fun forEachInTick(tick: Int, action: (cellType: Boolean, index: Boolean, pos: Int) -> Unit) {
+    inline fun forEachInTick(tick: Int, action: (cellType: Boolean, index: Boolean, pos: Int, color: Int) -> Unit) {
         if (tick < 0 || tick >= tickStartIndices.size) return
 
         val start = tickStartIndices.getInt(tick)
@@ -51,7 +54,7 @@ class LinkReplay(
         val end = start + count
 
         for (i in start until end) {
-            action(isNeuronLink[i], isLink1NeuralDirected[i], index[i])
+            action(isNeuronLink[i], isLink1NeuralDirected[i], index[i], color[i])
         }
     }
 

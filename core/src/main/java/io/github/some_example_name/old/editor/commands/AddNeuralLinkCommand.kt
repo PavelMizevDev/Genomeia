@@ -1,5 +1,6 @@
 package io.github.some_example_name.old.editor.commands
 
+import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.editor.entities.EditorCell
 import io.github.some_example_name.old.systems.genomics.genome.Action
 import io.github.some_example_name.old.systems.genomics.genome.CellAction
@@ -13,7 +14,9 @@ class AddNeuralLinkCommand(
     val genomeStageInstruction: MutableList<GenomeStage>,
     val doesNeedAddNewStage: Boolean,
     val isNeural: Boolean,
-    val parentId: Int
+    val parentId: Int,
+    val isNeuralPhantom: Boolean,
+    val color: Color
 ) : Command {
 
     override val stage = currentStage
@@ -37,7 +40,8 @@ class AddNeuralLinkCommand(
         } else {
             LinkData(
                 isNeuronal = true,
-                directedNeuronLink = cellTo.id
+                directedNeuronLink = cellTo.id,
+                color = color
             )
         }
 
@@ -51,14 +55,16 @@ class AddNeuralLinkCommand(
                     cellFrom.divide.physicalLink.compute(cellTo.id) { _, old ->
                         old?.copy(
                             isNeuronal = linkData.isNeuronal,
-                            directedNeuronLink = linkData.directedNeuronLink
+                            directedNeuronLink = linkData.directedNeuronLink,
+                            color = linkData.color
                         )
                     }
                 } else if (cellTo.divide?.physicalLink[cellFrom.id] != null) {
                     cellTo.divide.physicalLink.compute(cellFrom.id) { _, old ->
                         old?.copy(
                             isNeuronal = linkData.isNeuronal,
-                            directedNeuronLink = linkData.directedNeuronLink
+                            directedNeuronLink = linkData.directedNeuronLink,
+                            color = linkData.color
                         )
                     }
                 }
@@ -67,7 +73,8 @@ class AddNeuralLinkCommand(
                 cellFrom.divide?.physicalLink?.compute(cellTo.id) { _, old ->
                     old?.copy(
                         isNeuronal = linkData.isNeuronal,
-                        directedNeuronLink = linkData.directedNeuronLink
+                        directedNeuronLink = linkData.directedNeuronLink,
+                        color = linkData.color
                     )
                 }
             }
@@ -75,7 +82,8 @@ class AddNeuralLinkCommand(
                 cellTo.divide?.physicalLink?.compute(cellFrom.id) { _, old ->
                     old?.copy(
                         isNeuronal = linkData.isNeuronal,
-                        directedNeuronLink = linkData.directedNeuronLink
+                        directedNeuronLink = linkData.directedNeuronLink,
+                        color = linkData.color
                     )
                 }
             }
@@ -94,7 +102,8 @@ class AddNeuralLinkCommand(
                                     if (old == null) return@compute linkData
                                     old.copy(
                                         isNeuronal = linkData.isNeuronal,
-                                        directedNeuronLink = linkData.directedNeuronLink
+                                        directedNeuronLink = linkData.directedNeuronLink,
+                                        color = linkData.color
                                     )
                                 }
                                 if (current.mutate!!.physicalLink.isEmpty()) {

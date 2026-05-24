@@ -52,7 +52,7 @@ object DISimulationContainer:  DIContext, Disposable {
     override val substrateSettings = SubstrateSettings()
 
     var energyTransportRate = substrateSettings.data.rateOfEnergyTransferInLinks
-    var linkMaxLength2 = substrateSettings.data.linkMaxLength * substrateSettings.data.linkMaxLength
+    var linkMaxLength2 = 3f * 3f
     var cellsSettings = substrateSettings.cellsSettings
 
     init {
@@ -118,7 +118,9 @@ object DISimulationContainer:  DIContext, Disposable {
     )
     override val linkEntity = LinkEntity(
         20_000,
-        cellEntity = cellEntity
+        cellEntity = cellEntity,
+        gridManager = gridManager,
+        particleEntity = particleEntity
     )
     override val pheromoneEntity = PheromoneEntity(
         gridManager = gridManager
@@ -272,7 +274,8 @@ object DISimulationContainer:  DIContext, Disposable {
         particleEntity = particleEntity,
         cellEntity = cellEntity,
         worldCommandsManager = worldCommandsManager,
-        cellSystem = cellSystem
+        cellSystem = cellSystem,
+        diContext = this
     )
 
 

@@ -72,7 +72,7 @@ class RenderBufferManager(
                     val cosByte = ((cellEntity.angleCos[cellIndex] * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val sinByte = ((cellEntity.angleSin[cellIndex] * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
 
-                    val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bRadius = ((((radius[i] * cellEntity.degreeOfShortening[cellIndex]) - 0.05f) / 0.7f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val bEnergy = 0//((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val bCell = cellEntity.cellType[cellIndex].toInt().coerceIn(0, 255)
 
@@ -95,7 +95,7 @@ class RenderBufferManager(
                         }
                     }
                 } else {
-                    val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bRadius = (((radius[i] - 0.05f) / 0.7f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val bCell = (cellList.size + 1).coerceIn(0, 255)
 
                     back.packed1[bufIndex] = bRadius shl 24

@@ -7,12 +7,12 @@ enum class WorldCommandType(val intParamsCount: Int, val floatParamsCount: Int, 
         booleanParamsCount = 2
     ),
     ADD_LINK(
-        intParamsCount = 2,
+        intParamsCount = 3,
         floatParamsCount = 2,
         booleanParamsCount = 3
     ),
     ADD_LINK_BY_ID(
-        intParamsCount = 3,
+        intParamsCount = 4,
         floatParamsCount = 1,
         booleanParamsCount = 2
     ),

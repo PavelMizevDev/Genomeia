@@ -157,7 +157,9 @@ class GenomeEditorScreen(
         }
 
         camera.update()
-        renderSystem.render()
+
+        val (touchedCellX, touchedCellY) = screenToWorld(Gdx.input.x.toFloat(), Gdx.input.y.toFloat())
+        renderSystem.render(touchedCellX, touchedCellY)
 
         isRestartSimulation = false
 
