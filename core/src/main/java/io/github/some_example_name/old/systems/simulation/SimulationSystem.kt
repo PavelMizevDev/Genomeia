@@ -81,8 +81,6 @@ class SimulationSystem(
         cellSystem.iterateCell()
         pheromonesManager.iterate()
         arrangementOfPositionsInTheGrid()
-        linkPhysicsSystem.distributeLinksIndicesAcrossChunks()
-
 
         worldCommandsManager.executingCommandsFromTheWorld()
         organManager.performOrgansNextStage()
@@ -145,6 +143,7 @@ class SimulationSystem(
         gridManager.clearAll()
         entityList.forEach { it.clear() }
         simulationData.clear()
+        worldCommandsManager.dispose()
     }
 
     private fun restartSim() {

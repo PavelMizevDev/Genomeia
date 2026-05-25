@@ -1,6 +1,7 @@
 package io.github.some_example_name.old.commands
 
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.Cell
 import io.github.some_example_name.old.cells.Zygote
 import io.github.some_example_name.old.core.DIContext
@@ -19,6 +20,7 @@ import io.github.some_example_name.old.entities.SubstancesEntity
 import io.github.some_example_name.old.systems.genomics.OrganManager
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
 import io.github.some_example_name.old.systems.physics.GridManager
+import it.unimi.dsi.fastutil.ints.IntArrayList
 import kotlin.collections.map
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -40,7 +42,7 @@ class WorldCommandsManager(
     val userCommandManager: UserCommandManager? = null,
     val diContext: DIContext,
     val isEditor: Boolean
-): WorldResizable {
+): WorldResizable, Disposable {
     var worldCommandBuffer = Array(diContext.threadCount) { WorldCommandBuffer() }
     var worldCommandSecondBuffer = Array(diContext.threadCount) { WorldCommandBuffer(100) }
     val worldCommandLastBuffer = WorldCommandBuffer(100)
@@ -52,6 +54,9 @@ class WorldCommandsManager(
     var oddCellChunkPositionStack = Array(diContext.threadCount) { IntArray(5_000) }
     var evenCellCounter = IntArray(diContext.threadCount)
     var oddCellCounter = IntArray(diContext.threadCount)
+
+    var evenLinkLists = Array(diContext.threadCount) { IntArrayList(5000) }
+    var oddLinkLists = Array(diContext.threadCount) { IntArrayList(5000) }
 
     fun executingCommandsFromTheWorld() {
         worldCommandBuffer.forEachIndexed { threadId, worldCommandBuffer ->
@@ -80,7 +85,7 @@ class WorldCommandsManager(
 
                         val otherCellIndex = ints[1]
 
-                        linkEntity.addLink(
+                        val linkIndex = linkEntity.addLink(
                             cellIndex = cellIndex,
                             otherCellIndex = otherCellIndex,
                             linksLength = floats[0],
@@ -89,9 +94,14 @@ class WorldCommandsManager(
                             isLink1NeuralDirected = booleans[2],
                             color = ints[2]
                         )
+                        linkEntity.registerNewLink(linkIndex, evenLinkLists, oddLinkLists)
                     }
                     WorldCommandType.DELETE_LINK -> {
-                        linkEntity.deleteLink(linkIndex = ints[0], linkGeneration = ints[1])
+                        val linkIndex = ints[0]
+                        linkEntity.removeLinkFromLists(
+                            linkIndex, evenLinkLists, oddLinkLists
+                        )
+                        linkEntity.deleteLink(linkIndex, linkGeneration = ints[1])
                     }
                     WorldCommandType.ADD_CELL -> {
                         val isMorphogenesis = booleans[1]
@@ -165,7 +175,7 @@ class WorldCommandsManager(
                                         val rSum = cellEntity.getRadius(it) + radius
                                         val squareDist = dx * dx + dy * dy
                                         if (rSum * rSum > squareDist) {
-                                            linkEntity.addLink(
+                                            val linkIndex = linkEntity.addLink(
                                                 cellIndex = cellIndex,
                                                 otherCellIndex = it,
                                                 linksLength = sqrt(squareDist),
@@ -174,6 +184,7 @@ class WorldCommandsManager(
                                                 isLink1NeuralDirected = false,
                                                 color = Color.RED.toIntBits()
                                             )
+                                            linkEntity.registerNewLink(linkIndex, evenLinkLists, oddLinkLists)
                                         }
                                 }
 
@@ -314,7 +325,7 @@ class WorldCommandsManager(
                         val otherCellIndex = organIndexCellIdMapIndex.get(organIndex, otherCellId)
 
                         if (cellIndex != -1 && otherCellIndex != -1 && linkEntity.linkIndexMap.get(cellIndex, otherCellIndex) == -1) {
-                            linkEntity.addLink(
+                            val linkIndex = linkEntity.addLink(
                                 cellIndex = cellIndex,
                                 otherCellIndex = otherCellIndex,
                                 linksLength = linksLength,
@@ -323,6 +334,7 @@ class WorldCommandsManager(
                                 isLink1NeuralDirected = isLink1NeuralDirected,
                                 color = ints[3]
                             )
+                            linkEntity.registerNewLink(linkIndex, evenLinkLists, oddLinkLists)
                         }
                     }
 
@@ -362,5 +374,14 @@ class WorldCommandsManager(
         oddCellChunkPositionStack = Array(diContext.threadCount) { IntArray(5_000) }
         evenCellCounter = IntArray(diContext.threadCount)
         oddCellCounter = IntArray(diContext.threadCount)
+        evenLinkLists = Array(diContext.threadCount) { IntArrayList(5000) }
+        oddLinkLists = Array(diContext.threadCount) { IntArrayList(5000) }
+    }
+
+    override fun dispose() {
+        oddCellCounter.fill(0)
+        evenCellCounter.fill(0)
+        evenLinkLists = Array(diContext.threadCount) { IntArrayList(5000) }
+        oddLinkLists = Array(diContext.threadCount) { IntArrayList(5000) }
     }
 }

@@ -120,7 +120,8 @@ object DISimulationContainer:  DIContext, Disposable {
         20_000,
         cellEntity = cellEntity,
         gridManager = gridManager,
-        particleEntity = particleEntity
+        particleEntity = particleEntity,
+        this
     )
     override val pheromoneEntity = PheromoneEntity(
         gridManager = gridManager
