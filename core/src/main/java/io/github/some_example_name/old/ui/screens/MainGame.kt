@@ -30,6 +30,7 @@ import io.github.some_example_name.old.ui.screens.GlobalSettings.MSAA
 import io.github.some_example_name.old.ui.screens.GlobalSettings.MUSIC_VOLUME
 import io.github.some_example_name.old.ui.screens.GlobalSettings.UI_SCALE
 import io.github.some_example_name.old.core.FileProvider
+import io.github.some_example_name.old.systems.pheromone.PheromoneShaderManager
 import io.github.some_example_name.old.systems.render.ShaderManager
 import kotlin.math.max
 
@@ -38,12 +39,14 @@ interface KeyBoardListener {
 }
 var openKeyBoardListenerGlobal: KeyBoardListener? = null
 var androidRendererFactory: (() -> ShaderManager)? = null
+var androidPheromoneRendererFactory: (() -> PheromoneShaderManager)? = null
 
 //Entry point
 class MyGame(
     val multiPlatformFileProvider: FileProvider,
     val openKeyBoardListener: KeyBoardListener? = null,
-    private val rendererFactory: (() -> ShaderManager)? = null
+    rendererFactory: (() -> ShaderManager)? = null,
+    rendererPheromoneShaderManagerLibgdx: (() -> PheromoneShaderManager)? = null
 ) : Game() {
 
     lateinit var pikSounds: List<Sound>
@@ -65,6 +68,7 @@ class MyGame(
 
     init {
         androidRendererFactory = rendererFactory
+        androidPheromoneRendererFactory = rendererPheromoneShaderManagerLibgdx
     }
 
     override fun create() {

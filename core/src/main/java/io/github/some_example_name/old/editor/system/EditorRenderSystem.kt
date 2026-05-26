@@ -84,7 +84,7 @@ class EditorRenderSystem(
         val cosByte = ((cos * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
         val sinByte = ((sin * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
 
-        val bRadius = (((radius - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+        val bRadius = (((radius  - 0.05f) / 0.7f) * 255f + 0.5f).toInt().coerceIn(0, 255)
         val bEnergy = 0
         val bCell = cellType.toInt().coerceIn(0, 255)
 

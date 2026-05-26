@@ -1,5 +1,7 @@
 package io.github.some_example_name.old.core
 
+import com.badlogic.gdx.Application
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.base.CellListBuilder
 import io.github.some_example_name.old.commands.UserCommandManager
@@ -27,15 +29,19 @@ import io.github.some_example_name.old.systems.genomics.MutateManager
 import io.github.some_example_name.old.systems.genomics.OrganManager
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
 import io.github.some_example_name.old.systems.pheromone.PheromoneShaderManager
+import io.github.some_example_name.old.systems.pheromone.PheromoneShaderManagerLibgdx
 import io.github.some_example_name.old.systems.physics.GridManager
 import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem
 import io.github.some_example_name.old.systems.physics.ParticlePhysicsSystem
 import io.github.some_example_name.old.systems.render.RenderBufferManager
 import io.github.some_example_name.old.systems.render.RenderSystem
+import io.github.some_example_name.old.systems.render.ShaderManager
 import io.github.some_example_name.old.systems.simulation.SimulationSystem
 import io.github.some_example_name.old.systems.simulation.ThreadManager
 import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_HEIGHT
 import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_WIDTH
+import io.github.some_example_name.old.ui.screens.androidPheromoneRendererFactory
+import io.github.some_example_name.old.ui.screens.androidRendererFactory
 import kotlin.getValue
 
 object DISimulationContainer:  DIContext, Disposable {
@@ -161,7 +167,18 @@ object DISimulationContainer:  DIContext, Disposable {
         cellEntity = cellEntity
     )
 
-    val pheromoneShaderManager = PheromoneShaderManager()
+
+    var androidPheromoneRenderer: PheromoneShaderManager? = androidPheromoneRendererFactory?.invoke()
+    val pheromoneShaderManager: PheromoneShaderManager = when (Gdx.app.type) {
+        Application.ApplicationType.Desktop -> PheromoneShaderManagerLibgdx()
+        Application.ApplicationType.Android -> androidPheromoneRenderer!!
+        Application.ApplicationType.HeadlessDesktop -> TODO()
+        Application.ApplicationType.Applet -> TODO()
+        Application.ApplicationType.WebGL -> TODO()
+        Application.ApplicationType.iOS -> TODO()
+    }
+
+
 
     val renderBufferManager = RenderBufferManager(
         simulationData = simulationData,

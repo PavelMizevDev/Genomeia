@@ -72,7 +72,14 @@ class AndroidLauncher : AndroidApplication(), KeyBoardListener {
         GLES32.glGenBuffers(1, buf, 0)
 
         val fileProvider = AndroidFileProvider(this, AndroidFileChooser(this))
-        val gameView = initializeForView(MyGame(fileProvider, rendererFactory = { ShaderManagerAndroidApi() }), config)
+        val gameView = initializeForView(
+            MyGame(
+                fileProvider,
+                rendererFactory = { ShaderManagerAndroidApi() },
+                rendererPheromoneShaderManagerLibgdx = { PheromoneShaderManagerAndroid() }
+            ),
+            config
+        )
 
         val rootLayout = FrameLayout(this)
         rootLayout.addView(gameView)

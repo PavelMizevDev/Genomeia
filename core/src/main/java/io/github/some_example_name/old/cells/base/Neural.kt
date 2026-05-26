@@ -69,7 +69,7 @@ fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
         11 -> {
             val a = getA(cellIndex)
             val b = getB(cellIndex)
-            kotlin.random.Random.nextFloat() * (b - a) + a
+            randomFromFloat(x, a, b)
         }
 
         12 -> {
@@ -86,4 +86,16 @@ fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
 
         else -> x
     }
+}
+
+fun randomFromFloat(seed: Float, min: Float, max: Float): Float {
+    var x = seed.toBits()
+
+    x = x xor (x shl 13)
+    x = x xor (x shr 17)
+    x = x xor (x shl 5)
+
+    val normalized = (x.toUInt().toDouble() / UInt.MAX_VALUE.toDouble()).toFloat()
+
+    return min + normalized * (max - min)
 }
