@@ -105,10 +105,16 @@ class ParticlePhysicsSystem(
 
         val distanceSquared = dx2 + dy2
         if (distanceSquared < radiusSquared) {
-            val distance = 1.0f / invSqrt(distanceSquared)
 
             val isParticleAIsCell = isCell[particleAId]
             val isParticleBIsCell = isCell[particleBId]
+            if (isParticleAIsCell && isParticleBIsCell) {
+                if (linkEntity.linkIndexMap.get(holderEntityIndex[particleAId], holderEntityIndex[particleBId]) != -1) {
+                    return@with
+                }
+            }
+
+            val distance = sqrt(distanceSquared)
             if (isParticleAIsCell) {
                 if (effectOnContact[particleAId]) {
                     val cellAIndex = holderEntityIndex[particleAId]

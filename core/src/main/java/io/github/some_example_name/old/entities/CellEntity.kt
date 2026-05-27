@@ -114,6 +114,7 @@ class CellEntity(
         neuralIndexes[index] = neuralEntity.addNeural(cellType, a, b, c, isSum, activationFuncType)
     }
 
+    //TODO есть проблема, что при мутации и последующему удалени клетки, которая до этого была touchTrigger-ом элемент не удалится
     val mapCellLinks = Int2ObjectOpenHashMap<IntArrayList>(1000)
 
     fun addLink(cellIndex: Int, linkId: Int) {
