@@ -12,6 +12,7 @@ import io.github.some_example_name.old.editor.system.SymmetryManager
 import io.github.some_example_name.old.editor.system.TriangleGrid
 import io.github.some_example_name.old.ui.dialogs.setupTitleSize
 import io.github.some_example_name.old.ui.screens.MyGame
+import io.github.some_example_name.old.ui.screens.applyCustomFont
 
 class SymmetryDialog(
     val game: MyGame,
@@ -21,10 +22,10 @@ class SymmetryDialog(
 
     private val buttonGroup = ButtonGroup<VisRadioButton>()
 
-    private val noSymmetryButton = VisRadioButton(bundle.get("symmetry.none") ?: "No symmetry")
-    private val axialButton = VisRadioButton(bundle.get("symmetry.axial") ?: "Axial symmetry")
-    private val squareGridButton = VisRadioButton(bundle.get("symmetry.square") ?: "Square grid")
-    private val triangleGridButton = VisRadioButton(bundle.get("symmetry.triangle") ?: "Triangle grid")
+    private val noSymmetryButton = VisRadioButton(bundle.get("symmetry.none") ?: "No symmetry").apply { game.applyCustomFont(this) }
+    private val axialButton = VisRadioButton(bundle.get("symmetry.axial") ?: "Axial symmetry").apply { game.applyCustomFont(this) }
+    private val squareGridButton = VisRadioButton(bundle.get("symmetry.square") ?: "Square grid").apply { game.applyCustomFont(this) }
+    private val triangleGridButton = VisRadioButton(bundle.get("symmetry.triangle") ?: "Triangle grid").apply { game.applyCustomFont(this) }
 
     init {
         val density = Gdx.graphics.density

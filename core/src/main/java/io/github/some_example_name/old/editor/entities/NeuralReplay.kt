@@ -7,6 +7,7 @@ class NeuralReplay(
     startCapacity: Int,
     val neuralEntity: NeuralEntity
 ) {
+    private val initialCapacity = startCapacity
     var capacity = startCapacity
     var size = 0
 
@@ -31,6 +32,13 @@ class NeuralReplay(
 
             capacity = newCapacity
         }
+    }
+
+    fun reset() {
+        size = 0
+        capacity = initialCapacity
+        replayCellsCounterInTick.clear()
+        tickStartIndices.clear()
     }
 
     fun copy() {

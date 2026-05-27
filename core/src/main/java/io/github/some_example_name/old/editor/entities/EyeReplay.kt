@@ -9,6 +9,7 @@ class EyeReplay(
     val specialEntity: SpecialEntity,
     val eyeEntity: EyeEntity
 ) {
+    private val initialCapacity = startCapacity
     var capacity = startCapacity
     var size = 0
 
@@ -25,6 +26,13 @@ class EyeReplay(
             visibilityRange = visibilityRange.copyOf(newCapacity)
             capacity = newCapacity
         }
+    }
+
+    fun reset() {
+        size = 0
+        capacity = initialCapacity
+        replayCellsCounterInTick.clear()
+        tickStartIndices.clear()
     }
 
     fun copy() {

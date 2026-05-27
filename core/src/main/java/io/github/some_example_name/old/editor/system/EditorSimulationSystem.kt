@@ -129,14 +129,10 @@ class EditorSimulationSystem(
         tickByStage = IntArray(stagesAmount + 1)
         stageCounter++
 
-        cellReplay.replayCellsCounterInTick.clear()
-        cellReplay.tickStartIndices.clear()
-        linkReplay.replayCellsCounterInTick.clear()
-        linkReplay.tickStartIndices.clear()
-        eyeReplay.replayCellsCounterInTick.clear()
-        eyeReplay.tickStartIndices.clear()
-        neuralReplay.replayCellsCounterInTick.clear()
-        neuralReplay.tickStartIndices.clear()
+        cellReplay.reset()
+        linkReplay.reset()
+        eyeReplay.reset()
+        neuralReplay.reset()
 
         for (tick in 0..TIME_SIMULATION) {
             updateTick()

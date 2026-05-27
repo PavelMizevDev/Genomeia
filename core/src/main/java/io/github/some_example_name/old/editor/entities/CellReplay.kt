@@ -9,6 +9,7 @@ class CellReplay(
     val particleEntity: ParticleEntity,
     val cellEntity: CellEntity
 ) {
+    private val initialCapacity = startCapacity
     var capacity = startCapacity
     var size = 0
 
@@ -37,6 +38,13 @@ class CellReplay(
             color = color.copyOf(newCapacity)
             capacity = newCapacity
         }
+    }
+
+    fun reset() {
+        size = 0
+        capacity = initialCapacity
+        replayCellsCounterInTick.clear()
+        tickStartIndices.clear()
     }
 
     fun copy() {

@@ -9,6 +9,7 @@ class LinkReplay(
 ) {
     var capacity = startCapacity
     var size = 0
+    private val initialCapacity = startCapacity
 
     var isNeuronLink = BooleanArray(startCapacity)
     var isLink1NeuralDirected = BooleanArray(startCapacity)
@@ -27,6 +28,13 @@ class LinkReplay(
             color = color.copyOf(newCapacity)
             capacity = newCapacity
         }
+    }
+
+    fun reset() {
+        size = 0
+        capacity = initialCapacity
+        replayCellsCounterInTick.clear()
+        tickStartIndices.clear()
     }
 
     fun copy() {
