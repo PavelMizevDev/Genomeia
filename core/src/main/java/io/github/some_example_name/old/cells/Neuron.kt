@@ -8,6 +8,11 @@ class Neuron(cellTypeId: Int) : Cell(
     isNeural = true
 ) {
 
+    override fun onStart(cellIndex: Int, threadId: Int, genomeIndex: Int) {
+        //TODO понять до конца, почему neuronImpulseOutput может оказаться Nan при мутации из обычной Leaf в нейрон
+        cellEntity.neuronImpulseOutput[cellIndex] = 0f
+    }
+
     override fun doOnTick(cellIndex: Int, threadId: Int) {
         cellEntity.energy[cellIndex] -= substrateSettings
             .cellsSettings[cellEntity.cellType[cellIndex].toInt()]
