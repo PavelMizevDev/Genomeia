@@ -3,20 +3,17 @@ package io.github.some_example_name.old.ui.screens
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.NinePatch
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.util.TableUtils
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import io.github.some_example_name.old.core.DIGameGlobalContainer
+import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
 import io.github.some_example_name.old.ui.dialogs.GenomeListDialog
@@ -46,19 +43,19 @@ class MenuScreen(
         genomeia.setAlignment(Align.center)
         table.add(genomeia).fillX().padBottom(10f).row()
 
-        val patch = NinePatch(Texture(Gdx.files.internal("button.png")), 20, 20, 20, 20)
-        val roundUp = NinePatchDrawable(patch).tint(com.badlogic.gdx.graphics.Color(0.44f, 0.40f, 0.40f, 1f))
-        val roundDown = NinePatchDrawable(patch).tint(com.badlogic.gdx.graphics.Color(0.2f,0.2f,0.2f,1f))
-        val roundOver = NinePatchDrawable(patch).tint(com.badlogic.gdx.graphics.Color(0f, 0.9f, 1f, 1f))
-
-        val baseStyle = VisUI.getSkin().get("blue", VisTextButton.VisTextButtonStyle::class.java)
-
-        val roundStyle = VisTextButton.VisTextButtonStyle(baseStyle).apply {
-            up = roundUp
-            down = roundDown
-            over = roundOver
-        }
-
+//        val patch = NinePatch(Texture(Gdx.files.internal("button.png")), 20, 20, 20, 20)
+//        val roundUp = NinePatchDrawable(patch).tint(com.badlogic.gdx.graphics.Color(0.44f, 0.40f, 0.40f, 1f))
+//        val roundDown = NinePatchDrawable(patch).tint(com.badlogic.gdx.graphics.Color(0.2f,0.2f,0.2f,1f))
+//        val roundOver = NinePatchDrawable(patch).tint(com.badlogic.gdx.graphics.Color(0f, 0.9f, 1f, 1f))
+//
+//        val baseStyle = VisUI.getSkin().get("blue", VisTextButton.VisTextButtonStyle::class.java)
+//
+//        val roundStyle = VisTextButton.VisTextButtonStyle(baseStyle).apply {
+//            up = roundUp
+//            down = roundDown
+//            over = roundOver
+//        }
+        val roundStyle = DISimulationContainer.roundStyle
         val emptyButton = VisTextButton(bundle.get("button.empty"), roundStyle)
         emptyButton.pad(4f)
         game.applyCustomFont(emptyButton)
