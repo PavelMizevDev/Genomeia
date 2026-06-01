@@ -13,7 +13,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.kotcrab.vis.ui.widget.VisSlider
 import com.kotcrab.vis.ui.widget.VisTextField
 import com.kotcrab.vis.ui.widget.VisTextButton
-import com.badlogic.gdx.scenes.scene2d.ui.Window as GdxWindow
 import com.kotcrab.vis.ui.widget.VisWindow
 
 val STYLE_BEIGE = Color(0.84f, 0.77f, 0.62f, 1.00f)
@@ -95,8 +94,9 @@ fun VisWindow.roundCorners() {
     val d = Gdx.graphics.density
     val side = 16f * d
 
-    val s = GdxWindow.WindowStyle(style.titleFont, style.titleFontColor, getDialogBackground())
-    setStyle(s)                      // sets padTop = title label height
+    // Only replace the background drawable — do NOT call setStyle(), which would
+    // overwrite subclass-specific style objects (e.g. ColorPickerStyle).
+    setBackground(getDialogBackground())
 
     // Pad title bar (title text + X button) away from rounded corners
     getTitleTable().apply {

@@ -12,36 +12,22 @@ import io.github.some_example_name.old.ui.screens.roundCorners
 
 fun VisWindow.setupTitleSize(game: MyGame) {
     roundCorners()
+    addCloseButton()
+    transparentCloseButton()
 
-    if (Gdx.app.type != Application.ApplicationType.Android) {
-        addCloseButton()
-        transparentCloseButton()
-        return
-    }
-
+    val d = Gdx.graphics.density
     val titleLabel = getTitleLabel()
     game.applyCustomFontMedium(titleLabel)
 
     val titleTable = getTitleTable()
-    val d = Gdx.graphics.density
     titleTable.pad(5f * d)
     titleTable.padTop(5f * d).padBottom(5f * d)
 
-    addCloseButton()
-    transparentCloseButton()
-
     val closeButton = titleTable.children.last() as? VisImageButton ?: return
-
-    closeButton.setSize(30f * d, 30f * d)
+    val closeBtnSize = if (Gdx.app.type == Application.ApplicationType.Android) 20f else 32f
     closeButton.image.setScaling(Scaling.fit)
-    closeButton.imageCell.size(24f * d)
-
-    titleTable.getCell(titleLabel)
-        .minHeight(10f * d)
-        .prefHeight(10f * d)
-
-    val closeButtonSize = if (Gdx.app.type == Application.ApplicationType.Android) 20f else 30f
-    titleTable.getCell(closeButton).size(closeButtonSize * d, closeButtonSize * d)
+    closeButton.imageCell.size(closeBtnSize * d * 0.75f)
+    titleTable.getCell(closeButton).size(closeBtnSize * d, closeBtnSize * d)
 
     titleTable.invalidateHierarchy()
     padTop(titleTable.getPrefHeight())
