@@ -95,7 +95,7 @@ class GenomeListDialog(
         }
 
         // Шрифт, как в оригинале
-        radioStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) game.mediumFont else game.largeFont
+        radioStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) game.largeFont else game.extraLargeFont
 
         val content = VisTable(true)
 

@@ -17,7 +17,7 @@ import io.github.some_example_name.old.systems.genomics.genome.Genome
 import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
 import io.github.some_example_name.old.ui.dialogs.setupTitleSize
 import io.github.some_example_name.old.ui.screens.MyGame
-import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
+import io.github.some_example_name.old.ui.screens.applyCustomFont
 import io.github.some_example_name.old.ui.screens.makeStyledButton
 import io.github.some_example_name.old.ui.screens.makeStyledTextField
 
@@ -43,12 +43,12 @@ class SaveGenomeDialog(
         // ── Top row: Name label + input field ──────────────────────────────
         val nameRow = Table()
         val genomeText = VisLabel(bundle.get("button.name"))
-        game.applyCustomFontMedium(genomeText)
+        game.applyCustomFont(genomeText)
         val genomeNameField = makeStyledTextField(game, textures).also { it.text = genome.name }
 
         nameRow.add(genomeText).padRight(pad)
-        nameRow.add(genomeNameField).width(220f * density).height(btnH * 0.8f)
-        contentTable.add(nameRow).fillX().padBottom(pad).row()
+        nameRow.add(genomeNameField).growX().height(btnH * 0.9f)
+        contentTable.add(nameRow).growX().padBottom(pad).row()
 
         // ── Bottom row: action buttons side by side ─────────────────────────
         val btnRow = Table()

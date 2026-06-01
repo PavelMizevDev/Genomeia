@@ -15,6 +15,7 @@ import io.github.some_example_name.old.editor.system.SymmetryManager
 import io.github.some_example_name.old.editor.system.TriangleGrid
 import io.github.some_example_name.old.ui.dialogs.setupTitleSize
 import io.github.some_example_name.old.ui.screens.MyGame
+import io.github.some_example_name.old.ui.screens.applyCustomFont
 import io.github.some_example_name.old.ui.screens.makeStyledButton
 
 class SymmetryDialog(
@@ -39,6 +40,8 @@ class SymmetryDialog(
 
         buttonGroup.add(noSymmetryButton, axialButton, squareGridButton, triangleGridButton)
         buttonGroup.setMaxCheckCount(1); buttonGroup.setMinCheckCount(1)
+        listOf(noSymmetryButton, axialButton, squareGridButton, triangleGridButton)
+            .forEach { game.applyCustomFont(it) }
 
         // 2-column grid of radio buttons
         val radioGrid = VisTable()

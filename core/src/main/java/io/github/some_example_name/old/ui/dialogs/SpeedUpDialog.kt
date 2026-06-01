@@ -8,7 +8,7 @@ import com.kotcrab.vis.ui.widget.VisDialog
 import com.kotcrab.vis.ui.widget.VisLabel
 import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.ui.screens.MyGame
-import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
+import io.github.some_example_name.old.ui.screens.applyCustomFont
 import io.github.some_example_name.old.ui.screens.makeStyledButton
 import io.github.some_example_name.old.ui.screens.makeStyledSlider
 import io.github.some_example_name.old.ui.screens.valueChanged
@@ -28,7 +28,7 @@ class SpeedUpDialog(
 
         // Label row
         val upsLabel = VisLabel("Target ups: ${DISimulationContainer.simulationData.targetUPS}")
-        game.applyCustomFontMedium(upsLabel)
+        game.applyCustomFont(upsLabel)
 
         // Slider row (horizontal: label on left, slider on right)
         val upsSlider = makeStyledSlider(1f, 1000f, 1f, false, textures).apply {

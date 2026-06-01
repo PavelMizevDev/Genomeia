@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.badlogic.gdx.video.VideoPlayer
@@ -116,8 +117,16 @@ class MenuScreen(
             Btn(bundle.get("button.exit")) { Gdx.app.exit() }
         )
 
+        val glyphLayout = GlyphLayout()
         for (btn in btns) {
             val b = makeStyledButton(btn.label, game, extraTextures)
+            // Scale label to fill ~85% of button width
+            glyphLayout.setText(game.buttonFont, btn.label)
+            if (glyphLayout.width > 0f) {
+                // Scale is almost always < 1 (shrinking from 48dp down), so no blur
+                val scale = (btnW * 0.85f / glyphLayout.width).coerceIn(0.3f, 1.0f)
+                b.label.setFontScale(scale)
+            }
             val action = btn.action
             b.addListener(object : ClickListener() {
                 override fun clicked(event: InputEvent, x: Float, y: Float) = action()

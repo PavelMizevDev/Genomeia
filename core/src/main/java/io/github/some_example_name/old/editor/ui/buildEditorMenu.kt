@@ -36,7 +36,6 @@ import io.github.some_example_name.old.ui.screens.MenuScreen
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.screens.SimulationScreen
 import io.github.some_example_name.old.ui.screens.applyCustomFont
-import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
 
 
 class MenuUiBuilder(
@@ -82,10 +81,10 @@ class MenuUiBuilder(
         val nextTickButton  = makeStyledButton(" > ",  game, textures)
         val nextStageButton = makeStyledButton(" >> ", game, textures)
         stageText = VisLabel("0")
-        game.applyCustomFontMedium(stageText)
+        game.applyCustomFont(stageText)
         stageText.setAlignment(Align.left)
         tickText = VisLabel("0")
-        game.applyCustomFontMedium(tickText)
+        game.applyCustomFont(tickText)
         timeSlider = makeStyledSlider(0f, editorLogicSystem.lastTick.toFloat(), 1f, false, textures)
         timeSlider.value = 0f
 
@@ -217,11 +216,11 @@ class MenuUiBuilder(
 
 
         val tick = VisLabel(bundle.get("button.tick"))
-        game.applyCustomFontMedium(tick)
+        game.applyCustomFont(tick)
         labelsRow1.add(tick).padRight(4f * density).padLeft(40f * density)
         labelsRow1.add(tickText).size(40f * density, 30f * density).padRight(16f * density)
         val stage = VisLabel(bundle.get("button.stage"))
-        game.applyCustomFontMedium(stage)
+        game.applyCustomFont(stage)
         labelsRow2.add(stage).padRight(4f * density).padLeft(0f)
         labelsRow2.add(stageText).size(40f * density, 30f * density)
 

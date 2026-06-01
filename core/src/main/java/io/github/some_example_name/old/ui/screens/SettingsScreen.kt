@@ -60,11 +60,11 @@ class SettingsScreen(
         checkBoxStyle.tick.minHeight = checkBoxSize * density
         checkBoxStyle.tickDisabled?.minWidth = checkBoxSize * density
         checkBoxStyle.tickDisabled?.minHeight = checkBoxSize * density
-        checkBoxStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) game.mediumFont else game.largeFont
+        checkBoxStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) game.largeFont else game.extraLargeFont
 
         // === MSAA слайдер ===
         val msaaLabel = VisLabel("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
-        game.applyCustomFontMedium(msaaLabel)
+        game.applyCustomFont(msaaLabel)
         val msaaSlider = makeStyledSlider(1f, 8f, 1f, false, extraTextures).apply {
             value = GlobalSettings.MSAA.toFloat()
             addListener { e ->
@@ -74,7 +74,7 @@ class SettingsScreen(
                 }
                 false
             }
-            invalidateHierarchy()  // Обновляем layout после изменений
+            invalidateHierarchy()
         }
         table.add(msaaLabel).left()
         table.row()
@@ -82,6 +82,7 @@ class SettingsScreen(
         table.row()
 
         val drawLinks = VisCheckBox(bundle.get("checkbox.draw_links"), checkBoxStyle).apply {
+            game.applyCustomFont(this)
             isChecked = GlobalSettings.DRAW_LINK_SHADER
             addListener { e ->
                 if (changed(e)) GlobalSettings.DRAW_LINK_SHADER = isChecked
@@ -116,7 +117,7 @@ class SettingsScreen(
 
         // === Громкость музыки ===
         val musicLabel = VisLabel("${bundle.get("label.music_volume")}: ${GlobalSettings.MUSIC_VOLUME}")
-        game.applyCustomFontMedium(musicLabel)
+        game.applyCustomFont(musicLabel)
         val musicSlider = makeStyledSlider(0f, 100f, 1f, false, extraTextures).apply {
             value = GlobalSettings.MUSIC_VOLUME.toFloat()
             addListener { e ->
@@ -136,7 +137,7 @@ class SettingsScreen(
 
         // === Громкость звуков ===
         val soundLabel = VisLabel("${bundle.get("label.sound_volume")}: ${GlobalSettings.SOUND_VOLUME}")
-        game.applyCustomFontMedium(soundLabel)
+        game.applyCustomFont(soundLabel)
         val soundSlider = makeStyledSlider(0f, 100f, 1f, false, extraTextures).apply {
             value = GlobalSettings.SOUND_VOLUME.toFloat()
             addListener { e ->
@@ -154,7 +155,7 @@ class SettingsScreen(
         table.row()
 
         val gridWidthLabel = VisLabel("World width: $GRID_WIDTH")
-        game.applyCustomFontMedium(gridWidthLabel)
+        game.applyCustomFont(gridWidthLabel)
         val gridWidthSlider = makeStyledSlider(16f, 3440f, heightMultiplier.toFloat(), false, extraTextures).apply {
             value = GRID_WIDTH.toFloat()
             addListener { e ->
@@ -172,7 +173,7 @@ class SettingsScreen(
         table.row()
 
         val gridHeightLabel = VisLabel("World height: $GRID_HEIGHT")
-        game.applyCustomFontMedium(gridHeightLabel)
+        game.applyCustomFont(gridHeightLabel)
         val gridHeightSlider = makeStyledSlider(16f, 3440f, heightMultiplier.toFloat(), false, extraTextures).apply {
             value = GRID_HEIGHT.toFloat()
             addListener { e ->
@@ -191,7 +192,7 @@ class SettingsScreen(
 
 
         val gravitationLabel = VisLabel("Gravitation: $GRAVITATION")
-        game.applyCustomFontMedium(gravitationLabel)
+        game.applyCustomFont(gravitationLabel)
         val gravitationSlider = makeStyledSlider(-0.1f, 0.1f, 0.01f, false, extraTextures).apply {
             value = GRAVITATION
             addListener { e ->

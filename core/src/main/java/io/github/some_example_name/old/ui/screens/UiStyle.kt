@@ -56,7 +56,7 @@ fun makeStyledNP(fill: Color, border: Color, textures: MutableList<Texture>): Ni
  */
 fun makeStyledButton(text: String, game: MyGame, textures: MutableList<Texture>, toggle: Boolean = false): VisTextButton {
     val style = VisTextButton.VisTextButtonStyle()   // fresh — no VisUI skin artifacts
-    style.font          = game.largeFont
+    style.font          = game.buttonFont
     style.fontColor     = Color(STYLE_BEIGE)
     style.overFontColor = Color.WHITE
     style.downFontColor = Color.WHITE

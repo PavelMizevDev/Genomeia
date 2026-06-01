@@ -62,6 +62,7 @@ class MyGame(
     lateinit var titleFont: BitmapFont
     lateinit var extraLargeFont: BitmapFont
     lateinit var largeFont: BitmapFont
+    lateinit var buttonFont: BitmapFont
     lateinit var mediumFont: BitmapFont
     lateinit var smallFont: BitmapFont
 
@@ -109,8 +110,17 @@ class MyGame(
             largeFont.data.setScale(desiredLargeSize.toFloat() / MIN_GEN_SIZE.toFloat())
         }
 
+        // Button font — generated at 2x size so scaling down in buttons stays sharp
+        val desiredButtonSize = (48 * Gdx.graphics.density).toInt()
+        parameter.size = max(MIN_GEN_SIZE, desiredButtonSize)
+        parameter.borderWidth = 1.2f
+        parameter.borderColor = com.badlogic.gdx.graphics.Color.WHITE
+        buttonFont = generator.generateFont(parameter)
+        parameter.borderWidth = 0f
+        parameter.size = max(MIN_GEN_SIZE, desiredLargeSize)
+
         // Extra large font
-        val desiredExtraLargeSize = (32 * Gdx.graphics.density).toInt()
+        val desiredExtraLargeSize = (40 * Gdx.graphics.density).toInt()
         parameter.size = max(MIN_GEN_SIZE, desiredExtraLargeSize)
         extraLargeFont = generator.generateFont(parameter)
         if (desiredExtraLargeSize < MIN_GEN_SIZE) {
@@ -170,6 +180,7 @@ class MyGame(
         screen.dispose()
         titleFont.dispose()
         largeFont.dispose()
+        buttonFont.dispose()
         mediumFont.dispose()
         smallFont.dispose()
         pikSounds.forEach {
@@ -181,76 +192,66 @@ class MyGame(
     }
 }
 
-//VisRadioButton
 fun MyGame.applyCustomFont(button: VisTextButton) {
-    val newStyle = VisTextButtonStyle(button.style as VisTextButtonStyle)  // Копируем текущий стиль
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont   // Применяем большой шрифт
-    button.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = VisTextButtonStyle(button.style as VisTextButtonStyle)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    button.style = newStyle
 }
 
 fun MyGame.applyCustomFont(scrollableTextArea: ScrollableTextArea) {
-    val textArea = scrollableTextArea // Получаем внутренний VisTextArea
-    val oldStyle = scrollableTextArea.style
-    val newStyle = VisTextField.VisTextFieldStyle(oldStyle)  // Копируем стиль
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) {
-        this.mediumFont
-    } else {
-        this.largeFont
-    }
-    textArea.style = newStyle
+    val newStyle = VisTextField.VisTextFieldStyle(scrollableTextArea.style)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    scrollableTextArea.style = newStyle
 }
 
 fun MyGame.applyCustomFont(selectBox: VisSelectBox<String>) {
-    val newStyle =
-        SelectBox.SelectBoxStyle(selectBox.style as SelectBox.SelectBoxStyle)  // Копируем текущий стиль
-    val customFont = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
-    newStyle.font = customFont  // Применяем большой шрифт для выбранного элемента
-    newStyle.listStyle.font = customFont  // Применяем большой шрифт для элементов списка (dropdown)
-    selectBox.style = newStyle  // Устанавливаем стиль обратно
-    selectBox.invalidateHierarchy()  // Пересчитываем layout, чтобы учесть изменения размера
+    val newStyle = SelectBox.SelectBoxStyle(selectBox.style as SelectBox.SelectBoxStyle)
+    val font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    newStyle.font = font
+    newStyle.listStyle.font = font
+    selectBox.style = newStyle
+    selectBox.invalidateHierarchy()
 }
 
 fun MyGame.applyCustomFont(button: VisTextField) {
-    val newStyle = VisTextField.VisTextFieldStyle(button.style as VisTextField.VisTextFieldStyle)  // Копируем текущий стиль
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont   // Применяем большой шрифт
-    button.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = VisTextField.VisTextFieldStyle(button.style as VisTextField.VisTextFieldStyle)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    button.style = newStyle
 }
 
 fun MyGame.applyCustomFont(button: VisValidatableTextField) {
-    val newStyle = VisTextField.VisTextFieldStyle(button.style as VisTextField.VisTextFieldStyle)  // Копируем текущий стиль
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont   // Применяем большой шрифт
-    button.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = VisTextField.VisTextFieldStyle(button.style as VisTextField.VisTextFieldStyle)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    button.style = newStyle
 }
 
 fun MyGame.applyCustomFont(label: VisLabel) {
-    val newStyle = Label.LabelStyle(label.style)  // Копируем текущий стиль (используем стандартный LabelStyle из scene2d.ui)
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.largeFont else this.extraLargeFont  // Применяем большой шрифт
-    label.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = Label.LabelStyle(label.style)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.largeFont else this.extraLargeFont
+    label.style = newStyle
 }
 
 fun MyGame.applyCustomFontMedium(label: VisLabel) {
-    val newStyle = Label.LabelStyle(label.style)  // Копируем текущий стиль (используем стандартный LabelStyle из scene2d.ui)
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont  // Применяем большой шрифт
-    label.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = Label.LabelStyle(label.style)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    label.style = newStyle
 }
 
 fun MyGame.applyCustomFontMedium(label: Label) {
-    val newStyle = Label.LabelStyle(label.style)  // Копируем текущий стиль (используем стандартный LabelStyle из scene2d.ui)
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont  // Применяем большой шрифт
-    label.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = Label.LabelStyle(label.style)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    label.style = newStyle
 }
 
 fun MyGame.applyCustomFont(radioButton: VisRadioButton) {
-    val newStyle =
-        VisCheckBoxStyle(radioButton.style as VisCheckBoxStyle)  // Копируем текущий стиль
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont   // Применяем большой шрифт
-    radioButton.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = VisCheckBoxStyle(radioButton.style as VisCheckBoxStyle)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.largeFont else this.extraLargeFont
+    radioButton.style = newStyle
 }
 
 
 fun MyGame.applyCustomFont(radioButton: VisCheckBox) {
-    val newStyle =
-        VisCheckBoxStyle(radioButton.style as VisCheckBoxStyle)  // Копируем текущий стиль
-    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont   // Применяем большой шрифт
-    radioButton.style = newStyle  // Устанавливаем стиль обратно
+    val newStyle = VisCheckBoxStyle(radioButton.style as VisCheckBoxStyle)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.largeFont else this.extraLargeFont
+    radioButton.style = newStyle
 }
