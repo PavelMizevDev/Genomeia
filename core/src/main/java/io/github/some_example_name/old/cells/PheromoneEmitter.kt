@@ -17,7 +17,7 @@ class PheromoneEmitter(cellTypeId: Int) : Cell(
 
         worldCommandsManager.worldCommandBuffer[threadId].push(
             type = WorldCommandType.ADD_PHEROMONE,
-            ints = intArrayOf(getParticleIndex(cellIndex), 2 /*todo pheromone type*/),
+            ints = intArrayOf(getParticleIndex(cellIndex), cellEntity.pheromoneType[cellIndex]),
             floats = floatArrayOf(getX(cellIndex), getY(cellIndex))
         )
     }

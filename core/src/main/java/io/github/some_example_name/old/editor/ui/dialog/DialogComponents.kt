@@ -27,38 +27,12 @@ import kotlin.math.PI
 import kotlin.math.roundToInt
 import com.kotcrab.vis.ui.widget.VisTextButton
 import io.github.some_example_name.old.cells.base.formulaType
+import io.github.some_example_name.old.core.DIGenomeEditorContainer.cellsTypeNames
 import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.screens.applyCustomFont
 import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
 
-val cellsType = arrayOf(
-    "Leaf",
-    "Fat",
-    "Bone",
-    "Tail",
-    "Neuron",
-    "Muscle",
-    "Sensor",
-    "Sucker",
-    "Stem",
-    "Excreta",
-    "SuctionCup",
-    "Sticky",
-    "Pumper",
-    "Chameleon",
-    "Eye",
-    "Compass",
-    "Controller",
-    "TouchTrigger",
-    "Zygote",
-    "Producer",
-    "Breakaway",
-    "Vascular",
-    "PheromoneEmitter",
-    "PheromoneSensor",
-    "Punisher",
-)
 
 fun actionButton(
     text: String,
@@ -104,7 +78,7 @@ fun cellTypePicker(
     onAction: (Int) -> Unit
 ): VisSelectBox<String> {
     val celTypePicker = VisSelectBox<String>().apply {
-        items = Array(cellsType)
+        items = Array(cellsTypeNames)
         selectedIndex = cellTypeFrom
         setSize(100f, 40f)
         addListener(object : ChangeListener() {
@@ -445,6 +419,42 @@ fun controller(): VisTextField {
     controllerKey.maxLength = 1
 
     return controllerKey
+}
+
+
+fun pheromone(
+    action: Action,
+    game: MyGame,
+    bundle: I18NBundle,
+    onTypeChange: (type: Int) -> Unit
+): VisTable {
+    val density = Gdx.graphics.density
+    val table = VisTable()
+
+    val label = VisLabel("Pheromone Type")
+    game.applyCustomFontMedium(label)
+
+    // Создаём список из 32 элементов (0..31)
+    val items = Array(32) { i -> i.toString() }
+
+    val selectBox = VisSelectBox<String>().apply {
+        this.items = Array(items)
+        // Предполагается, что в классе Action есть поле pheromoneType (Int?)
+        // Если поле называется иначе — замени на правильное имя
+        selectedIndex = (action.pheromoneType ?: 0).coerceIn(0, 31)
+
+        addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent, actor: Actor) {
+                onTypeChange(selectedIndex)
+            }
+        })
+    }
+    game.applyCustomFont(selectBox)
+
+    table.add(label).align(Align.left).padBottom(8f * density).row()
+    table.add(selectBox).width(140f * density).height(38f * density).align(Align.left)
+
+    return table
 }
 
 

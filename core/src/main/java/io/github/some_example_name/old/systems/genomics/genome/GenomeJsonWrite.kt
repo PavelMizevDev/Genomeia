@@ -44,7 +44,8 @@ class ActionJsonWrite(
     val c: Float? = null,
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
-    val lengthDirected: Float? = null
+    val lengthDirected: Float? = null,
+    val pheromoneType: Int? = null
 ): Json.Serializable {
 
     override fun write(json: Json) {
@@ -69,6 +70,7 @@ class ActionJsonWrite(
         if (isSum != null) json.writeValue("isSum", isSum)
         if (colorRecognition != null) json.writeValue("colorRecognition", colorRecognition)
         if (lengthDirected != null) json.writeValue("lengthDirected", lengthDirected)
+        if (pheromoneType != null) json.writeValue("pheromoneType", pheromoneType)
     }
 
     override fun read(json: Json, jsonData: JsonValue) {
@@ -135,7 +137,8 @@ private fun Action.toJson(): ActionJsonWrite {
         c = this.c,
         isSum = this.isSum,
         colorRecognition = this.colorRecognition,
-        lengthDirected = this.lengthDirected?.times(40f)
+        lengthDirected = this.lengthDirected?.times(40f),
+        pheromoneType = pheromoneType
     )
 }
 

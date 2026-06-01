@@ -177,6 +177,10 @@ class MutateManager(
                 action.lengthDirected?.let { specialEntity.setVisibilityRange(index, it) }
             }
 
+            action.pheromoneType?.let {
+                pheromoneType[index] = it
+            }
+
             if (action.physicalLink.isNotEmpty()) {
                 val gridX = getX(index).toInt()
                 val gridY = getY(index).toInt()

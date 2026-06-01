@@ -82,6 +82,7 @@ class DivideManager(
                 val activationFuncType: Int = action.funActivation ?: 0
 
                 val isMorphogenesis = false
+                val pheromoneType = action.pheromoneType ?: -1
 
                 worldCommandsManager.worldCommandBuffer[threadId].push(
                     type = WorldCommandType.ADD_CELL,
@@ -94,7 +95,8 @@ class DivideManager(
                         parentOrganIndex,
                         parentIndex,
                         colorDifferentiation,
-                        activationFuncType
+                        activationFuncType,
+                        pheromoneType
                     )
                 )
 

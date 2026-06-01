@@ -170,12 +170,7 @@ class UserCommandManager(
                                     }
 
                                     if (neighborIndex == null) {
-//                                        val r = Random.nextInt(255)
-//                                        val g = Random.nextInt(255)
-//                                        val b = Random.nextInt(255)
-//                                        val a = 255
-
-                                        val color = Color.RED.toIntBits()//124124//(a shl 24) or (r shl 16) or (g shl 8) or b
+                                        val color = Color.RED.toIntBits()
                                         val radius = Random.nextFloat() * (0.5f - 0.1f) + 0.1f
 
                                         worldCommandsManager.worldCommandBuffer[Random.nextInt(

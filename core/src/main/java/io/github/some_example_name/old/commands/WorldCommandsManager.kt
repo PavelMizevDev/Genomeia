@@ -105,8 +105,8 @@ class WorldCommandsManager(
                     }
                     WorldCommandType.ADD_CELL -> {
                         val isMorphogenesis = booleans[1]
-                        var x = floats[0]
-                        var y = floats[1]
+                        val x = floats[0]
+                        val y = floats[1]
 
                         val radius = floats[2]
 
@@ -162,7 +162,8 @@ class WorldCommandsManager(
                                 b = floats[9],
                                 c = floats[10],
                                 isSum = booleans[0],
-                                activationFuncType = ints[6].toByte()
+                                activationFuncType = ints[6].toByte(),
+                                pheromoneType = ints[7]
                             )
 
                             //TODO сделать без алокаций
@@ -213,16 +214,10 @@ class WorldCommandsManager(
                             userCommandManager.isDragging = false
                         }
                         if (cellEntity.isAlive[cellIndex] && cellEntity.getGeneration(cellIndex) == cellGeneration) {
-                            val r = Random.nextInt(255)
-                            val g = Random.nextInt(255)
-                            val b = Random.nextInt(255)
-                            val a = 255
-
-                            val color = (a shl 24) or (r shl 16) or (g shl 8) or b
                             substancesEntity.addSubstance(
                                 x = cellEntity.getX(cellIndex),
                                 y = cellEntity.getY(cellIndex),
-                                color = color,
+                                color = Color.RED.toIntBits(),
                                 radius = 0.1f,
                                 subType = 0,
                             )

@@ -19,16 +19,16 @@ class PheromonesManager(
             if (cellEntity.neuronImpulseOutput[cellIndex] > 0f) {
                 worldCommandsManager.worldCommandBuffer[threadId].push(
                     type = WorldCommandType.ADD_PHEROMONE,
-                    ints = intArrayOf(emitterIndex, 2 /*todo pheromone type*/),
+                    ints = intArrayOf(emitterIndex, cellEntity.pheromoneType[cellIndex]),
                     floats = floatArrayOf(newX, newY)
                 )
             }
         } else {
-//            worldCommandsManager.worldCommandBuffer[threadId].push(
-//                type = WorldCommandType.ADD_PHEROMONE,
-//                ints = intArrayOf(emitterIndex, 0 /*todo pheromone type*/),
-//                floats = floatArrayOf(newX, newY)
-//            )
+            worldCommandsManager.worldCommandBuffer[threadId].push(
+                type = WorldCommandType.ADD_PHEROMONE,
+                ints = intArrayOf(emitterIndex, 0),
+                floats = floatArrayOf(newX, newY)
+            )
         }
     }
 
@@ -41,7 +41,7 @@ class PheromonesManager(
 
             val maxLevel = if (particleEntity.isCell[emitterIndex]) {
                 cellEntity.neuronImpulseOutput[particleEntity.holderEntityIndex[emitterIndex]]
-            } else 0.3f
+            } else 0.15f
 
             if (emitterX == x[index].toInt() && emitterY == y[index].toInt() && maxLevel > 0) {
                 if (time[index] < maxLevel) {
@@ -67,7 +67,7 @@ class PheromonesManager(
     inline fun findAllPheromonesInPoint(
         posX: Float,
         posY: Float,
-        type: Int = 0, // TODO
+        type: Int,
         iterate: (Int) -> Unit
     ) {
         val cellSize = MAXIMUM_PHEROMONE_SPREAD_DIAMETER.toFloat()
@@ -78,30 +78,30 @@ class PheromonesManager(
         val fracX = (posX % cellSize) / cellSize
         val fracY = (posY % cellSize) / cellSize
 
-        pheromoneEntity.pack(gx, gy).iteratePheromoneMapGrid(iterate)
+        pheromoneEntity.pack(gx, gy).iteratePheromoneMapGrid(type, iterate)
 
         if (fracX >= 0.5f) {
-            pheromoneEntity.pack(gx + 1, gy).iteratePheromoneMapGrid(iterate)
+            pheromoneEntity.pack(gx + 1, gy).iteratePheromoneMapGrid(type, iterate)
         } else if (gx > 0) {
-            pheromoneEntity.pack(gx - 1, gy).iteratePheromoneMapGrid(iterate)
+            pheromoneEntity.pack(gx - 1, gy).iteratePheromoneMapGrid(type, iterate)
         }
 
         if (fracY >= 0.5f) {
-            pheromoneEntity.pack(gx, gy + 1).iteratePheromoneMapGrid(iterate)
+            pheromoneEntity.pack(gx, gy + 1).iteratePheromoneMapGrid(type, iterate)
         } else if (gy > 0) {
-            pheromoneEntity.pack(gx, gy - 1).iteratePheromoneMapGrid(iterate)
+            pheromoneEntity.pack(gx, gy - 1).iteratePheromoneMapGrid(type, iterate)
         }
 
         val diagX = if (fracX >= 0.5f) gx + 1 else gx - 1
         val diagY = if (fracY >= 0.5f) gy + 1 else gy - 1
 
         if (diagX >= 0 && diagY >= 0) {
-            pheromoneEntity.pack(diagX, diagY).iteratePheromoneMapGrid(iterate)
+            pheromoneEntity.pack(diagX, diagY).iteratePheromoneMapGrid(type, iterate)
         }
     }
 
-    inline fun Int.iteratePheromoneMapGrid(iterate: (Int) -> Unit) {
-        pheromoneEntity.pheromoneMapGrid[this]?.forEach(iterate)
+    inline fun Int.iteratePheromoneMapGrid(type: Int, iterate: (Int) -> Unit) {
+        pheromoneEntity.pheromoneMapGrid[type]?.get(this)?.forEach(iterate)
     }
 
     fun f(x: Float, a: Float): Float {

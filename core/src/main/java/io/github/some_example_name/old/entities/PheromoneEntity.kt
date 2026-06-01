@@ -19,25 +19,39 @@ class PheromoneEntity(
     var radiusSquared = FloatArray(maxAmount)
     var emitterIndex = IntArray(maxAmount)
     var color = IntArray(maxAmount)
+    var type = IntArray(maxAmount)
 
-    val pheromoneMapGrid = Int2ObjectOpenHashMap<IntOpenHashSet>()
-    val emitterMap = Int2ObjectOpenHashMap<IntOpenHashSet>()
+    //TODO в идеале заменить на сетку из примитивов для большей скорости
+    val pheromoneMapGrid = Int2ObjectOpenHashMap<Int2ObjectOpenHashMap<IntOpenHashSet>>()
+    val emitterMap = Int2ObjectOpenHashMap<Int2ObjectOpenHashMap<IntOpenHashSet>>()
+
+    companion object {
+        const val MAX_PHEROMONE_TYPES = 32
+
+        private val TYPE_COLORS = IntArray(MAX_PHEROMONE_TYPES) { index ->
+            val hue = (index * 360f) / MAX_PHEROMONE_TYPES
+            Color().fromHsv(hue, 0.92f, 0.96f).toIntBits()
+        }
+    }
 
     fun pack(x: Int, y: Int): Int {
         require(x in 0..MAX && y in 0..MAX)
         return (x shl 12) or y          // 12 бит хватит с запасом (2^12 = 4096 > 3441)
     }
 
-    fun addUnique(key: Int, value: Int): Boolean {
-        val set = emitterMap.computeIfAbsent(key) { IntOpenHashSet(3) }
+    /** Добавление с учётом type (уникальность теперь считается отдельно для каждого типа) */
+    private fun addUnique(pType: Int, key: Int, value: Int): Boolean {
+        val typeMap = emitterMap.computeIfAbsent(pType) { Int2ObjectOpenHashMap(4) }
+        val set = typeMap.computeIfAbsent(key) { IntOpenHashSet(3) }
         return set.add(value)
     }
 
     fun addPheromone(x: Float, y: Float, emitterIndex: Int, type: Int): Int? {
         val exactKey = pack(x.toInt(), y.toInt())
 
-        val isFirstAdded = addUnique(exactKey, emitterIndex)
+        val isFirstAdded = addUnique(type, exactKey, emitterIndex)
         if (!isFirstAdded) return null
+
         val newIndex = add()
 
         this.x[newIndex] = x
@@ -45,18 +59,21 @@ class PheromoneEntity(
         this.time[newIndex] = 0f
         this.radiusSquared[newIndex] = 0f
         this.emitterIndex[newIndex] = emitterIndex
-        this.color[newIndex] = when (type) {
-            0 -> Color.RED
-            1 -> Color.GREEN
-            2 -> Color.BLUE
-            else -> Color.FIREBRICK
-        }.toIntBits()
+        this.type[newIndex] = type
+
+        this.color[newIndex] = if (type in 0 until MAX_PHEROMONE_TYPES) {
+            TYPE_COLORS[type]
+        } else {
+            Color.FIREBRICK.toIntBits()
+        }
 
         val bigGridX = x.toInt() / MAXIMUM_PHEROMONE_SPREAD_DIAMETER
         val bigGridY = y.toInt() / MAXIMUM_PHEROMONE_SPREAD_DIAMETER
         val gridKey = pack(bigGridX, bigGridY)
 
-        pheromoneMapGrid.computeIfAbsent(gridKey) { IntOpenHashSet(8) }.add(newIndex)
+        // Добавляем в pheromoneMapGrid[type][gridKey]
+        val typeGridMap = pheromoneMapGrid.computeIfAbsent(type) { Int2ObjectOpenHashMap(8) }
+        typeGridMap.computeIfAbsent(gridKey) { IntOpenHashSet(8) }.add(newIndex)
 
         return newIndex
     }
@@ -67,34 +84,50 @@ class PheromoneEntity(
             val px = x[pheromoneIndex]
             val py = y[pheromoneIndex]
             val emitter = emitterIndex[pheromoneIndex]
+            val pType = type[pheromoneIndex]
 
             val gridX = px.toInt() / MAXIMUM_PHEROMONE_SPREAD_DIAMETER
             val gridY = py.toInt() / MAXIMUM_PHEROMONE_SPREAD_DIAMETER
             val gridKey = pack(gridX, gridY)
 
-            pheromoneMapGrid.get(gridKey)?.let { set ->
-                set.remove(pheromoneIndex)
-                if (set.isEmpty()) {
-                    pheromoneMapGrid.remove(gridKey)
+            // Удаление из pheromoneMapGrid
+            pheromoneMapGrid.get(pType)?.let { typeGridMap ->
+                typeGridMap.get(gridKey)?.let { set ->
+                    set.remove(pheromoneIndex)
+                    if (set.isEmpty()) {
+                        typeGridMap.remove(gridKey)
+                        if (typeGridMap.isEmpty()) {
+                            pheromoneMapGrid.remove(pType)
+                        }
+                    }
                 }
             }
 
             val exactKey = pack(px.toInt(), py.toInt())
-            emitterMap.get(exactKey)?.let { set ->
-                set.remove(emitter)
-                if (set.isEmpty()) {
-                    emitterMap.remove(exactKey)
+
+            // Удаление из emitterMap
+            emitterMap.get(pType)?.let { typeEmitterMap ->
+                typeEmitterMap.get(exactKey)?.let { set ->
+                    set.remove(emitter)
+                    if (set.isEmpty()) {
+                        typeEmitterMap.remove(exactKey)
+                        if (typeEmitterMap.isEmpty()) {
+                            emitterMap.remove(pType)
+                        }
+                    }
                 }
             }
 
             delete(pheromoneIndex)
-//            println("deletePheromone $pheromoneIndex")
+
+            // Очистка
             x[pheromoneIndex] = 0f
             y[pheromoneIndex] = 0f
             time[pheromoneIndex] = 0f
             radiusSquared[pheromoneIndex] = 0f
             emitterIndex[pheromoneIndex] = -1
             color[pheromoneIndex] = 0
+            type[pheromoneIndex] = -1
         } else {
             throw Exception("Not deleted")
         }
@@ -104,7 +137,6 @@ class PheromoneEntity(
     }
 
     override fun onPaste() {
-
     }
 
     override fun onClear(bound: Int) {
@@ -114,6 +146,7 @@ class PheromoneEntity(
         radiusSquared.clear()
         emitterIndex.clear(-1)
         color.clear()
+        type.clear(-1)                          // ← очищаем новый массив
 
         pheromoneMapGrid.clear()
         emitterMap.clear()
@@ -126,5 +159,6 @@ class PheromoneEntity(
         radiusSquared = radiusSquared.resize()
         emitterIndex = emitterIndex.resize(-1)
         color = color.resize()
+        type = type.resize(-1)                  // ← ресайзим новый массив
     }
 }

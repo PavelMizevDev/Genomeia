@@ -13,6 +13,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.cells.Controller
 import io.github.some_example_name.old.cells.Eye
+import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.core.DIGenomeEditorContainer.cellList
 import io.github.some_example_name.old.systems.genomics.genome.Action
 import io.github.some_example_name.old.core.color_picker.ColorPicker
@@ -162,6 +163,15 @@ class ChangeRemoveActionDialog(
             ).also { scrollContentTable.add(it).row()}
         }
 
+        if (cellType.isPheromone()) {
+            pheromone(
+                action = divide,
+                game = game,
+                bundle = bundle
+            ) { pheromoneType ->
+                divide = divide.copy(pheromoneType = pheromoneType)
+            }.also { scrollContentTable.add(it).row() }
+        }
 
         val radiusLabel = VisLabel("Radius: ${divide.radius ?: PARTICLE_MAX_RADIUS}")
         game.applyCustomFontMedium(radiusLabel)
@@ -242,6 +252,19 @@ class ChangeRemoveActionDialog(
                 )
             }
         }
+
+        when {
+            fromCellType.isPheromone() && !toCellType.isPheromone() -> {
+                divide = divide.copy(
+                    pheromoneType = null
+                )
+            }
+            !fromCellType.isPheromone() && toCellType.isPheromone() -> {
+                divide = divide.copy(
+                    pheromoneType = 0,
+                )
+            }
+        }
     }
 }
 
@@ -249,5 +272,6 @@ fun Int.isEye() = cellList[this] is Eye
 fun Int.isController() = cellList[this] is Controller
 fun Int.isDirected() = cellList[this].isDirected
 fun Int.isNeural() = cellList[this].isNeural
+fun Int.isPheromone() = cellList[this] is PheromoneEmitter || cellList[this] is PheromoneEmitter
 
 fun getCellColor(cellType: Int) = cellList[cellType].defaultColor

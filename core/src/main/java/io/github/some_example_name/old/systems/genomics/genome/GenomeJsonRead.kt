@@ -37,7 +37,8 @@ class ActionJsonRead(
     val c: Float? = null,
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
-    val lengthDirected: Float? = null
+    val lengthDirected: Float? = null,
+    val pheromoneType: Int? = null
 )
 
 class LinkDataJsonRead(
@@ -130,7 +131,8 @@ private fun ActionJsonRead.toDomain(): Action {
         c = c,
         isSum = isSum,
         colorRecognition = colorRecognition,
-        lengthDirected = lengthDirected?.div(40f)
+        lengthDirected = lengthDirected?.div(40f),
+        pheromoneType = pheromoneType
     )
 }
 

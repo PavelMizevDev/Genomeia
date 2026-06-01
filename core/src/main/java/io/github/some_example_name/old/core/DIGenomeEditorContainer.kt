@@ -51,6 +51,7 @@ object DIGenomeEditorContainer: DIContext, Disposable {
     )
 
     private val cellListBuilder = CellListBuilder(this)
+    val cellsTypeNames = cellListBuilder.instances.map { it.name }.toTypedArray()
     val cellList = cellListBuilder.instances
     val zygote = cellListBuilder.zygote
 

@@ -15,10 +15,13 @@ class PheromoneSensor(cellTypeId: Int) : Cell(
 
             val posX = cellEntity.getX(cellIndex)
             val posY = cellEntity.getY(cellIndex)
+
+            val pheromoneType = 0
+
             //TODO думаю это можно как-то оптимизировать через среднее арифметическое для каждой ячекйи 32*32
-            pheromonesManager.findAllPheromonesInPoint(posX, posY) { pheromoneIndex ->
-                val dx = posX - pheromoneEntity.x[pheromoneIndex]// + 0.5f
-                val dy = posY - pheromoneEntity.y[pheromoneIndex]// + 0.5f
+            pheromonesManager.findAllPheromonesInPoint(posX, posY, pheromoneType) { pheromoneIndex ->
+                val dx = posX - pheromoneEntity.x[pheromoneIndex]
+                val dy = posY - pheromoneEntity.y[pheromoneIndex]
                 val distSq = dx * dx + dy * dy
 
                 val a = pheromoneEntity.time[pheromoneIndex]

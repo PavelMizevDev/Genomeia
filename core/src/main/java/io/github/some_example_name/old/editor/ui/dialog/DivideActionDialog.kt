@@ -168,6 +168,16 @@ class DivideActionDialog(
             ).also { scrollContentTable.add(it).row() }
         }
 
+        if (cellType.isPheromone()) {
+            pheromone(
+                action = divide,
+                game = game,
+                bundle = bundle
+            ) { pheromoneType ->
+                divide = divide.copy(pheromoneType = pheromoneType)
+            }.also { scrollContentTable.add(it).row() }
+        }
+
         val radiusLabel = VisLabel("Radius: $PARTICLE_MAX_RADIUS")
         game.applyCustomFontMedium(radiusLabel)
         val radiusSlider = VisSlider(0.2f, 0.5f, 0.01f, false).apply {
@@ -243,6 +253,19 @@ class DivideActionDialog(
                 divide = divide.copy(
                     colorRecognition = 7,
                     lengthDirected = 4.25f
+                )
+            }
+        }
+
+        when {
+            fromCellType.isPheromone() && !toCellType.isPheromone() -> {
+                divide = divide.copy(
+                    pheromoneType = null
+                )
+            }
+            !fromCellType.isPheromone() && toCellType.isPheromone() -> {
+                divide = divide.copy(
+                    pheromoneType = 0,
                 )
             }
         }

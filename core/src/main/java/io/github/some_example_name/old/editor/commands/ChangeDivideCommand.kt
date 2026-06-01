@@ -33,7 +33,8 @@ class ChangeDivideCommand(
                 c = divide.c,
                 isSum = divide.isSum,
                 colorRecognition = divide.colorRecognition,
-                lengthDirected = divide.lengthDirected
+                lengthDirected = divide.lengthDirected,
+                pheromoneType = divide.pheromoneType
             ))
         }
 

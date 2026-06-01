@@ -1,7 +1,9 @@
 package io.github.some_example_name.old.cells
 
+import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.commands.WorldCommandType
 import io.github.some_example_name.old.core.DIGameGlobalContainer.morphogenesis
+import io.github.some_example_name.old.core.DISimulationContainer.cellsSettings
 import io.github.some_example_name.old.core.utils.collectParticles
 import io.github.some_example_name.old.core.utils.pinkColors
 import io.github.some_example_name.old.systems.physics.ParticlePhysicsSystem.Companion.PARTICLE_MAX_RADIUS
@@ -15,7 +17,6 @@ class Stem(cellTypeId: Int): Cell(
         if (energy[cellIndex] < substrateSettings.cellsSettings[cellType[cellIndex].toInt()].maxEnergy) {
             energy[cellIndex] += substrateSettings.data.amountOfSolarEnergy
         } else if (simulationData.tickCounter % 8 == cellIndex % 8) {
-            if (!isOnEdge[cellIndex]) return@with
 
             var impulse = 0f
             val posX = cellEntity.getX(cellIndex)
@@ -23,8 +24,26 @@ class Stem(cellTypeId: Int): Cell(
             var xPheromone = -1f
             var yPheromone = -1f
 
+            pheromonesManager.findAllPheromonesInPoint(posX, posY, 31) { pheromoneIndex ->
+                val dx = posX - pheromoneEntity.x[pheromoneIndex]
+                val dy = posY - pheromoneEntity.y[pheromoneIndex]
+                val distSq = dx * dx + dy * dy
+
+                val radiusSquared = pheromoneEntity.radiusSquared[pheromoneIndex]
+
+                if (distSq <= radiusSquared) {
+                    setColor(cellIndex, Color.WHITE.toIntBits())
+                    cellType[cellIndex] = 2
+                    cellEntity.setCellStiffness(cellIndex, cellsSettings[2].cellStiffness)
+                    return@with
+                }
+            }
+
+            if (!isOnEdge[cellIndex]) return@with
+
+
             //TODO думаю это можно как-то оптимизировать через среднее арифметическое для каждой ячекйи 32*32
-            pheromonesManager.findAllPheromonesInPoint(posX, posY) { pheromoneIndex ->
+            pheromonesManager.findAllPheromonesInPoint(posX, posY, 11) { pheromoneIndex ->
                 val dx = posX - pheromoneEntity.x[pheromoneIndex]
                 val dy = posY - pheromoneEntity.y[pheromoneIndex]
                 val distSq = dx * dx + dy * dy
@@ -122,6 +141,7 @@ class Stem(cellTypeId: Int): Cell(
             }
 
             val isMorphogenesis = true
+            val pheromoneType = 1
 
             worldCommandsManager.worldCommandBuffer[threadId].push(
                 type = WorldCommandType.ADD_CELL,
@@ -146,7 +166,8 @@ class Stem(cellTypeId: Int): Cell(
                     organIndex,
                     parentIndex,
                     colorDifferentiation,
-                    activationFuncType
+                    activationFuncType,
+                    pheromoneType
                 )
             )
 

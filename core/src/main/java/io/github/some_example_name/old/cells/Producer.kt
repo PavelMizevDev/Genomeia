@@ -56,6 +56,7 @@ class Producer(cellTypeId: Int): Cell(
         val y = getY(cellIndex) + finalSin * 0.05f
 
         val isMorphogenesis = false
+        val pheromoneType = -1
 
         worldCommandsManager.worldCommandBuffer[threadId].push(
             type = WorldCommandType.ADD_CELL,
@@ -68,7 +69,8 @@ class Producer(cellTypeId: Int): Cell(
                 organIndex,
                 parentIndex,
                 colorDifferentiation,
-                activationFuncType
+                activationFuncType,
+                pheromoneType
             )
         )
 

@@ -17,5 +17,5 @@ void main() {
 
     float alpha = v_A / (1.0 + u_K * distSq * v_radius);
 
-    fragColor = vec4(ex_Color, alpha * 0.2);
+    fragColor = vec4(ex_Color, alpha * 0.7);
 }

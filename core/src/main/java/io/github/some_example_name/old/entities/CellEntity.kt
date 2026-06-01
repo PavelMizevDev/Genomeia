@@ -68,6 +68,7 @@ class CellEntity(
     var neuronImpulseOutput = FloatArray(maxAmount)
     var isOnEdge = BooleanArray(maxAmount)
     var degreeOfShortening = FloatArray(maxAmount) { 1f }
+    var pheromoneType = IntArray(maxAmount) { -1 }
 
     //Neural entity
     var neuralIndexes = IntArray(maxAmount) { -1 }
@@ -173,7 +174,8 @@ class CellEntity(
         c: Float = 0f,
         isSum: Boolean = true,
         activationFuncType: Byte = 7,
-        speed: Float = 0f
+        speed: Float = 0f,
+        pheromoneType: Int = -1,
     ): Int {
         val cellIndex = add()
 
@@ -211,6 +213,7 @@ class CellEntity(
         mapCellLinks.put(cellIndex, IntArrayList())
         isOnEdge[cellIndex] = true
         this.degreeOfShortening[cellIndex] = 1f
+        this.pheromoneType[cellIndex] = pheromoneType
         val cell = cellList[cellType]
 
         if (cell.isNeural) {
@@ -262,6 +265,7 @@ class CellEntity(
         neuronImpulseOutput[cellIndex] = 0f
         isOnEdge[cellIndex] = true
         this.degreeOfShortening[cellIndex] = 1f
+        pheromoneType[cellIndex] = -1
         mapCellLinks.remove(cellIndex)
 
         deleteNeural(cellIndex = cellIndex)
@@ -302,6 +306,7 @@ class CellEntity(
         neuralIndexes.clear()
         isOnEdge.clear(true)
         degreeOfShortening.clear(1f)
+        pheromoneType.clear(-1)
         mapCellLinks.clear()
     }
 
@@ -334,5 +339,6 @@ class CellEntity(
         neuralIndexes = neuralIndexes.resize()
         isOnEdge = isOnEdge.resize(true)
         degreeOfShortening = degreeOfShortening.resize(1f)
+        pheromoneType = pheromoneType.resize(-1)
     }
 }

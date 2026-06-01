@@ -118,7 +118,8 @@ data class Action(
     val c: Float? = null,
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
-    val lengthDirected: Float? = null
+    val lengthDirected: Float? = null,
+    val pheromoneType: Int? = null
 ) {
     fun deepCopy(): Action {
         return Action(
@@ -135,7 +136,8 @@ data class Action(
             c = c,
             isSum = isSum,
             colorRecognition = colorRecognition,
-            lengthDirected = lengthDirected
+            lengthDirected = lengthDirected,
+            pheromoneType = pheromoneType
         )
     }
 
