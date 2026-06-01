@@ -34,11 +34,14 @@ class MenuScreen(
     private val cam   = OrthographicCamera()
 
     private val video: VideoPlayer? = runCatching {
-        // Native decoder needs a real filesystem path, not a JAR entry.
-        // Extract once to ~/.local/share/genomeia/ and reuse.
-        val cacheFile = Gdx.files.absolute(
-            System.getProperty("user.home") + "/.local/share/genomeia/bg.webm"
-        )
+        val home = System.getProperty("user.home")
+        val os   = System.getProperty("os.name").lowercase()
+        val cacheDir = when {
+            os.contains("win") -> (System.getenv("APPDATA") ?: "$home/AppData/Roaming") + "/Genomeia"
+            os.contains("mac") -> "$home/Library/Application Support/Genomeia"
+            else               -> "$home/.local/share/genomeia"
+        }
+        val cacheFile = Gdx.files.absolute("$cacheDir/bg.webm")
         if (!cacheFile.exists()) {
             val src = Gdx.files.internal("ui/bg.webm")
             if (!src.exists()) return@runCatching null
