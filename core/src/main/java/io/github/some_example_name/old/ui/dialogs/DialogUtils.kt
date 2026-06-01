@@ -2,48 +2,62 @@ package io.github.some_example_name.old.ui.dialogs
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.utils.Scaling
 import com.kotcrab.vis.ui.widget.VisImageButton
 import com.kotcrab.vis.ui.widget.VisWindow
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
+import io.github.some_example_name.old.ui.screens.roundCorners
 
 fun VisWindow.setupTitleSize(game: MyGame) {
+    roundCorners()
+
     if (Gdx.app.type != Application.ApplicationType.Android) {
         addCloseButton()
+        transparentCloseButton()
         return
     }
-    // Увеличиваем заголовок (title label): применяем custom font и scale
+
     val titleLabel = getTitleLabel()
-    game.applyCustomFontMedium(titleLabel)  // Предполагаем, что это устанавливает больший шрифт
+    game.applyCustomFontMedium(titleLabel)
 
     val titleTable = getTitleTable()
-    titleTable.pad(5f * Gdx.graphics.density)  // Увеличьте внутренние отступы
-    titleTable.padTop(5f * Gdx.graphics.density).padBottom(5f * Gdx.graphics.density)  // Вертикальные паддинги
+    val d = Gdx.graphics.density
+    titleTable.pad(5f * d)
+    titleTable.padTop(5f * d).padBottom(5f * d)
 
-    addCloseButton()  // Добавляем крестик после настройки label (чтобы prefHeight учел изменения)
+    addCloseButton()
+    transparentCloseButton()
 
-    // Получаем closeButton из titleTable (индекс 1, так как 0 - titleLabel)
-    val closeButton = titleTable.children.get(1) as VisImageButton
+    val closeButton = titleTable.children.last() as? VisImageButton ?: return
 
-    // Увеличиваем крестик (close button): устанавливаем больший размер
-    closeButton.setSize(30f * Gdx.graphics.density, 30f * Gdx.graphics.density)  // Размер кнопки
-    closeButton.image.setScaling(Scaling.fit)  // Масштабируем иконку внутри кнопки
-    closeButton.imageCell.size(24f * Gdx.graphics.density)  // Размер иконки (подберите)
+    closeButton.setSize(30f * d, 30f * d)
+    closeButton.image.setScaling(Scaling.fit)
+    closeButton.imageCell.size(24f * d)
 
-    // Настраиваем cells для увеличения высоты titleTable
     titleTable.getCell(titleLabel)
-        .minHeight(10f * Gdx.graphics.density)
-        .prefHeight(10f * Gdx.graphics.density)
+        .minHeight(10f * d)
+        .prefHeight(10f * d)
 
     val closeButtonSize = if (Gdx.app.type == Application.ApplicationType.Android) 20f else 30f
+    titleTable.getCell(closeButton).size(closeButtonSize * d, closeButtonSize * d)
 
-    titleTable.getCell(closeButton)
-        .size(closeButtonSize * Gdx.graphics.density, closeButtonSize * Gdx.graphics.density)
-
-    // Пересчитываем prefHeight и обновляем padTop окна для большей верхней панели
-    titleTable.invalidateHierarchy()  // Пересчитать layout titleTable
-    padTop(titleTable.getPrefHeight())  // Обновить top padding окна новым prefHeight
+    titleTable.invalidateHierarchy()
+    padTop(titleTable.getPrefHeight())
 }
 
-
+// Remove the square button background from the close (×) button; keep only the icon
+private fun VisWindow.transparentCloseButton() {
+    for (cell in getTitleTable().cells) {
+        val btn = cell.actor
+        if (btn is ImageButton) {
+            val orig = btn.style
+            val ns = ImageButton.ImageButtonStyle()
+            ns.imageUp   = orig.imageUp
+            ns.imageDown = orig.imageDown
+            ns.imageOver = orig.imageOver
+            btn.style = ns
+        }
+    }
+}

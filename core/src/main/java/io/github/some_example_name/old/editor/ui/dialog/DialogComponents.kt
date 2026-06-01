@@ -31,6 +31,8 @@ import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.screens.applyCustomFont
 import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
+import io.github.some_example_name.old.ui.screens.makeStyledSlider
+import io.github.some_example_name.old.ui.screens.makeStyledTextField
 
 val cellsType = arrayOf(
     "Leaf",
@@ -130,7 +132,7 @@ fun angleDirected(
     game.applyCustomFontMedium(volumeLabel)
     volumeLabel.setAlignment(Align.center)
 
-    val volumeSlider = VisSlider(-180f, 180f, 0.1f, false).apply {
+    val volumeSlider = makeStyledSlider(-180f, 180f, 0.1f, false).apply {
         disableScrollWhileDragging(scrollPane)
     }
     volumeSlider.value = angleAction
@@ -268,9 +270,10 @@ fun neuron(
     val aButtonTable = Table().apply {
         val aLabel = VisLabel("a")
         game.applyCustomFontMedium(aLabel)
-        val aTextField = VisTextField((action.a ?: 1f).toString())
-        game.applyCustomFont(aTextField)
-        aTextField.textFieldFilter = FloatDigitsOnlyFilter(true)
+        val aTextField = makeStyledTextField(game, mutableListOf()).also {
+            it.text = (action.a ?: 1f).toString()
+            it.textFieldFilter = FloatDigitsOnlyFilter(true)
+        }
         aTextField.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent, actor: Actor) {
                 val value = aTextField.text.toFloatOrNull() ?: 1.0f
@@ -285,9 +288,10 @@ fun neuron(
     val bButtonTable = Table().apply {
         val bLabel = VisLabel("b")
         game.applyCustomFontMedium(bLabel)
-        val bTextField = VisTextField((action.b ?: 0f).toString())
-        game.applyCustomFont(bTextField)
-        bTextField.textFieldFilter = FloatDigitsOnlyFilter(true)
+        val bTextField = makeStyledTextField(game, mutableListOf()).also {
+            it.text = (action.b ?: 0f).toString()
+            it.textFieldFilter = FloatDigitsOnlyFilter(true)
+        }
         bTextField.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent, actor: Actor) {
                 val value = bTextField.text.toFloatOrNull() ?: 0.0f
@@ -302,9 +306,10 @@ fun neuron(
     val cButtonTable = Table().apply {
         val cLabel = VisLabel("c")
         game.applyCustomFontMedium(cLabel)
-        val cTextField = VisTextField((action.c ?: 0f).toString())
-        game.applyCustomFont(cTextField)
-        cTextField.textFieldFilter = FloatDigitsOnlyFilter(true)
+        val cTextField = makeStyledTextField(game, mutableListOf()).also {
+            it.text = (action.c ?: 0f).toString()
+            it.textFieldFilter = FloatDigitsOnlyFilter(true)
+        }
         cTextField.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent, actor: Actor) {
                 val value = cTextField.text.toFloatOrNull() ?: 0.0f
@@ -341,7 +346,7 @@ fun eye(
     game.applyCustomFontMedium(volumeLabel)
     volumeLabel.setAlignment(Align.center)
 
-    val volumeSlider = VisSlider(25f, 1400f, 1f, false).apply {
+    val volumeSlider = makeStyledSlider(25f, 1400f, 1f, false).apply {
         disableScrollWhileDragging(scrollPane)
     }
     volumeSlider.value = distanceAction
@@ -439,12 +444,12 @@ fun eye(
     return table
 }
 
-fun controller(): VisTextField {
-    val controllerKey = VisTextField("1")
-    controllerKey.textFieldFilter = IntDigitsOnlyFilter(false)
-    controllerKey.maxLength = 1
-
-    return controllerKey
+fun controller(game: MyGame): VisTextField {
+    return makeStyledTextField(game, mutableListOf()).also {
+        it.text = "1"
+        it.textFieldFilter = IntDigitsOnlyFilter(false)
+        it.maxLength = 1
+    }
 }
 
 

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.scenes.scene2d.Event
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.utils.viewport.ScreenViewport
@@ -12,6 +13,7 @@ import com.kotcrab.vis.ui.widget.VisCheckBox
 import com.kotcrab.vis.ui.widget.VisCheckBox.VisCheckBoxStyle
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisSlider
+import io.github.some_example_name.old.ui.screens.makeStyledSlider
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
@@ -32,6 +34,7 @@ class SettingsScreen(
 ) : Screen {
 
     private lateinit var stage: Stage
+    private val extraTextures = mutableListOf<Texture>()
 
     override fun show() {
         stage = Stage(ScreenViewport())
@@ -43,12 +46,11 @@ class SettingsScreen(
         table.defaults().pad(10f)
         stage.addActor(table)
 
-        val density = Gdx.graphics.density  // Получаем density один раз
+        val density = Gdx.graphics.density
 
-        // Локальный стиль для чекбоксов (копия дефолтного)
         val checkBoxStyle = VisCheckBoxStyle(VisUI.getSkin().get("default", VisCheckBoxStyle::class.java))
         val checkBoxSize = if (Gdx.app.type == Application.ApplicationType.Android) 10f else 15f
-        checkBoxStyle.checkBackground.minWidth = checkBoxSize * density  // Размер квадрата в on/off
+        checkBoxStyle.checkBackground.minWidth  = checkBoxSize * density
         checkBoxStyle.checkBackground.minHeight = checkBoxSize * density
         checkBoxStyle.checkBackgroundOver?.minWidth = checkBoxSize * density
         checkBoxStyle.checkBackgroundOver?.minHeight = checkBoxSize * density
@@ -63,7 +65,7 @@ class SettingsScreen(
         // === MSAA слайдер ===
         val msaaLabel = VisLabel("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
         game.applyCustomFontMedium(msaaLabel)
-        val msaaSlider = VisSlider(1f, 8f, 1f, false/*, sliderStyle*/).apply {
+        val msaaSlider = makeStyledSlider(1f, 8f, 1f, false, extraTextures).apply {
             value = GlobalSettings.MSAA.toFloat()
             addListener { e ->
                 if (valueChanged(e)) {
@@ -115,7 +117,7 @@ class SettingsScreen(
         // === Громкость музыки ===
         val musicLabel = VisLabel("${bundle.get("label.music_volume")}: ${GlobalSettings.MUSIC_VOLUME}")
         game.applyCustomFontMedium(musicLabel)
-        val musicSlider = VisSlider(0f, 100f, 1f, false/*, sliderStyle*/).apply {
+        val musicSlider = makeStyledSlider(0f, 100f, 1f, false, extraTextures).apply {
             value = GlobalSettings.MUSIC_VOLUME.toFloat()
             addListener { e ->
                 if (valueChanged(e)) {
@@ -135,7 +137,7 @@ class SettingsScreen(
         // === Громкость звуков ===
         val soundLabel = VisLabel("${bundle.get("label.sound_volume")}: ${GlobalSettings.SOUND_VOLUME}")
         game.applyCustomFontMedium(soundLabel)
-        val soundSlider = VisSlider(0f, 100f, 1f, false/*, sliderStyle*/).apply {
+        val soundSlider = makeStyledSlider(0f, 100f, 1f, false, extraTextures).apply {
             value = GlobalSettings.SOUND_VOLUME.toFloat()
             addListener { e ->
                 if (valueChanged(e)) {
@@ -153,7 +155,7 @@ class SettingsScreen(
 
         val gridWidthLabel = VisLabel("World width: $GRID_WIDTH")
         game.applyCustomFontMedium(gridWidthLabel)
-        val gridWidthSlider = VisSlider(16f, 3440f, heightMultiplier.toFloat(), false).apply {
+        val gridWidthSlider = makeStyledSlider(16f, 3440f, heightMultiplier.toFloat(), false, extraTextures).apply {
             value = GRID_WIDTH.toFloat()
             addListener { e ->
                 if (valueChanged(e)) {
@@ -171,7 +173,7 @@ class SettingsScreen(
 
         val gridHeightLabel = VisLabel("World height: $GRID_HEIGHT")
         game.applyCustomFontMedium(gridHeightLabel)
-        val gridHeightSlider = VisSlider(16f, 3440f, heightMultiplier.toFloat(), false).apply {
+        val gridHeightSlider = makeStyledSlider(16f, 3440f, heightMultiplier.toFloat(), false, extraTextures).apply {
             value = GRID_HEIGHT.toFloat()
             addListener { e ->
                 if (valueChanged(e)) {
@@ -190,7 +192,7 @@ class SettingsScreen(
 
         val gravitationLabel = VisLabel("Gravitation: $GRAVITATION")
         game.applyCustomFontMedium(gravitationLabel)
-        val gravitationSlider = VisSlider(-0.1f, 0.1f, 0.01f, false).apply {
+        val gravitationSlider = makeStyledSlider(-0.1f, 0.1f, 0.01f, false, extraTextures).apply {
             value = GRAVITATION
             addListener { e ->
                 if (valueChanged(e)) {
@@ -206,9 +208,7 @@ class SettingsScreen(
         table.add(gravitationSlider).fillX()
         table.row()
 
-        // === Кнопка назад ===
-        val backButton = VisTextButton(bundle.get("button.back")).apply {
-            game.applyCustomFont(this)
+        val backButton = makeStyledButton(bundle.get("button.back"), game, extraTextures).apply {
             addListener { e ->
                 if (clicked(e)) {
                     game.screen = MenuScreen(game, multiPlatformFileProvider)
@@ -217,8 +217,8 @@ class SettingsScreen(
             }
         }
         table.add(backButton).colspan(2).center().padTop(30f)
-            .width(180f * density)   // ширина
-            .height(40f * density)   // высота
+            .width(Gdx.graphics.width * 0.20f)
+            .height(Gdx.graphics.height * 0.065f)
     }
 
     override fun render(delta: Float) {
@@ -239,6 +239,7 @@ class SettingsScreen(
     override fun hide() {}
     override fun dispose() {
         stage.dispose()
+        extraTextures.forEach { it.dispose() }
     }
 
     // Утилиты для читаемости

@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.Texture.TextureFilter
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
-import com.badlogic.gdx.scenes.scene2d.ui.Slider.SliderStyle
 import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.ScrollableTextArea
 import com.kotcrab.vis.ui.widget.VisCheckBox
@@ -31,6 +30,7 @@ import io.github.some_example_name.old.ui.screens.GlobalSettings.MUSIC_VOLUME
 import io.github.some_example_name.old.ui.screens.GlobalSettings.UI_SCALE
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.systems.render.ShaderManager
+import com.badlogic.gdx.video.VideoPlayer
 import kotlin.math.max
 
 interface KeyBoardListener {
@@ -43,7 +43,8 @@ var androidRendererFactory: (() -> ShaderManager)? = null
 class MyGame(
     val multiPlatformFileProvider: FileProvider,
     val openKeyBoardListener: KeyBoardListener? = null,
-    private val rendererFactory: (() -> ShaderManager)? = null
+    private val rendererFactory: (() -> ShaderManager)? = null,
+    val videoFactory: (() -> VideoPlayer)? = null
 ) : Game() {
 
     lateinit var pikSounds: List<Sound>
@@ -58,10 +59,11 @@ class MyGame(
     lateinit var currentMusic: Music
     private val trackQueue = mutableListOf<String>()
 
-    lateinit var extraLargeFont: BitmapFont  // Кастомный большой шрифт для передачи в экраны
-    lateinit var largeFont: BitmapFont  // Кастомный большой шрифт для передачи в экраны
-    lateinit var mediumFont: BitmapFont  // Кастомный большой шрифт для передачи в экраны
-    lateinit var smallFont: BitmapFont  // Кастомный большой шрифт для передачи в экраны
+    lateinit var titleFont: BitmapFont
+    lateinit var extraLargeFont: BitmapFont
+    lateinit var largeFont: BitmapFont
+    lateinit var mediumFont: BitmapFont
+    lateinit var smallFont: BitmapFont
 
     init {
         androidRendererFactory = rendererFactory
@@ -74,7 +76,7 @@ class MyGame(
         DIGenomeEditorContainer
 
         // Генерация шрифта с большим размером (адаптировано под DPI)
-        val generator = FreeTypeFontGenerator(Gdx.files.internal("fonts/Roboto-Regular.ttf"))
+        val generator = FreeTypeFontGenerator(Gdx.files.internal("fonts/Rubik-Regular.ttf"))
         val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
         parameter.genMipMaps = true
         parameter.minFilter = TextureFilter.MipMapLinearLinear
@@ -115,33 +117,15 @@ class MyGame(
             extraLargeFont.data.setScale(desiredExtraLargeSize.toFloat() / MIN_GEN_SIZE.toFloat())
         }
 
+        // Title font — large display size for the main menu logo
+        val desiredTitleSize = (64 * Gdx.graphics.density).toInt()
+        parameter.size = max(MIN_GEN_SIZE, desiredTitleSize)
+        titleFont = generator.generateFont(parameter)
+        if (desiredTitleSize < MIN_GEN_SIZE) {
+            titleFont.data.setScale(desiredTitleSize.toFloat() / MIN_GEN_SIZE.toFloat())
+        }
+
         generator.dispose()
-
-        val density = Gdx.graphics.density
-        val sliderStyle = SliderStyle(VisUI.getSkin().get("default-horizontal", SliderStyle::class.java))
-        sliderStyle.knob.minWidth = 10f * density  // Размер ручки (knob)
-        sliderStyle.knob.minHeight = 25f * density
-        sliderStyle.background.minHeight = 10f * density  // Высота фона ползунка
-        // Опционально: масштабируйте другие drawables, если нужно (knobDown, knobOver)
-        sliderStyle.knobDown?.minWidth = 10f * density
-        sliderStyle.knobDown?.minHeight = 25f * density
-        sliderStyle.knobOver?.minWidth = 10f * density
-        sliderStyle.knobOver?.minHeight = 25f * density
-
-        // Локальный стиль для чекбоксов (копия дефолтного)
-        val checkBoxStyle = VisCheckBoxStyle(VisUI.getSkin().get("default", VisCheckBoxStyle::class.java))
-        val checkBoxSize = if (Gdx.app.type == Application.ApplicationType.Android) 10f else 15f
-        checkBoxStyle.checkBackground.minWidth = checkBoxSize * density  // Размер квадрата в on/off
-        checkBoxStyle.checkBackground.minHeight = checkBoxSize * density
-        checkBoxStyle.checkBackgroundOver?.minWidth = checkBoxSize * density
-        checkBoxStyle.checkBackgroundOver?.minHeight = checkBoxSize * density
-        checkBoxStyle.checkBackgroundDown?.minWidth = checkBoxSize * density
-        checkBoxStyle.checkBackgroundDown?.minHeight = checkBoxSize * density
-        checkBoxStyle.tick.minWidth = checkBoxSize * density
-        checkBoxStyle.tick.minHeight = checkBoxSize * density
-        checkBoxStyle.tickDisabled?.minWidth = checkBoxSize * density
-        checkBoxStyle.tickDisabled?.minHeight = checkBoxSize * density
-        checkBoxStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) mediumFont else largeFont
 
         openKeyBoardListenerGlobal = openKeyBoardListener
         shuffleTracks()
@@ -184,6 +168,7 @@ class MyGame(
     override fun dispose() {
         currentMusic.dispose()
         screen.dispose()
+        titleFont.dispose()
         largeFont.dispose()
         mediumFont.dispose()
         smallFont.dispose()

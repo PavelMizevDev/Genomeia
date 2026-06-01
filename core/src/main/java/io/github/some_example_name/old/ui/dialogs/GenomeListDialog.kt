@@ -2,7 +2,9 @@ package io.github.some_example_name.old.ui.dialogs
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.scenes.scene2d.InputEvent
+import com.badlogic.gdx.scenes.scene2d.actions.Actions
 import com.badlogic.gdx.scenes.scene2d.ui.ButtonGroup
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
@@ -11,9 +13,9 @@ import com.kotcrab.vis.ui.widget.VisCheckBox
 import com.kotcrab.vis.ui.widget.VisDialog
 import com.kotcrab.vis.ui.widget.VisRadioButton
 import com.kotcrab.vis.ui.widget.VisTable
-import io.github.some_example_name.old.editor.ui.dialog.actionButton
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.screens.applyCustomFont
+import io.github.some_example_name.old.ui.screens.makeStyledButton
 
 class GenomeListDialog(
     val genomesList: List<String>,
@@ -30,8 +32,8 @@ class GenomeListDialog(
     val isMenu: Boolean
 ) : VisDialog(title) {
     var selectedIndex = selectedGenomeIndex ?: 0
-
     val scrollPane: ScrollPane
+    private val textures = mutableListOf<Texture>()
 
     init {
         isModal = true
@@ -42,29 +44,19 @@ class GenomeListDialog(
         setupTitleSize(game)
 
         setupUI(scrollContentTable)
-        // Оборачиваем в ScrollPane
         scrollPane = ScrollPane(scrollContentTable).apply {
-            setFadeScrollBars(false)      // полоска прокрутки всегда видна
+            setFadeScrollBars(false)
             setScrollingDisabled(false, false)
             setForceScroll(false, true)
             setFlickScroll(true)
             setOverscroll(false, true)
         }
 
-        // Добавляем ScrollPane в диалог с ограничением по высоте
-        contentTable.add(scrollPane)
-            .grow()  // растягиваем на доступное место
-            .maxHeight(Gdx.graphics.height * 0.8f)
-
+        contentTable.add(scrollPane).grow().maxHeight(Gdx.graphics.height * 0.8f)
         contentTable.row()
-
         closeOnEscape()
-
-        onResize.invoke {
-            centerWindow()
-        }
-
-        pack()  // Пересчитываем размеры после изменений
+        onResize.invoke { centerWindow() }
+        pack()
         centerWindow()
     }
 
@@ -130,53 +122,49 @@ class GenomeListDialog(
 
         scrollContentTable.add(content).pad(10f * density).row()
 
+        val btnH = Gdx.graphics.height * 0.055f
         val bottomButtonTable = VisTable()
+        bottomButtonTable.defaults().padRight(8f * density)
 
-        // Левое пространство (пустая ячейка)
-        bottomButtonTable.add().growX().uniformX()
-
-        actionButton(new, game) {
-            onNew.invoke()
-            fadeOut()
-        }.also {
-            game.applyCustomFont(it)
-            bottomButtonTable.add(it).padBottom(5f * density).padRight(8f * density)
+        makeStyledButton(new, game, textures).also {
+            it.addListener(object : ClickListener() {
+                override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                    onNew.invoke(); fadeOut()
+                }
+            })
+            bottomButtonTable.add(it).height(btnH)
         }
 
-        // Среднее пространство
-        bottomButtonTable.add().growX().uniformX()
-
-        actionButton(select, game) {
-            if (selectedIndex != -1) {
-                onNext.invoke(genomesList[selectedIndex])
-            }
-            fadeOut()
-        }.also {
-            game.applyCustomFont(it)
-            bottomButtonTable.add(it).padBottom(5f * density).padRight(if (Gdx.app.type == Application.ApplicationType.Android) 8f * density else 0f)
+        makeStyledButton(select, game, textures).also {
+            it.addListener(object : ClickListener() {
+                override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                    if (selectedIndex != -1) onNext.invoke(genomesList[selectedIndex])
+                    fadeOut()
+                }
+            })
+            bottomButtonTable.add(it).height(btnH)
         }
 
         if (Gdx.app.type == Application.ApplicationType.Android && isMenu) {
-            actionButton(import, game) {
-                game.multiPlatformFileProvider.importGenome { fileHandle ->
-                    onRestart.invoke()
-                    fadeOut()
-                }
-            }.also {
-                game.applyCustomFont(it)
-                bottomButtonTable.add(it).padBottom(5f * density)
+            makeStyledButton(import, game, textures).also {
+                it.addListener(object : ClickListener() {
+                    override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                        game.multiPlatformFileProvider.importGenome { _ -> onRestart.invoke(); fadeOut() }
+                    }
+                })
+                bottomButtonTable.add(it).height(btnH)
             }
         }
 
-        // Правое пространство
-        bottomButtonTable.add().growX().uniformX()
-
-        // Добавляем таблицу в родителя с растяжкой по ширине
-        scrollContentTable.add(bottomButtonTable).growX()
+        scrollContentTable.add(bottomButtonTable).center().padTop(8f * density)
     }
 
     override fun close() {
         super.close()
-        onResize.invoke { /* пустая лямбда, чтобы сбросить */ }
+        onResize.invoke {}
+        addAction(Actions.sequence(
+            Actions.delay(0.3f),
+            Actions.run { textures.forEach { it.dispose() }; textures.clear() }
+        ))
     }
 }

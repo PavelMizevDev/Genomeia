@@ -2,21 +2,26 @@ package io.github.some_example_name.old.ui.screens
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.kotcrab.vis.ui.util.TableUtils
-import com.kotcrab.vis.ui.widget.VisTable
-import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.ui.Label
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.badlogic.gdx.video.VideoPlayer
 import com.kotcrab.vis.ui.widget.VisLabel
+import com.kotcrab.vis.ui.widget.VisTable
 import io.github.some_example_name.old.core.DIGameGlobalContainer.bundle
-import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
-import io.github.some_example_name.old.ui.dialogs.GenomeListDialog
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.editor.ui.GenomeEditorScreen
+import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
+import io.github.some_example_name.old.ui.dialogs.GenomeListDialog
 
 class MenuScreen(
     private val game: MyGame,
@@ -24,146 +29,154 @@ class MenuScreen(
 ) : Screen {
 
     private val stage = Stage(ScreenViewport())
+    private val batch = SpriteBatch()
+    private val shape = ShapeRenderer()
+    private val cam   = OrthographicCamera()
+
+    private val video: VideoPlayer? = runCatching {
+        // Native decoder needs a real filesystem path, not a JAR entry.
+        // Extract once to ~/.local/share/genomeia/ and reuse.
+        val cacheFile = Gdx.files.absolute(
+            System.getProperty("user.home") + "/.local/share/genomeia/bg.webm"
+        )
+        if (!cacheFile.exists()) {
+            val src = Gdx.files.internal("ui/bg.webm")
+            if (!src.exists()) return@runCatching null
+            cacheFile.parent().mkdirs()
+            src.copyTo(cacheFile)
+        }
+        game.videoFactory?.invoke()?.also { p ->
+            p.play(cacheFile)
+            p.setOnCompletionListener { p.play(cacheFile) }
+        }
+    }.getOrNull()
+
+    private val extraTextures = mutableListOf<Texture>()
 
     val genomeJsonReader: GenomeJsonReader = GenomeJsonReader()
     var onResize: (() -> Unit)? = null
 
     init {
+        cam.setToOrtho(false, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
+
+        val w = Gdx.graphics.width.toFloat()
+        val h = Gdx.graphics.height.toFloat()
         val density = Gdx.graphics.density
+
         val table = VisTable()
-        TableUtils.setSpacingDefaults(table)
-//        table.defaults().minWidth(400f)  // Увеличьте для места под большой текст
-        table.columnDefaults(0).pad(10f * density)  // Больше отступов
         table.setFillParent(true)
+        table.left()
+        table.pad(0f, (w * 0.04f).coerceAtLeast(24f), 0f, 0f)
 
-        val genomeia = VisLabel(bundle.get("title.genomeia"))
-        game.applyCustomFont(genomeia)
-        genomeia.setAlignment(Align.center)
-        table.add(genomeia).fillX().padBottom(10f).row()
+        val titleLabel = VisLabel("GENOMEIA")
+        titleLabel.style = Label.LabelStyle(game.titleFont, Color(STYLE_BEIGE))
+        titleLabel.setAlignment(Align.left)
+        table.add(titleLabel).left().padBottom(h * 0.018f).row()
 
-        val emptyButton = VisTextButton(bundle.get("button.empty"))
-        emptyButton.pad(4f)
-        game.applyCustomFont(emptyButton)
-        table.add(emptyButton).fillX().height(30f * density).row()
-        emptyButton.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                val oldScreen = game.screen
-                game.screen =
-                    SimulationScreen(multiPlatformFileProvider, game, null, bundle, null) // Передаем map
-                oldScreen.dispose()
-//                game.screen = WorldEditorScreen(
-//                    multiPlatformFileProvider = multiPlatformFileProvider,
-//                    game = game,
-//                    bundle = bundle
-//                )
-            }
-        })
+        val btnW   = (w * 0.26f).coerceIn(180f * density, 520f * density)
+        val btnGap = (h * 0.012f).coerceAtLeast(6f * density)
 
-//        currentGenomeIndex = 0
-        val genomeEditorButton = VisTextButton(bundle.get("button.editor"))
-        genomeEditorButton.pad(4f)
-        game.applyCustomFont(genomeEditorButton)
-        table.add(genomeEditorButton).fillX().height(30f * density).row()
-        genomeEditorButton.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
+        data class Btn(val label: String, val action: () -> Unit)
+
+        val btns = listOf(
+            Btn(bundle.get("button.empty")) {
+                val old = game.screen
+                game.screen = SimulationScreen(multiPlatformFileProvider, game, null, bundle, null)
+                old.dispose()
+            },
+            Btn(bundle.get("button.editor")) {
                 val genomes = genomeJsonReader.getGenomeFileNamesFromFolder("user_genomes")
-
-                when (genomes.size) {
-                    0 -> {
-                        game.screen = GenomeEditorScreen(
-                            game = game,
-                            genomeName = null,
-                        )
-                    }
-                    else -> {
-                        GenomeListDialog(
-                            genomesList = genomes,
-                            selectedGenomeIndex = null,
-                            title = bundle.get("button.selectGenome"),
-                            new = bundle.get("button.new"),
-                            select = bundle.get("button.select"),
-                            import = bundle.get("button.import"),
-                            onNew = {
-                                game.screen = GenomeEditorScreen(
-                                    game = game,
-                                    genomeName = null
-                                )
-                            },
-                            onNext = { genomeName ->
-                                game.screen = GenomeEditorScreen(
-                                    game = game,
-                                    genomeName = genomeName
-                                )
-                            },
-                            onRestart = {
-
-                            },
-                            game = game,
-                            onResize = { handler ->
-                                onResize = if (handler == {}) null else handler
-                            },
-                             isMenu = true
-                        ).show(stage)
-                    }
+                if (genomes.isEmpty()) {
+                    game.screen = GenomeEditorScreen(game = game, genomeName = null)
+                } else {
+                    GenomeListDialog(
+                        genomesList = genomes, selectedGenomeIndex = null,
+                        title  = bundle.get("button.selectGenome"),
+                        new    = bundle.get("button.new"),
+                        select = bundle.get("button.select"),
+                        import = bundle.get("button.import"),
+                        onNew  = { game.screen = GenomeEditorScreen(game = game, genomeName = null) },
+                        onNext = { n -> game.screen = GenomeEditorScreen(game = game, genomeName = n) },
+                        onRestart = {},
+                        game = game,
+                        onResize = { h -> onResize = if (h == {}) null else h },
+                        isMenu = true
+                    ).show(stage)
                 }
-            }
-        })
-
-        val optionsButton = VisTextButton(bundle.get("button.options"))
-        optionsButton.pad(4f)
-        game.applyCustomFont(optionsButton)
-        table.add(optionsButton).fillX().height(30f * density).row()
-        optionsButton.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
+            },
+            Btn(bundle.get("button.options")) {
                 game.screen = SettingsScreen(game, multiPlatformFileProvider, bundle = bundle)
-            }
-        })
-
-        val substrateSettingsButton = VisTextButton(bundle.get("button.substrateSettings"))
-        substrateSettingsButton.pad(4f)
-        game.applyCustomFont(substrateSettingsButton)
-        table.add(substrateSettingsButton).fillX().height(30f * density).row()
-        substrateSettingsButton.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
+            },
+            Btn(bundle.get("button.substrateSettings")) {
                 game.screen = JsonEditorScreen(game, multiPlatformFileProvider, bundle = bundle)
-            }
-        })
+            },
+            Btn(bundle.get("button.exit")) { Gdx.app.exit() }
+        )
 
-        val exitButton = VisTextButton(bundle.get("button.exit"))
-        emptyButton.pad(4f)
-        game.applyCustomFont(exitButton)
-        table.add(exitButton).fillX().height(30f * density).row()
-        exitButton.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                Gdx.app.exit()
-            }
-        })
+        for (btn in btns) {
+            val b = makeStyledButton(btn.label, game, extraTextures)
+            val action = btn.action
+            b.addListener(object : ClickListener() {
+                override fun clicked(event: InputEvent, x: Float, y: Float) = action()
+            })
+            table.add(b).left().width(btnW).padBottom(btnGap).row()
+        }
 
         stage.addActor(table)
         Gdx.input.inputProcessor = stage
+    }
 
-        // Отладка: проверьте размер шрифта в логах
-        Gdx.app.log("FontDebug", "Menu font cap height: ${game.mediumFont.capHeight}")
+    private fun drawCover(tex: Texture, sw: Float, sh: Float) {
+        val scale = maxOf(sw / tex.width, sh / tex.height)
+        batch.draw(tex, (sw - tex.width * scale) / 2f, (sh - tex.height * scale) / 2f,
+            tex.width * scale, tex.height * scale)
     }
 
     override fun render(delta: Float) {
-        Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
+        video?.update()
+
+        Gdx.gl.glClearColor(0.04f, 0.04f, 0.06f, 1f)
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+        val w = Gdx.graphics.width.toFloat()
+        val h = Gdx.graphics.height.toFloat()
+
+        batch.projectionMatrix = cam.combined
+        batch.begin()
+        video?.texture?.let { drawCover(it, w, h) }
+        batch.end()
+
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shape.projectionMatrix = cam.combined
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        shape.rect(0f, 0f, w * 0.50f, h,
+            Color(0.04f, 0.04f, 0.06f, 0.90f), Color(0.04f, 0.04f, 0.06f, 0f),
+            Color(0.04f, 0.04f, 0.06f, 0f),    Color(0.04f, 0.04f, 0.06f, 0.90f))
+        shape.end()
+        Gdx.gl.glDisable(GL20.GL_BLEND)
+
         stage.act(delta)
         stage.draw()
     }
 
     override fun resize(width: Int, height: Int) {
-        if (width == 0 || height == 0) return  // Avoid divide-by-zero on minimize
+        if (width == 0 || height == 0) return
+        cam.setToOrtho(false, width.toFloat(), height.toFloat())
         stage.viewport.update(width, height, true)
         onResize?.invoke()
     }
 
-    override fun pause() {}
+    override fun pause()  {}
     override fun resume() {}
-    override fun show() {}
-    override fun hide() {}
+    override fun show()   {}
+    override fun hide()   { video?.pause() }
+
     override fun dispose() {
+        video?.dispose()
         stage.dispose()
+        batch.dispose()
+        shape.dispose()
+        extraTextures.forEach { it.dispose() }
     }
 }
