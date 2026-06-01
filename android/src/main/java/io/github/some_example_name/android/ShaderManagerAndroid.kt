@@ -513,7 +513,7 @@ class ShaderManagerAndroidApi : ShaderManager {
 
         GLES32.glUniformMatrix4fv(particleProjLoc, 1, false, cameraProjection.`val`, 0)
         GLES32.glUniform1f(particleTextureScaleLoc, 1.0f)
-        GLES32.glUniform1f(particleColorScaleLoc, /*if (usePostProcess) 0f else 0.5f*/1.0f)
+        GLES32.glUniform1f(particleColorScaleLoc, if (usePostProcess) 0f else 1.0f)
         GLES32.glUniform1i(particleTextureArrayLoc, 0)
 
         GLES32.glActiveTexture(GLES32.GL_TEXTURE0)

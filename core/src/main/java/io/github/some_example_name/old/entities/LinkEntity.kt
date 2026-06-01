@@ -109,8 +109,6 @@ class LinkEntity(
 
         if (linksLength > 0) {
             linkIndexMap.put(cellIndex, otherCellIndex, addLinkId)
-            cellEntity.addLink(cellIndex, addLinkId)
-            cellEntity.addLink(otherCellIndex, addLinkId)
         }
 
         return addLinkId
@@ -125,8 +123,6 @@ class LinkEntity(
 
             if (linksNaturalLength[linkIndex] > 0) {
                 linkIndexMap.remove(cellA, cellB)
-                cellEntity.deleteLinkedCellLink(cellA, linkIndex)
-                cellEntity.deleteLinkedCellLink(cellB, linkIndex)
             }
 
             if (isNeuronLink[linkIndex]) {

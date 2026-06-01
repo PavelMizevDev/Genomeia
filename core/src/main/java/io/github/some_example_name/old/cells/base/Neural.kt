@@ -22,7 +22,8 @@ val formulaType = arrayOf(
     "y = random(a, b)",
     "y = r(x)",
     "y = g(x)",
-    "y = b(x)"
+    "y = b(x)",
+    "y = energy"
 )
 
 fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
@@ -82,6 +83,10 @@ fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
 
         14 -> {
             ((x * 255f).toInt() * 65536).toFloat()
+        }
+
+        15 -> {
+            energy[cellIndex] / maxEnergy[cellIndex]
         }
 
         else -> x

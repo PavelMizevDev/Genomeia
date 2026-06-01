@@ -73,7 +73,7 @@ class RenderBufferManager(
                     val sinByte = ((cellEntity.angleSin[cellIndex] * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
 
                     val bRadius = ((((radius[i] * cellEntity.degreeOfShortening[cellIndex]) - 0.05f) / 0.7f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-                    val bEnergy = 0//((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bEnergy = ((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val bCell = cellEntity.cellType[cellIndex].toInt().coerceIn(0, 255)
 
                     back.packed1[bufIndex] = cosByte or (sinByte shl 8) or (bRadius shl 24)

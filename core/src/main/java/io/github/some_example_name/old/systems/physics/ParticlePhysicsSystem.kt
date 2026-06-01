@@ -141,76 +141,75 @@ class ParticlePhysicsSystem(
             }
 
             if (!isParticleAIsCell && !isParticleBIsCell) {
-//                if (subAIndex != -1 && subBIndex != -1) {
-                    //TODO вынести в SubManager
-                    val rA2 = radius[particleAId] * radius[particleAId]
-                    val rB2 = radius[particleBId] * radius[particleBId]
-                    val radiusSumSquared = rA2 + rB2
-                    if (radiusSumSquared < PARTICLE_MAX_RADIUS_SQUARED) {
+                //TODO вынести в SubManager
+                val rA2 = radius[particleAId] * radius[particleAId]
+                val rB2 = radius[particleBId] * radius[particleBId]
+                val radiusSumSquared = rA2 + rB2
+                if (radiusSumSquared < PARTICLE_MAX_RADIUS_SQUARED) {
 
-                        val maxRadius = maxOf(radius[particleAId], radius[particleBId])
-                        if (distance < maxRadius && isSub[particleAId] && isSub[particleBId]) {
-                            val subAIndex = holderEntityIndex[particleAId]
-                            val subBIndex = holderEntityIndex[particleBId]
-                            val radius = sqrt(radiusSumSquared)
-                            val deleteIndex = if (this.radius[particleAId] < this.radius[particleBId]) {
-                                this.radius[particleBId] = radius
-                                subAIndex
-                            } else {
-                                this.radius[particleAId] = radius
-                                subBIndex
-                            }
-
-                            worldCommandsManager.worldCommandBuffer[threadId].push(
-                                type = WorldCommandType.DELETE_SUBSTANCE,
-                                ints = intArrayOf(
-                                    deleteIndex,
-                                    substancesEntity.getGeneration(deleteIndex)
-                                )
-                            )
+                    val maxRadius = maxOf(radius[particleAId], radius[particleBId])
+                    if (distance < maxRadius && isSub[particleAId] && isSub[particleBId]) {
+                        val subAIndex = holderEntityIndex[particleAId]
+                        val subBIndex = holderEntityIndex[particleBId]
+                        val radius = sqrt(radiusSumSquared)
+                        val deleteIndex = if (this.radius[particleAId] < this.radius[particleBId]) {
+                            this.radius[particleBId] = radius
+                            subAIndex
                         } else {
-                            val force = 0.02f * rA2 * rB2 / distanceSquared
-                            val dirX = dx / distance
-                            val dirY = dy / distance
-                            val fx = force * dirX
-                            val fy = force * dirY
-                            vx[particleBId] += fx
-                            vy[particleBId] += fy
-                            vx[particleAId] -= fx
-                            vy[particleAId] -= fy
+                            this.radius[particleAId] = radius
+                            subBIndex
                         }
+
+                        worldCommandsManager.worldCommandBuffer[threadId].push(
+                            type = WorldCommandType.DELETE_SUBSTANCE,
+                            ints = intArrayOf(
+                                deleteIndex,
+                                substancesEntity.getGeneration(deleteIndex)
+                            )
+                        )
                     } else {
-
-                        val stiffness = 0.009f
-
-                        if (distanceSquared < 0) throw Exception("distanceSquared < 0, distanceSquared = $distanceSquared")
-
-                        val force = (distance - 0.35f) * stiffness
-
+                        val force = 0.02f * rA2 * rB2 / distanceSquared
                         val dirX = dx / distance
                         val dirY = dy / distance
-
-                        // Spring dampening
-                        val dvx = vx[particleAId] - vx[particleBId]
-                        val dvy = vy[particleAId] - vy[particleBId]
-
-                        val dampeningConstant = 0.3f
-                        val dampeningForce = dampeningConstant * (dvx * dirX + dvy * dirY)
-
-                        val cellStrengthAverage = 0.01f
-                        val forceRepulsion = cellStrengthAverage - cellStrengthAverage * distanceSquared / radiusSquared
-
-                        val fx = (force + dampeningForce - forceRepulsion) * dirX
-                        val fy = (force + dampeningForce - forceRepulsion) * dirY
-
+                        val fx = force * dirX
+                        val fy = force * dirY
                         vx[particleBId] += fx
                         vy[particleBId] += fy
                         vx[particleAId] -= fx
                         vy[particleAId] -= fy
                     }
+                } else {
 
-                    return@with
-//                }
+                    val stiffness = 0.009f
+
+                    if (distanceSquared < 0) throw Exception("distanceSquared < 0, distanceSquared = $distanceSquared")
+
+                    val force = (distance - 0.35f) * stiffness
+
+                    val dirX = dx / distance
+                    val dirY = dy / distance
+
+                    // Spring dampening
+                    val dvx = vx[particleAId] - vx[particleBId]
+                    val dvy = vy[particleAId] - vy[particleBId]
+
+                    val dampeningConstant = 0.3f
+                    val dampeningForce = dampeningConstant * (dvx * dirX + dvy * dirY)
+
+                    val cellStrengthAverage = 0.01f
+                    val forceRepulsion =
+                        cellStrengthAverage - cellStrengthAverage * distanceSquared / radiusSquared
+
+                    val fx = (force + dampeningForce - forceRepulsion) * dirX
+                    val fy = (force + dampeningForce - forceRepulsion) * dirY
+
+                    vx[particleBId] += fx
+                    vy[particleBId] += fy
+                    vx[particleAId] -= fx
+                    vy[particleAId] -= fy
+                }
+
+                return@with
             }
 
             if (isCollidable[particleAId] && isCollidable[particleBId]) {

@@ -336,7 +336,7 @@ class ShaderManagerLibgdxApi : ShaderManager {
         shader.setUniformMatrix("u_projTrans", cameraProjection)
 //        shader.setUniformi("u_currentBuffer", currentReadIndex)
         shader.setUniformf("u_textureScale", 1.0f)
-        shader.setUniformf("u_colorScale", if (usePostProcess) 1.0f else 1.0f)
+        shader.setUniformf("u_colorScale", if (usePostProcess) 0.0f else 1.0f)
         shader.setUniformi("u_textureArray", 0)
 
         Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0)

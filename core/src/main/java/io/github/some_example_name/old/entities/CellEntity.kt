@@ -115,45 +115,6 @@ class CellEntity(
         neuralIndexes[index] = neuralEntity.addNeural(cellType, a, b, c, isSum, activationFuncType)
     }
 
-    //TODO есть проблема, что при мутации и последующему удалени клетки, которая до этого была touchTrigger-ом элемент не удалится
-    val mapCellLinks = Int2ObjectOpenHashMap<IntArrayList>(1000)
-
-    fun addLink(cellIndex: Int, linkId: Int) {
-        val cell = cellList[cellType[cellIndex].toInt()]
-        if (cell is TouchTrigger) {
-            var list = mapCellLinks.get(cellIndex)
-
-            if (list == null) {
-                list = IntArrayList()
-                mapCellLinks.put(cellIndex, list)
-            }
-
-            list.add(linkId)
-        }
-    }
-
-    fun deleteLinkedCellLink(cellIndex: Int, linkId: Int) {
-        val cell = cellList[cellType[cellIndex].toInt()]
-        if (cell is TouchTrigger) {
-            val list = mapCellLinks.get(cellIndex) ?: return
-            val size = list.size
-
-            for (i in 0 until size) {
-                if (list.getInt(i) == linkId) {
-                    val lastIndex = size - 1
-                    if (i != lastIndex) {
-                        list.set(i, list.getInt(lastIndex))
-                    }
-                    list.removeInt(lastIndex)
-                    if (list.isEmpty()) {
-                        mapCellLinks.remove(cellIndex)
-                    }
-                    return
-                }
-            }
-        }
-    }
-
     fun addCell(
         x: Float,
         y: Float,
@@ -210,7 +171,6 @@ class CellEntity(
         this.cellType[cellIndex] = cellType.toByte()
         energy[cellIndex] = 0f
         maxEnergy[cellIndex] = cellsSettings[cellType].maxEnergy
-        mapCellLinks.put(cellIndex, IntArrayList())
         isOnEdge[cellIndex] = true
         this.degreeOfShortening[cellIndex] = 1f
         this.pheromoneType[cellIndex] = pheromoneType
@@ -266,7 +226,6 @@ class CellEntity(
         isOnEdge[cellIndex] = true
         this.degreeOfShortening[cellIndex] = 1f
         pheromoneType[cellIndex] = -1
-        mapCellLinks.remove(cellIndex)
 
         deleteNeural(cellIndex = cellIndex)
 
@@ -307,7 +266,6 @@ class CellEntity(
         isOnEdge.clear(true)
         degreeOfShortening.clear(1f)
         pheromoneType.clear(-1)
-        mapCellLinks.clear()
     }
 
     override fun onResize(oldMax: Int) {

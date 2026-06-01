@@ -13,11 +13,7 @@ class Punisher(cellTypeId: Int) : Cell(
         if (particleEntity.isCell[particleIndexCollided]) {
             val collidedCellIndex = particleEntity.holderEntityIndex[particleIndexCollided]
             val cell = cellList[cellType[collidedCellIndex].toInt()]
-            if (organIndex[cellIndex] != organIndex[collidedCellIndex] &&
-                cellType[collidedCellIndex].toInt() != -1 &&
-                cellType[collidedCellIndex].toInt() != 2 &&
-                cellType[collidedCellIndex].toInt() != 24
-            ) {
+            if (organIndex[cellIndex] != organIndex[collidedCellIndex] && cell !is Bone && cell !is Punisher) {
                 val maxEnergy = substrateSettings.cellsSettings[cellType[cellIndex].toInt()].maxEnergy
                 if (energy[cellIndex] >= maxEnergy) {
                     energy[cellIndex] -= maxEnergy

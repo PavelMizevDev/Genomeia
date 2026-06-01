@@ -4,7 +4,6 @@ precision highp sampler2DArray;
 
 in vec2 ex_Quad;
 flat in vec2 ex_Centroid;
-//flat in vec2 ex_Velocity;
 flat in vec3 ex_Color;
 flat in float ex_R;
 flat in float ex_R_2;
@@ -35,7 +34,6 @@ vec3 hsv2rgb(vec3 c) {
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-
 void main() {
     vec2 diff = ex_Quad - ex_Centroid;
     float dist2 = dot(diff, diff);
@@ -64,22 +62,27 @@ void main() {
     vec4 texColor = texture(u_textureArray, vec3(distortedUV, float(ex_cellType)));
 
     // === СМЕШИВАНИЕ С ЦВЕТОМ КЛЕТКИ ===
-    // vec3 finalColor = mix(texColor.rgb, ex_Color, u_colorScale);  // ← старое
-
     vec3 texHSV = rgb2hsv(texColor.rgb);
     vec3 targetHSV = rgb2hsv(ex_Color);
-
-    // Меняем только оттенок (hue) на цвет клетки.
-    // Насыщенность и яркость (включая тёмные контуры!) полностью остаются от текстуры.
     texHSV.x = targetHSV.x;
-
     vec3 tinted = hsv2rgb(texHSV);
 
-    // Если хочешь чуть мягче (чтобы текстура всё равно немного "просвечивала"):
-    vec3 finalColor = mix(texColor.rgb, tinted, u_colorScale);
+    vec3 finalColor = tinted/*mix(texColor.rgb, tinted, u_colorScale)*/;
 
-    // Или жёстко (полностью цвет клетки, но с сохранением всех деталей текстуры):
-    // vec3 finalColor = tinted;
+    // === ЧЕРНЫЙ КРУЖОЧЕК ===
+    float dist = length(diff);
+
+    float edgeWidth = ex_R * 0.018;
+    float energyRadius = max(ex_Energy, 0.0);
+
+    float energyMask = 1.0 - smoothstep(energyRadius, energyRadius + edgeWidth, dist);
+
+    // Полностью убираем даже точку при ex_Energy = 0
+    energyMask *= step(0.0001, ex_Energy);
+
+    float blackStrength = energyMask * u_colorScale;
+
+    finalColor = mix(finalColor, vec3(0.0), blackStrength);
 
     fragColor = vec4(finalColor, 1.0);
 

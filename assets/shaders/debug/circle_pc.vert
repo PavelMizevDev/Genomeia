@@ -50,7 +50,7 @@ void main() {
     float ay = v1.z;
 
     ex_R = 0.05 + v1.w * 0.7;
-    float energy   = v2.x * 10.0 * 0.0;
+    float energy   = v2.x * 0.5;
     int   cellType = int(round(v2.y * 255.0));
 
     vec2 worldPos = a_position * ex_R + curr.pos;
@@ -60,7 +60,7 @@ void main() {
     //    ex_Velocity = velocity;
     ex_Color = unpackUnorm4x8(curr.color).rgb;
     ex_R_2 = ex_R * ex_R;
-    ex_Energy = energy * energy * 0.0005;
+    ex_Energy = energy * energy;
     ex_UV = a_position * 0.5 + 0.5;   // -1..1 → 0..1
     ex_cellType = cellType;
 
