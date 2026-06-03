@@ -33,7 +33,7 @@ class MutateManager(
 ): Disposable {
 
     fun mutateCell(index: Int, threadId: Int) = with(cellEntity) {
-        //TODO очень легко запутсаться и потерять какие-то значения при мутации, нужно либо перепроверить, либо менять все параметры разом
+        //TODO очень легко запутсаться и потерять какие-то значения при мутации, нужно либо перепроверить, либо менять все параметры разом или сделать общий метод с addCell
         if (!isMutateInThisStage[index] && energy[index] >= energyNecessaryToMutate[index]) {
             isMutateInThisStage[index] = true
 
@@ -123,6 +123,7 @@ class MutateManager(
                     )
                 }
                 cellType[index] = it.toByte()
+                maxEnergy[index] = cellsSettings[it].maxEnergy
                 setDragCoefficient(index, substrateSettings.data.viscosityOfTheEnvironment)
                 setEffectOnContact(index, newCell.effectOnContact)
                 setIsCollidable(index, newCell.isCollidable)
@@ -137,10 +138,12 @@ class MutateManager(
             }
 
             if (isFromMuscleToAnother) {
-                //TODO придумать как выприямить все линки, если мышца превратиалсь в дргую клетку
+                degreeOfShortening[index] = 1f
             }
 
             action.color?.let { setColor(index, it.toIntBits()) }
+
+            action.radius?.let { setRadius(index, it) }
 
             if (lastCell.isNeural && newCell.isNeural) {
                 action.funActivation?.let { setActivationFuncType(index, it.toByte()) }

@@ -141,7 +141,9 @@ class WorldCommandsManager(
                             } else ints[1]
                             val parentOrganIndex = ints[3]
                             val parentIndex = ints[4]
-                            val organIndex = if (newCell is Zygote) -1 else parentOrganIndex
+                            val organIndex = if (newCell is Zygote) {
+                                if (isEditor) 0 else -1
+                            } else parentOrganIndex
 
                             val cellIndex = cellEntity.addCell(
                                 x = x,
@@ -213,14 +215,19 @@ class WorldCommandsManager(
                             userCommandManager.grabbedParticleIndex = -1
                             userCommandManager.isDragging = false
                         }
+
                         if (cellEntity.isAlive[cellIndex] && cellEntity.getGeneration(cellIndex) == cellGeneration) {
-                            substancesEntity.addSubstance(
+                            val x = cellEntity.getX(cellIndex)
+                            val y = cellEntity.getY(cellIndex)
+                            val newSubIndex = substancesEntity.addSubstance(
                                 x = cellEntity.getX(cellIndex),
                                 y = cellEntity.getY(cellIndex),
                                 color = Color.RED.toIntBits(),
-                                radius = 0.1f,
+                                radius = (0.03f * cellEntity.energy[cellIndex]).coerceIn(0.1f, 0.5f),
                                 subType = 0,
                             )
+                            pheromoneEntity.addPheromone(x, y, emitterIndex = substancesEntity.particleIndex[newSubIndex], type = 0)
+                            pheromoneEntity.addPheromone(x, y, emitterIndex = -1, type = 18, time = 0.3f)
                             organManager.cellDeleted(cellIndex)
                             cellEntity.deleteCell(cellIndex)
                             cellList[cellEntity.cellType[cellIndex].toInt()].onDie(cellIndex)
@@ -277,13 +284,14 @@ class WorldCommandsManager(
                         //TODO подумать все ли нормально будет с organIndexCellIdMapIndex
                     }
                     WorldCommandType.ADD_SUBSTANCE -> {
-                        substancesEntity.addSubstance(
+                        val newSubIndex = substancesEntity.addSubstance(
                             x = floats[0],
                             y = floats[1],
                             color = ints[0],
                             radius = floats[2],
                             subType = ints[1].toByte(),
                         )
+                        pheromoneEntity.addPheromone(x = floats[0], y = floats[1], emitterIndex = substancesEntity.particleIndex[newSubIndex], type = 0)
                     }
                     WorldCommandType.DELETE_SUBSTANCE -> {
                         substancesEntity.deleteSubstance(subIndex = ints[0], subGeneration = ints[1])

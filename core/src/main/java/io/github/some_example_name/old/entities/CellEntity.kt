@@ -1,15 +1,10 @@
 package io.github.some_example_name.old.entities
 
 import io.github.some_example_name.old.cells.Cell
-import io.github.some_example_name.old.cells.Muscle
-import io.github.some_example_name.old.cells.PheromoneEmitter
-import io.github.some_example_name.old.cells.TouchTrigger
 import io.github.some_example_name.old.core.DISimulationContainer.cellsSettings
 import io.github.some_example_name.old.core.SubstrateSettings
 import io.github.some_example_name.old.systems.genomics.genome.CellAction
 import io.github.some_example_name.old.systems.simulation.SimulationData
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
-import it.unimi.dsi.fastutil.ints.IntArrayList
 
 class CellEntity(
     cellsStartMaxAmount: Int,
@@ -40,12 +35,14 @@ class CellEntity(
     fun getCellStiffness(index: Int) = particleEntity.cellStiffness[particleIndexes[index]]
     fun setCellStiffness(index: Int, value: Float) { particleEntity.cellStiffness[particleIndexes[index]] = value }
     fun getRadius(index: Int) = particleEntity.radius[particleIndexes[index]]
-    fun seRadius(index: Int, value: Float) { particleEntity.radius[particleIndexes[index]] = value }
+    fun setRadius(index: Int, value: Float) { particleEntity.radius[particleIndexes[index]] = value }
     fun getGridId(index: Int) = particleEntity.gridId[particleIndexes[index]]
     fun seGridId(index: Int, value: Int) { particleEntity.gridId[particleIndexes[index]] = value }
     fun getSimTime(index: Int) = simulationData.timeSimulation
     fun getColor(index: Int) = particleEntity.color[particleIndexes[index]]
     fun setColor(index: Int, value: Int) { particleEntity.color[particleIndexes[index]] = value }
+    fun getIsPheromoneEmitter(index: Int) = particleEntity.isPheromoneEmitter[particleIndexes[index]]
+    fun setIsPheromoneEmitter(index: Int, value: Boolean) { particleEntity.isPheromoneEmitter[particleIndexes[index]] = value }
     var cellGenomeId = IntArray(maxAmount) { -1 }
     var cellActions: Array<CellAction?> = arrayOfNulls(maxAmount)
     var organIndex = IntArray(maxAmount) { -1 }
@@ -93,6 +90,11 @@ class CellEntity(
     fun deleteNeural(cellIndex: Int, neuralGeneration: Int? = null) {
         val neuralIndex = neuralIndexes[cellIndex]
         if (neuralIndex == -1) return
+
+        neuronImpulseInput[cellIndex] = 0f
+        neuronImpulseOutput[cellIndex] = 0f
+        isNeural[cellIndex] = false
+
         if (neuralEntity.isAlive[neuralIndex] && (neuralGeneration == null
                 || neuralEntity.getGeneration(neuralIndex) == neuralGeneration)) {
             neuralEntity.deleteNeural(neuralIndex)
@@ -151,7 +153,6 @@ class CellEntity(
             cellStiffness = cellsSettings[cellType].cellStiffness,
             isCell = true,
             isSub = false,
-            isPheromoneEmitter = cellList[cellType] is PheromoneEmitter,
             holderEntityIndex = cellIndex
         )
         this.cellGenomeId[cellIndex] = cellGenomeId

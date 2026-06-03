@@ -77,18 +77,24 @@ class LinkPhysicsSystem(
                     return@with
                 }
 
-                val naturalLength = linksNaturalLength[linkIndex]
-
-                if (naturalLength < 0) {
-                    cellSystem.transportNeuralSignal(linkIndex, linkCellA, linkCellB)
-                    return@with
-                }
-
                 val linkParticleA = getParticleIndex(linkCellA)
                 val linkParticleB = getParticleIndex(linkCellB)
 
                 val dx = x[linkParticleA] - x[linkParticleB]
                 val dy = y[linkParticleA] - y[linkParticleB]
+                val distanceSquared = dx * dx + dy * dy
+
+                if (isLongNeuralLink[linkIndex]) {
+                    if (distanceSquared > 16) {
+                        worldCommandsManager.worldCommandBuffer[threadId].push(
+                            type = WorldCommandType.DELETE_LINK,
+                            ints = intArrayOf(linkIndex, linkEntity.getGeneration(linkIndex))
+                        )
+                        return@with
+                    }
+                    cellSystem.transportNeuralSignal(linkIndex, linkCellA, linkCellB)
+                    return@with
+                }
 
                 cellSystem.transportEnergy(linkCellA, linkCellB)
                 cellSystem.transportNeuralSignal(linkIndex, linkCellA, linkCellB)
@@ -100,7 +106,6 @@ class LinkPhysicsSystem(
                 if (linkCellB == parentCellA) {
                     cellSystem.processCellAngle(linkCellA, linkCellB)
                 }
-                val distanceSquared = dx * dx + dy * dy
 
                 if (distanceSquared > linkMaxLength2) {
                     linkEntity.reinitParentLink(linkIndex)
@@ -126,7 +131,7 @@ class LinkPhysicsSystem(
                 val degreeOfShorteningB = degreeOfShortening[linkCellB]
                 val degreeOfShortening = 2 * degreeOfShorteningA * degreeOfShorteningB / (degreeOfShorteningA + degreeOfShorteningB)
 
-                val force = (dist - naturalLength * degreeOfShortening) * stiffness
+                val force = (dist - linksNaturalLength[linkIndex] * degreeOfShortening) * stiffness
 
                 val dirX = dx / dist
                 val dirY = dy / dist

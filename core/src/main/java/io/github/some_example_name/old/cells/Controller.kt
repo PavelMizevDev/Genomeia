@@ -8,7 +8,7 @@ class Controller(cellTypeId: Int): Cell(
     cellTypeId = cellTypeId,
     isNeural = true,
     isNeuronTransportable = false,
-    specialData = ControllerData::class
+//    specialData = ControllerData::class
 ) {
     //TODO PC: WASD ↑←↓→ 1234567890 (SPACE)
     //TODO smartphone: ↑←↓→ XYAB

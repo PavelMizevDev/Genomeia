@@ -188,10 +188,11 @@ class SettingsScreen(
         table.row()
 
 
-        val gravitationLabel = VisLabel("Gravitation: $GRAVITATION")
+
+        val gravitationLabel = VisLabel("Gravitation: ${GRAVITATION  * 100}")
         game.applyCustomFontMedium(gravitationLabel)
         val gravitationSlider = VisSlider(-0.1f, 0.1f, 0.01f, false).apply {
-            value = GRAVITATION
+            value = GRAVITATION * 100
             addListener { e ->
                 if (valueChanged(e)) {
                     GRAVITATION = round((value / 100f) * 10000f) / 10000f

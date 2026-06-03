@@ -31,7 +31,6 @@ class EditorRenderSystem(
     val cellEntity: CellEntity,
     val particleEntity: ParticleEntity,
     val editorSimulationSystem: EditorSimulationSystem,
-    val linkEntity: LinkEntity,
     val symmetryManager: SymmetryManager
 ) {
 
@@ -196,9 +195,9 @@ class EditorRenderSystem(
             }
         }
 
-        linkReplay.forEachInTick(nextStageTick) { isNeural, isLink1NeuralDirected, i, color ->
-            val cellA = linkEntity.links1[i]
-            val cellB = linkEntity.links2[i]
+        linkReplay.forEachInTick(nextStageTick) { isNeural, isLink1NeuralDirected, i, color, links1, links2 ->
+            val cellA = links1
+            val cellB = links2
 
             var isDrawLinkByDistance = true
             if (editorLogicSystem.grabbedCellIndex != -1) {

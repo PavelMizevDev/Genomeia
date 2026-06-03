@@ -11,14 +11,21 @@ class PheromoneEmitter(cellTypeId: Int) : Cell(
 
     override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
         val lastImpulse = specialEntity.getPheromoneEmitterLastImpulse(cellIndex)
-        if (lastImpulse > 0) return@with
-        val impulse = neuronImpulseOutput[cellIndex]
-        if (impulse <= 0) return@with
+        val currentImpulse = neuronImpulseOutput[cellIndex]
+        specialEntity.setPheromoneEmitterLastImpulse(cellIndex, currentImpulse)
 
-        worldCommandsManager.worldCommandBuffer[threadId].push(
-            type = WorldCommandType.ADD_PHEROMONE,
-            ints = intArrayOf(getParticleIndex(cellIndex), cellEntity.pheromoneType[cellIndex]),
-            floats = floatArrayOf(getX(cellIndex), getY(cellIndex))
-        )
+        if (lastImpulse <= 0 && currentImpulse > 0) {
+            worldCommandsManager.worldCommandBuffer[threadId].push(
+                type = WorldCommandType.ADD_PHEROMONE,
+                ints = intArrayOf(getParticleIndex(cellIndex), cellEntity.pheromoneType[cellIndex]),
+                floats = floatArrayOf(getX(cellIndex), getY(cellIndex))
+            )
+        }
+
+        if (currentImpulse > 0) {
+            setIsPheromoneEmitter(cellIndex, true)
+        } else {
+            setIsPheromoneEmitter(cellIndex, false)
+        }
     }
 }

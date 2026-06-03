@@ -220,7 +220,7 @@ class SubstrateSettings {
 
     fun getFileHandle(): FileHandle {
         val relativeFolderName = "settings"
-        val fileName = "GlobalSubstrateSettings.json"
+        val fileName = "GlobalSubstrateSettings-0.2.3.json"
 
         val saveDir: FileHandle = when (Gdx.app.type) {
             Application.ApplicationType.Desktop -> {

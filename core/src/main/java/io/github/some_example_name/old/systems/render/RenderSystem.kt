@@ -247,7 +247,6 @@ class RenderSystem(
             for (i in 0..<pheromoneBufferSize) {
                 shapeRenderer.circle(x[i], y[i], sqrt(radiusSquared[i]), 64)
             }
-            shapeRenderer.circle(32f, 32f, 10f, 64)
         }
         shapeRenderer.end()
     }

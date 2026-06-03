@@ -108,8 +108,9 @@ class ParticlePhysicsSystem(
 
             val isParticleAIsCell = isCell[particleAId]
             val isParticleBIsCell = isCell[particleBId]
-            if (isParticleAIsCell && isParticleBIsCell) {
-                if (linkEntity.linkIndexMap.get(holderEntityIndex[particleAId], holderEntityIndex[particleBId]) != -1) {
+            if (isParticleAIsCell && isParticleBIsCell ) {
+                val linkIndex = linkEntity.linkIndexMap.get(holderEntityIndex[particleAId], holderEntityIndex[particleBId])
+                if (linkIndex != -1 && !linkEntity.isLongNeuralLink[linkIndex]) {
                     return@with
                 }
             }

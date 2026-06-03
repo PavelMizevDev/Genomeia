@@ -120,7 +120,8 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         cellEntity = cellEntity,
         gridManager = gridManager,
         particleEntity = particleEntity,
-        this
+        diContext = this,
+        isEditor = true
     )
     override val substancesEntity = SubstancesEntity(
         startMaxAmount = 1,
@@ -274,7 +275,6 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         cellEntity = cellEntity,
         particleEntity = particleEntity,
         editorSimulationSystem = editorSimulationSystem,
-        linkEntity = linkEntity,
         symmetryManager = symmetryManager
     )
 

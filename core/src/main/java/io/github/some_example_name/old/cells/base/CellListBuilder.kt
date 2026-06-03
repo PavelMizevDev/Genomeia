@@ -22,7 +22,7 @@ class CellListBuilder(
         Tail(3),
         Neuron(4),
         Muscle(5),
-        Sensor(6),
+        FoodSensor(6),
         Sucker(7),
         Stem(8),
         Excreta(9),

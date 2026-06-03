@@ -1,25 +1,23 @@
 package io.github.some_example_name.old.cells
 
-import io.github.some_example_name.old.core.utils.blueColors
+import io.github.some_example_name.old.core.utils.purpleColors
 
-class PheromoneSensor(cellTypeId: Int) : Cell(
-    defaultColor = blueColors[2],
+class FoodSensor(cellTypeId: Int): Cell(
+    defaultColor = purpleColors.first(),
     cellTypeId = cellTypeId,
-    isNeural = true,
-    isNeuronTransportable = false
+    isNeuronTransportable = false,
+    isNeural = true
 ) {
 
     override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
+
         if (simulationData.tickCounter % 4 == cellIndex % 4) {
             var impulse = 0f
 
             val posX = cellEntity.getX(cellIndex)
             val posY = cellEntity.getY(cellIndex)
 
-            val pheromoneType = pheromoneType[cellIndex]
-
-            //TODO думаю это можно как-то оптимизировать через среднее арифметическое для каждой ячекйи 32*32
-            pheromonesManager.findAllPheromonesInPoint(posX, posY, pheromoneType) { pheromoneIndex ->
+            pheromonesManager.findAllPheromonesInPoint(posX, posY, 0) { pheromoneIndex ->
                 val dx = posX - pheromoneEntity.x[pheromoneIndex]
                 val dy = posY - pheromoneEntity.y[pheromoneIndex]
                 val distSq = dx * dx + dy * dy

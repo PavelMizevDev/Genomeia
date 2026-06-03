@@ -143,6 +143,11 @@ class RenderBufferManager(
             with(linkEntity) {
                 for (bufIndex in 0..<aliveList.size) {
                     val i = aliveList.getInt(bufIndex)
+                    val linkCellA = links1[i]
+                    val linkCellB = links2[i]
+                    val linkCellAIsDead = !cellEntity.isAlive[linkCellA] || cellEntity.getGeneration(linkCellA) != linksGeneration1[i]
+                    val linkCellBIsDead = !cellEntity.isAlive[linkCellB] || cellEntity.getGeneration(linkCellB) != linksGeneration2[i]
+                    if (linkCellAIsDead || linkCellBIsDead) continue
                     val particleAIndex = cellEntity.getParticleIndex(links1[i])
                     val particleBIndex = cellEntity.getParticleIndex(links2[i])
 

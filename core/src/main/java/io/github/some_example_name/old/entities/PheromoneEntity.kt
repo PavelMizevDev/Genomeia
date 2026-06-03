@@ -2,6 +2,7 @@ package io.github.some_example_name.old.entities
 
 import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.systems.pheromone.PheromonesManager.Companion.MAXIMUM_PHEROMONE_SPREAD_DIAMETER
+import io.github.some_example_name.old.systems.pheromone.getSquaredRadius
 import io.github.some_example_name.old.systems.physics.GridManager
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.ints.IntArrayList
@@ -46,18 +47,19 @@ class PheromoneEntity(
         return set.add(value)
     }
 
-    fun addPheromone(x: Float, y: Float, emitterIndex: Int, type: Int): Int? {
-        val exactKey = pack(x.toInt(), y.toInt())
-
-        val isFirstAdded = addUnique(type, exactKey, emitterIndex)
-        if (!isFirstAdded) return null
+    fun addPheromone(x: Float, y: Float, emitterIndex: Int, type: Int, time: Float = 0f): Int? {
+        if (emitterIndex != -1) {
+            val exactKey = pack(x.toInt(), y.toInt())
+            val isFirstAdded = addUnique(type, exactKey, emitterIndex)
+            if (!isFirstAdded) return null
+        }
 
         val newIndex = add()
 
         this.x[newIndex] = x
         this.y[newIndex] = y
-        this.time[newIndex] = 0f
-        this.radiusSquared[newIndex] = 0f
+        this.time[newIndex] = time
+        this.radiusSquared[newIndex] = getSquaredRadius(A = time)
         this.emitterIndex[newIndex] = emitterIndex
         this.type[newIndex] = type
 

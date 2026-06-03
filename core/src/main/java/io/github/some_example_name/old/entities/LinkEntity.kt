@@ -21,6 +21,7 @@ class LinkEntity(
     var isNeuronLink = BooleanArray(maxAmount)
     var isLink1NeuralDirected = BooleanArray(maxAmount)
     var isStickyLink = BooleanArray(maxAmount) { false }
+    var isLongNeuralLink = BooleanArray(maxAmount) { false }
     var color = IntArray(maxAmount)
     val linkIndexMap = UnorderedIntPairMap(1_000_000)
 
@@ -94,24 +95,24 @@ class LinkEntity(
         isLink1NeuralDirected: Boolean,
         color: Int
     ): Int {
-        val addLinkId = add()
+        val addLinkIndex = add()
 
-        links1[addLinkId] = cellIndex
-        links2[addLinkId] = otherCellIndex
-        linksGeneration1[addLinkId] = cellEntity.getGeneration(cellIndex)
-        linksGeneration2[addLinkId] = cellEntity.getGeneration(otherCellIndex)
+        links1[addLinkIndex] = cellIndex
+        links2[addLinkIndex] = otherCellIndex
+        linksGeneration1[addLinkIndex] = cellEntity.getGeneration(cellIndex)
+        linksGeneration2[addLinkIndex] = cellEntity.getGeneration(otherCellIndex)
 
-        this.linksNaturalLength[addLinkId] = linksLength
-        this.isNeuronLink[addLinkId] = isNeuronLink
-        this.isLink1NeuralDirected[addLinkId] = isLink1NeuralDirected
-        this.isStickyLink[addLinkId] = isStickyLink
-        this.color[addLinkId] = color
+        this.linksNaturalLength[addLinkIndex] = linksLength
+        this.isNeuronLink[addLinkIndex] = isNeuronLink
+        this.isLink1NeuralDirected[addLinkIndex] = isLink1NeuralDirected
+        this.isStickyLink[addLinkIndex] = isStickyLink
+        this.color[addLinkIndex] = color
 
-        if (linksLength > 0) {
-            linkIndexMap.put(cellIndex, otherCellIndex, addLinkId)
-        }
+        isLongNeuralLink[addLinkIndex] = linksLength <= 0
 
-        return addLinkId
+        linkIndexMap.put(cellIndex, otherCellIndex, addLinkIndex)
+
+        return addLinkIndex
     }
 
     fun deleteLink(linkIndex: Int, linkGeneration: Int? = null) {
@@ -121,9 +122,7 @@ class LinkEntity(
             val cellA = links1[linkIndex]
             val cellB = links2[linkIndex]
 
-            if (linksNaturalLength[linkIndex] > 0) {
-                linkIndexMap.remove(cellA, cellB)
-            }
+            linkIndexMap.remove(cellA, cellB)
 
             if (isNeuronLink[linkIndex]) {
                 val cellIndex = if (isLink1NeuralDirected[linkIndex]) cellA else cellB
@@ -140,6 +139,7 @@ class LinkEntity(
             isNeuronLink[linkIndex] = false
             isLink1NeuralDirected[linkIndex] = false
             isStickyLink[linkIndex] = false
+            isLongNeuralLink[linkIndex] = false
             color[linkIndex] = 0
         }
     }
@@ -190,6 +190,7 @@ class LinkEntity(
         isNeuronLink.clear(false)
         isLink1NeuralDirected.clear(false)
         isStickyLink.clear(false)
+        isLongNeuralLink.clear(false)
         color.clear()
         linkIndexMap.clear()
         linkPhase.clear(false)
@@ -206,6 +207,7 @@ class LinkEntity(
         isNeuronLink = isNeuronLink.resize(false)
         isLink1NeuralDirected = isLink1NeuralDirected.resize(false)
         isStickyLink = isStickyLink.resize(false)
+        isLongNeuralLink = isLongNeuralLink.resize(false)
         color = color.resize()
         linkPhase = linkPhase.resize(false)
         assignedThread = assignedThread.resize(-1)

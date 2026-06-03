@@ -15,6 +15,9 @@ class LinkReplay(
     var isLink1NeuralDirected = BooleanArray(startCapacity)
     var index = IntArray(startCapacity)
     var color = IntArray(startCapacity)
+    var isLongNeuralLink = BooleanArray(startCapacity)
+    var links1 = IntArray(startCapacity)
+    var links2 = IntArray(startCapacity)
 
     val replayCellsCounterInTick = IntArrayList(10)
     val tickStartIndices = IntArrayList(10)   // ← НОВОЕ: стартовые индексы для каждого тика
@@ -26,6 +29,9 @@ class LinkReplay(
             isLink1NeuralDirected = isLink1NeuralDirected.copyOf(newCapacity)
             index = index.copyOf(newCapacity)
             color = color.copyOf(newCapacity)
+            links1 = links1.copyOf(newCapacity)
+            links2 = links2.copyOf(newCapacity)
+            isLongNeuralLink = isLongNeuralLink.copyOf(newCapacity)
             capacity = newCapacity
         }
     }
@@ -50,11 +56,15 @@ class LinkReplay(
         System.arraycopy(linkEntity.isLink1NeuralDirected, 0, isLink1NeuralDirected, size, cellsAmount)
         linkEntity.aliveList.getElements(0, index, size, cellsAmount)
         System.arraycopy(linkEntity.color, 0, color, size, cellsAmount)
+        System.arraycopy(linkEntity.isLongNeuralLink, 0, isLongNeuralLink, size, cellsAmount)
+        System.arraycopy(linkEntity.links1, 0, links1, size, cellsAmount)
+        System.arraycopy(linkEntity.links2, 0, links2, size, cellsAmount)
+
 
         size += cellsAmount
     }
 
-    inline fun forEachInTick(tick: Int, action: (cellType: Boolean, index: Boolean, pos: Int, color: Int) -> Unit) {
+    inline fun forEachInTick(tick: Int, action: (cellType: Boolean, index: Boolean, pos: Int, color: Int, link1: Int, link2: Int) -> Unit) {
         if (tick < 0 || tick >= tickStartIndices.size) return
 
         val start = tickStartIndices.getInt(tick)
@@ -62,7 +72,7 @@ class LinkReplay(
         val end = start + count
 
         for (i in start until end) {
-            action(isNeuronLink[i], isLink1NeuralDirected[i], index[i], color[i])
+            action(isNeuronLink[i], isLink1NeuralDirected[i], index[i], color[i], links1[i], links2[i])
         }
     }
 
@@ -82,5 +92,37 @@ class LinkReplay(
         val pos = start + indexInTick
 
         return isNeuronLink[pos]
+    }
+
+    fun getIsLink1NeuralDirected(
+        tick: Int,
+        indexInTick: Int
+    ): Boolean? {
+        if (tick < 0 || tick >= tickStartIndices.size) return null
+
+        val start = tickStartIndices.getInt(tick)
+        val count = replayCellsCounterInTick.getInt(tick)
+
+        if (indexInTick < 0 || indexInTick >= count) return null
+
+        val pos = start + indexInTick
+
+        return isLink1NeuralDirected[pos]
+    }
+
+    fun getIsLongNeuralLink(
+        tick: Int,
+        indexInTick: Int
+    ): Boolean? {
+        if (tick < 0 || tick >= tickStartIndices.size) return null
+
+        val start = tickStartIndices.getInt(tick)
+        val count = replayCellsCounterInTick.getInt(tick)
+
+        if (indexInTick < 0 || indexInTick >= count) return null
+
+        val pos = start + indexInTick
+
+        return isLongNeuralLink[pos]
     }
 }

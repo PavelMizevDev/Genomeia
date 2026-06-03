@@ -430,13 +430,21 @@ class EditorLogicSystem(
 
                 val cellFrom = toEditorData(previousCtrlClicked)
                 val cellTo = toEditorData(clickedIndex)
-                val linkId = linkEntity.linkIndexMap.get(previousCtrlClicked, clickedIndex)
+                val linkIndex = linkEntity.linkIndexMap.get(previousCtrlClicked, clickedIndex)
 
                 val nextStageTick = editorSimulationSystem.tickByStage[(currentStage + 1).coerceIn(0, lastStage)]
 
-                val isNeural = if (linkId != -1) { linkReplay.getLinkIsNeural(nextStageTick, linkId) ?: false } else false
-                val parentId = cellFrom.id
-                val isNeuralPhantom = linkId == -1
+                val isNeural = if (linkIndex != -1) {
+                    linkReplay.getLinkIsNeural(nextStageTick, linkIndex) ?: throw Exception()
+                } else false
+
+                val isLink1NeuralDirected = if (linkIndex != -1) {
+                    linkReplay.getIsLink1NeuralDirected(nextStageTick, linkIndex) ?: throw Exception()
+                } else false
+
+                val isLongNeuralLink = if (linkIndex != -1) {
+                    linkReplay.getIsLongNeuralLink(nextStageTick, linkIndex) ?: throw Exception()
+                } else true
                 commandEditorStackManager.executeCommand(
                     command = AddNeuralLinkCommand(
                         currentStage = currentStage,
@@ -445,9 +453,12 @@ class EditorLogicSystem(
                         genomeStageInstruction = genomeStageInstruction,
                         doesNeedAddNewStage = genomeStageInstruction.size <= currentStage,
                         isNeural = isNeural,
-                        parentId = parentId,
-                        isNeuralPhantom = isNeuralPhantom,
-                        color = linkColor
+                        isLink1NeuralDirected = isLink1NeuralDirected,
+                        isLongNeuralLink = isLongNeuralLink,
+                        color = linkColor,
+                        linkId = linkIndex,
+                        cellAId = if (linkIndex != -1) { cellEntity.cellGenomeId[linkEntity.links1[linkIndex]] } else cellFrom.id,
+                        cellBId = if (linkIndex != -1) { cellEntity.cellGenomeId[linkEntity.links2[linkIndex]] } else cellTo.id
                     )
                 )
             }

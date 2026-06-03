@@ -52,6 +52,7 @@ class SimulationSystem(
 ) {
 
     private var simulationThread: Thread? = null
+    private var map: Array<BooleanArray>? = null
 
     fun startThread() {
         if (!threadManager.isRunning) {
@@ -149,6 +150,7 @@ class SimulationSystem(
     private fun restartSim() {
         dispose()
         simulationData.isRestart = false
+        initWorld(map)
     }
 
     fun getColor(random: Random): Int {
@@ -161,6 +163,7 @@ class SimulationSystem(
 //    fun getColor(random: Random) = leafColors[random.nextInt(6)].toIntBits()
 
     fun initWorld(map: Array<BooleanArray>?) {
+        this.map = map
         if (map == null) return
         val random = Random(3)
         for (y in 0 until map.size) {

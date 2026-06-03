@@ -5,6 +5,8 @@ import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.ParticleEntity
 import io.github.some_example_name.old.entities.PheromoneEntity
+import io.github.some_example_name.old.systems.pheromone.PheromonesManager.Companion.K
+import io.github.some_example_name.old.systems.pheromone.PheromonesManager.Companion.P
 
 class PheromonesManager(
     val pheromoneEntity: PheromoneEntity,
@@ -36,29 +38,43 @@ class PheromonesManager(
         aliveList.forEach { index ->
             val emitterIndex = emitterIndex[index]
 
-            val emitterX = particleEntity.x[emitterIndex].toInt()
-            val emitterY = particleEntity.y[emitterIndex].toInt()
-
-            val maxLevel = if (particleEntity.isCell[emitterIndex]) {
-                cellEntity.neuronImpulseOutput[particleEntity.holderEntityIndex[emitterIndex]]
-            } else 0.15f
-
-            if (emitterX == x[index].toInt() && emitterY == y[index].toInt() && maxLevel > 0) {
-                if (time[index] < maxLevel) {
-                    time[index] += 0.02f
-                    radiusSquared[index] = getSquaredRadius(A = time[index])
-                } else {
-                    time[index] -= 0.005f
-                    radiusSquared[index] = getSquaredRadius(A = time[index])
-                }
-            } else {
-                time[index] -= 0.005f
+            if (emitterIndex == -1) {
+                time[index] -= 0.0005f
                 radiusSquared[index] = getSquaredRadius(A = time[index])
                 if (time[index] <= 0) {
                     worldCommandsManager.worldCommandBuffer[0].push(
                         type = WorldCommandType.DELETE_PHEROMONE,
                         ints = intArrayOf(index, pheromoneEntity.getGeneration(index))
                     )
+                }
+            } else {
+                val emitterX = particleEntity.x[emitterIndex].toInt()
+                val emitterY = particleEntity.y[emitterIndex].toInt()
+
+                val maxLevel = if (particleEntity.isCell[emitterIndex]) {
+                    cellEntity.neuronImpulseOutput[particleEntity.holderEntityIndex[emitterIndex]]
+                } else 0.25f * particleEntity.radius[emitterIndex]
+
+                if (emitterX == x[index].toInt() && emitterY == y[index].toInt() && maxLevel > 0) {
+                    if (time[index] < maxLevel) {
+                        time[index] += 0.0005f
+                        if (time[index] > maxLevel) {
+                            time[index] = maxLevel
+                        }
+                        radiusSquared[index] = getSquaredRadius(A = time[index])
+                    } else if (time[index] > maxLevel) {
+                        time[index] -= 0.0005f
+                        radiusSquared[index] = getSquaredRadius(A = time[index])
+                    }
+                } else {
+                    time[index] -= 0.0005f
+                    radiusSquared[index] = getSquaredRadius(A = time[index])
+                    if (time[index] <= 0) {
+                        worldCommandsManager.worldCommandBuffer[0].push(
+                            type = WorldCommandType.DELETE_PHEROMONE,
+                            ints = intArrayOf(index, pheromoneEntity.getGeneration(index))
+                        )
+                    }
                 }
             }
         }
@@ -108,13 +124,6 @@ class PheromonesManager(
         return a / (1f + K * x)
     }
 
-    fun getSquaredRadius(
-        A: Float
-    ): Float {
-        if (A <= P) return 0f
-        return (A / P - 1f) / K
-    }
-
     companion object {
         //Maximum pheromone spread diameter
         const val MAXIMUM_PHEROMONE_SPREAD_DIAMETER = 32
@@ -122,4 +131,12 @@ class PheromonesManager(
         const val P = 0.01f
     }
 
+}
+
+
+fun getSquaredRadius(
+    A: Float
+): Float {
+    if (A <= P) return 0f
+    return (A / P - 1f) / K
 }
