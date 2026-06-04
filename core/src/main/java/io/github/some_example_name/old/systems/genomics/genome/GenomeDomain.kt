@@ -6,7 +6,7 @@ import com.badlogic.gdx.utils.JsonWriter
 import io.github.some_example_name.old.systems.simulation.SimulationData
 
 class GenomeManager(
-    val genomeJsonReader: GenomeJsonReader = GenomeJsonReader(),
+    val genomeJsonReader: GenomeJsonReader,
     val simulationData: SimulationData,
     val isGenomeEditor: Boolean,
     val genomeName: String?
