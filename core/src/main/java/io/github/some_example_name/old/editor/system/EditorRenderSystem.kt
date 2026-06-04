@@ -246,12 +246,14 @@ class EditorRenderSystem(
                 }
 
                 if (showPhysicalLink || isNeural) {
-                    shapeRenderer.line(
-                        particleEntity.x[cellB],
-                        particleEntity.y[cellB],
-                        particleEntity.x[cellA],
-                        particleEntity.y[cellA]
-                    )
+                    if (cellB != -1 && cellA != -1) {//TODO воспроизводится на N-2 от Абобы 05.06.26 (по идее безопасная проверка, ничего не ломает)
+                        shapeRenderer.line(
+                            particleEntity.x[cellB],
+                            particleEntity.y[cellB],
+                            particleEntity.x[cellA],
+                            particleEntity.y[cellA]
+                        )
+                    }
                 }
             }
         }

@@ -14,6 +14,7 @@ import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.cells.Controller
 import io.github.some_example_name.old.cells.Eye
 import io.github.some_example_name.old.cells.PheromoneEmitter
+import io.github.some_example_name.old.cells.PheromoneSensor
 import io.github.some_example_name.old.core.DIGenomeEditorContainer.cellList
 import io.github.some_example_name.old.systems.genomics.genome.Action
 import io.github.some_example_name.old.core.color_picker.ColorPicker
@@ -272,6 +273,6 @@ fun Int.isEye() = cellList[this] is Eye
 fun Int.isController() = cellList[this] is Controller
 fun Int.isDirected() = cellList[this].isDirected
 fun Int.isNeural() = cellList[this].isNeural
-fun Int.isPheromone() = cellList[this] is PheromoneEmitter || cellList[this] is PheromoneEmitter
+fun Int.isPheromone() = cellList[this] is PheromoneEmitter || cellList[this] is PheromoneSensor
 
 fun getCellColor(cellType: Int) = cellList[cellType].defaultColor

@@ -40,7 +40,7 @@ void main() {
     ex_Centroid = a_pos;
     ex_Color = unpackUnorm4x8(a_color).rgb;
     ex_R_2 = ex_R * ex_R;
-    ex_Energy = v2.x * 10.0 * 0.0;
+    ex_Energy = v2.x * v2.x * 0.25;
     ex_UV = a_position * 0.5 + 0.5;
     ex_cellType = cellType;
 
