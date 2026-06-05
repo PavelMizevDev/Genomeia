@@ -164,29 +164,29 @@ class SimulationSystem(
 
     fun initWorld(map: Array<BooleanArray>?) {
         this.map = map
-        if (map == null) return
         val random = Random(3)
-        for (y in 0 until map.size) {
-            for (x in 0 until map[y].size) {
+        if (map != null) {
+            for (y in 0 until map.size) {
+                for (x in 0 until map[y].size) {
 
-                val scalex = x.toFloat() / 1.5f
-                val scaley = y.toFloat() / 1.5f
-                if (x == 0 || x == map.size - 1 || y == 0 || y == map[y].size - 1) continue
-                if (map[y][x]) {
-                    if (scalex < GRID_WIDTH && scaley < GRID_HEIGHT) {
-                        particleEntity.addParticle(
-                            x = scalex,
-                            y = scaley,
-                            radius = 0.5f,
-                            color = getColor(random),
-                            isCell = false,
-                            isSub = false,
-                            holderEntityIndex = -1,
-                            dragCoefficient = 0.4f
-                        )
-                    }
+                    val scalex = x.toFloat() / 1.5f
+                    val scaley = y.toFloat() / 1.5f
+                    if (x == 0 || x == map.size - 1 || y == 0 || y == map[y].size - 1) continue
+                    if (map[y][x]) {
+                        if (scalex < GRID_WIDTH && scaley < GRID_HEIGHT) {
+                            particleEntity.addParticle(
+                                x = scalex,
+                                y = scaley,
+                                radius = 0.5f,
+                                color = getColor(random),
+                                isCell = false,
+                                isSub = false,
+                                holderEntityIndex = -1,
+                                dragCoefficient = 0.4f
+                            )
+                        }
 
-                } else {
+                    } else {
 //                    if (random.nextInt(60) == 1) {
 ////                        subManager.addCell(
 ////                            x * WorldEditorScreen.SCALE_FACTOR + WorldEditorScreen.OFFSET + random.nextDouble(-10.0, 10.0).toFloat(),
@@ -202,12 +202,10 @@ class SimulationSystem(
 //                            subType = 0.toByte(),
 //                        )
 //                    }
+                    }
                 }
             }
         }
-
-
-
         for (i in 1..<(GRID_WIDTH / 2 * 3)) {
             particleEntity.addParticle(
                 x = i.toFloat() / 1.5f,
