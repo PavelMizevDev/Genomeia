@@ -25,7 +25,6 @@ interface DIContext {
     val linkEntity: LinkEntity
     val substancesEntity: SubstancesEntity
     val specialEntity: SpecialEntity
-    val substrateSettings: SubstrateSettings
     val worldCommandsManager: WorldCommandsManager
     val organEntity: OrganEntity
     val genomeManager: GenomeManager

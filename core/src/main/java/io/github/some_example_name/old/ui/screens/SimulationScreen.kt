@@ -169,13 +169,13 @@ class SimulationScreen(
         }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            val zoomFactor = if (true) 1.005f else 0.95f
-            val newZoom = MathUtils.clamp(camera.zoom * zoomFactor, 0.001f, 1000f)
-
-            camera.zoom = newZoom
-            camera.update()
-        }
+//        if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
+//            val zoomFactor = if (true) 1.005f else 0.95f
+//            val newZoom = MathUtils.clamp(camera.zoom * zoomFactor, 0.001f, 1000f)
+//
+//            camera.zoom = newZoom
+//            camera.update()
+//        }
 
         shapeRenderer.projectionMatrix = camera.combined
 

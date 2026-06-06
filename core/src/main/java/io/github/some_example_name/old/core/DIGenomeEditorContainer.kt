@@ -5,6 +5,7 @@ import io.github.some_example_name.old.cells.base.CellListBuilder
 import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.core.DIGameGlobalContainer.genomeJsonReader
 import io.github.some_example_name.old.core.DIGameGlobalContainer.shaderManager
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.editor.commands.CommandEditorStackManager
 import io.github.some_example_name.old.editor.system.EditorLogicSystem
 import io.github.some_example_name.old.editor.system.EditorRenderSystem
@@ -56,7 +57,6 @@ object DIGenomeEditorContainer: DIContext, Disposable {
     val zygote = cellListBuilder.zygote
 
     val simulationData = SimulationData()
-    override val substrateSettings = SubstrateSettings()
 
     override val genomeManager = GenomeManager(
         genomeJsonReader = genomeJsonReader,

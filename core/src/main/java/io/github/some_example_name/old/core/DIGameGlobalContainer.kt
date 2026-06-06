@@ -37,4 +37,6 @@ object DIGameGlobalContainer {
     }
 
     val morphogenesis = Morphogenesis()
+
+    val substrateSettings = SubstrateSettings()
 }

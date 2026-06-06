@@ -8,6 +8,7 @@ import io.github.some_example_name.old.commands.UserCommandManager
 import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.core.DIGameGlobalContainer.genomeJsonReader
 import io.github.some_example_name.old.core.DIGameGlobalContainer.shaderManager
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.EyeEntity
 import io.github.some_example_name.old.entities.LinkEntity
@@ -55,7 +56,6 @@ object DISimulationContainer:  DIContext, Disposable {
     override var threadCount = (gridHeight / chunkHeight) / 2
     override var totalChunks = threadCount * 2
     override var chunkSize = gridSize / totalChunks
-    override val substrateSettings = SubstrateSettings()
 
     var energyTransportRate = substrateSettings.data.rateOfEnergyTransferInLinks
     var linkMaxLength2 = 3f * 3f
