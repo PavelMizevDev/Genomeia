@@ -1,11 +1,11 @@
 package io.github.some_example_name.old.entities
 
 import io.github.some_example_name.old.cells.Cell
-import io.github.some_example_name.old.cells.Controller
 import io.github.some_example_name.old.cells.ControllerData
 import io.github.some_example_name.old.cells.Eye
 import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.cells.Producer
+import io.github.some_example_name.old.cells.SpecialModData
 import io.github.some_example_name.old.cells.Tail
 
 class SpecialEntity(
@@ -110,12 +110,14 @@ class SpecialEntity(
         specialTypeIndexes[index] = pheromoneEmitterEntity.addPheromoneEmitter()
     }
 
+    fun getSpecialData(index: Int) = specialModDataEntity.specialModData[specialTypeIndexes[index]]
 
     fun addSpecial(
         cell: Cell,
         colorDifferentiation: Int = 7,
         visibilityRange: Float = 4.25f,
-        speed: Float = 0f
+        speed: Float = 0f,
+        specialModData: SpecialModData? = null
     ): Int {
         val cellIndex = add()
         when (cell) {
@@ -137,8 +139,9 @@ class SpecialEntity(
         }
 
         if (cell.doesItHasSpecialModData) {
-            specialTypeIndexes[cellIndex] = specialModDataEntity.addModData(ControllerData('a'))
-            //TODO додлетаь контроллер и вместе с ним додумать как сделать, универсальные данные для модов
+//            if (specialModData != null) {
+//                specialTypeIndexes[cellIndex] = specialModDataEntity.addModData(specialModData)
+//            }
         }
         return cellIndex
     }

@@ -144,8 +144,24 @@ class SimulationScreen(
         camera.update()
     }
 
+    val keyCodes = intArrayOf(
+        Input.Keys.NUM_0, Input.Keys.NUM_1, Input.Keys.NUM_2, Input.Keys.NUM_3,
+        Input.Keys.NUM_4, Input.Keys.NUM_5, Input.Keys.NUM_6, Input.Keys.NUM_7,
+        Input.Keys.NUM_8, Input.Keys.NUM_9,
+        Input.Keys.W, Input.Keys.A, Input.Keys.S, Input.Keys.D,
+        Input.Keys.SPACE,
+        Input.Keys.UP, Input.Keys.LEFT, Input.Keys.DOWN, Input.Keys.RIGHT
+    )
 
     override fun render(delta: Float) {
+        if (Gdx.app.type == Application.ApplicationType.Desktop) {
+            for (i in 0 until 19) {
+                simulationSystem.simulationData.controllerKeyTouched[i] =
+                    Gdx.input.isKeyPressed(keyCodes[i])
+            }
+        }
+
+
         if (usePostProcess) {
             Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1f)
         } else {
@@ -343,55 +359,41 @@ class SimulationScreen(
     //TODO сделать работу с UI в другом месте
     private fun rebuildMenu() {
         root.clear()
-
         root.top().left()
 
-        val menuButton =
-            VisTextButton(if (genomeName == null) bundle.get("button.menu") else bundle.get("button.backToEditor"))
+        val menuButton = VisTextButton(
+            if (genomeName == null) bundle.get("button.menu") else bundle.get("button.backToEditor")
+        )
         val putOrganismToggle = VisTextButton(bundle.get("button.putOrganism"), "toggle")
         putOrganismToggle.isChecked = putOrgs
+
         val selectGenomeButton = VisTextButton(bundle.get("button.selectGenome"))
         val speedUpSimToggle = VisTextButton(bundle.get("button.speedUp"))
         val pauseSimToggle = VisTextButton(bundle.get("button.pause"), "toggle")
         pauseSimToggle.isChecked = !simEntity.isPlay
         val restartSimulationButton = VisTextButton(bundle.get("button.restart"))
-//        val chooseColorButton = VisTextButton(bundle.get("button.chooseColor"))
+
         val drawRaysToggle = VisTextButton(bundle.get("button.drawRays"), "toggle")
         drawRaysToggle.isChecked = usePostProcess
-//        chooseColorButton.addListener(object : ClickListener() {
-//            override fun clicked(event: InputEvent, x: Float, y: Float) {
-//                // Открываем палитру цветов
-//                if (picker == null) {
-//                    picker = ColorPicker(
-//                        title = bundle.get("button.chooseColor"),
-//                        listener = object : ColorPickerAdapter() {
-//                            override fun finished(newColor: Color) {
-//                                simulationSystem.backgroundColor.set(newColor)  // Меняем цвет фона меню при выборе
-//                            }
-//                        },
-//                        game = game,
-//                        colorInit = simulationSystem.backgroundColor
-//                    )
-//                }
-//                picker?.setColor(simulationSystem.backgroundColor)  // Начальный цвет - текущий фон
-//                stage.addActor(picker?.fadeIn())  // Показываем диалог с анимацией
-//            }
-//        })
+
+        // === НОВАЯ TOGGLE-КНОПКА ===
+        val controllerKeysToggle = VisTextButton("Controller Keys", "toggle")
+        controllerKeysToggle.isChecked = simulationSystem.simulationData.showControllerKeys
 
         val buttons = if (genomeName == null) {
             listOf(
                 menuButton, putOrganismToggle, selectGenomeButton, speedUpSimToggle,
-                pauseSimToggle, restartSimulationButton/*, chooseColorButton*/, drawRaysToggle
+                pauseSimToggle, restartSimulationButton, drawRaysToggle, controllerKeysToggle
             )
         } else {
             listOf(
-                menuButton, putOrganismToggle, speedUpSimToggle, pauseSimToggle,
-                restartSimulationButton/*, chooseColorButton*/, drawRaysToggle
+                menuButton, putOrganismToggle, speedUpSimToggle,
+                pauseSimToggle, restartSimulationButton, drawRaysToggle, controllerKeysToggle
             )
         }
 
         val controls = Table()
-        controls.defaults().pad(8f * Gdx.graphics.density).left() // Pad 8f around each cell, align left
+        controls.defaults().pad(8f * Gdx.graphics.density).left()
 
         var currentWidth = 0f
         var rowTable = Table()
@@ -399,7 +401,7 @@ class SimulationScreen(
 
         for (button in buttons) {
             applyCustomFont(button)
-            val prefWidth = button.prefWidth + 16f * Gdx.graphics.density // Approximate with padding
+            val prefWidth = button.prefWidth + 16f * Gdx.graphics.density
             if (currentWidth + prefWidth > Gdx.graphics.width && currentWidth > 0f) {
                 controls.add(rowTable).growX().row()
                 rowTable = Table()
@@ -413,21 +415,278 @@ class SimulationScreen(
             controls.add(rowTable).growX()
         }
 
-        root.add(controls).growX().top().left()
+        root.add(controls).growX().top().left().row()
 
+        // === НОВАЯ КЛАВИАТУРА (3 строки) ===
+        if (simulationSystem.simulationData.showControllerKeys) {
+
+            val density = Gdx.graphics.density
+            val screenW = minOf(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
+
+            // Размеры кнопок
+            val keySize = screenW * 0.075f          // ~8.5% ширины экрана
+            val spaceSize = screenW * 0.38f         // ~38% ширины экрана
+
+            // === 1. ЦИФРЫ (0-9) — полноширинная строка под верхними кнопками ===
+            val numbersTable = Table()
+            numbersTable.defaults().pad(3f * density).width(keySize).height(keySize)
+
+            for (num in 0..9) {
+                val btn = VisTextButton(num.toString())
+                applyCustomFont(btn)
+
+                // === Слушатель для цифр ===
+                val index = num          // 0..9
+                btn.addListener(object : ClickListener() {
+                    override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                        simulationSystem.simulationData.controllerKeyTouched[index] = true
+                        return true
+                    }
+                    override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                        simulationSystem.simulationData.controllerKeyTouched[index] = false
+                    }
+                })
+                numbersTable.add(btn)
+            }
+            root.add(numbersTable).growX().top().left().padTop(8f * density).row()
+
+            // === Spacer, который выталкивает нижнюю клавиатуру вниз ===
+            root.add().growY().row()
+
+            // === 2. НИЖНЯЯ КЛАВИАТУРА (WASD + Space + стрелки) ===
+            val bottomKeyboard = Table()
+            bottomKeyboard.defaults().pad(4f * density).left()
+
+            // Строка 2: W                    ↑   (W над S, ↑ над ↓)
+            val row2 = Table()
+
+            // таблица занимает всю ширину
+            row2.defaults().height(keySize)
+
+            // Левая кнопка
+            val wBtn = VisTextButton("W=10")
+            applyCustomFont(wBtn)
+
+            wBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[10] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[10] = false
+                }
+            })
+
+            // Правая кнопка
+            val upBtn = VisTextButton("^=15")
+            applyCustomFont(upBtn)
+
+            upBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[15] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[15] = false
+                }
+            })
+
+            // Левая кнопка
+            row2.add(wBtn)
+                .padLeft(keySize + 8f * density)
+                .width(keySize)
+                .left()
+
+            // Пустое растягивающееся пространство
+            row2.add()
+                .growX()
+
+            // Правая кнопка
+            row2.add(upBtn)
+                .padRight(keySize + 8f * density)
+                .width(keySize)
+                .right()
+
+            bottomKeyboard.add(row2)
+                .growX()
+                .row()
+
+            // Строка 3: A S D   (SPACE)   ← ↓ →
+            val row3 = Table()
+            row3.defaults().pad(3f * density).height(keySize)
+
+// Левая группа -------------------------------------------------------------
+
+            val leftGroup = Table()
+            leftGroup.defaults().pad(3f * density).width(keySize).height(keySize)
+
+// A (индекс 11)
+            val aBtn = VisTextButton("A=11")
+            applyCustomFont(aBtn)
+
+            aBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[11] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[11] = false
+                }
+            })
+
+            leftGroup.add(aBtn)
+
+// S (индекс 12)
+            val sBtn = VisTextButton("S=12")
+            applyCustomFont(sBtn)
+
+            sBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[12] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[12] = false
+                }
+            })
+
+            leftGroup.add(sBtn)
+
+// D (индекс 13)
+            val dBtn = VisTextButton("D=13")
+            applyCustomFont(dBtn)
+
+            dBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[13] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[13] = false
+                }
+            })
+
+            leftGroup.add(dBtn)
+
+
+// Центральная кнопка -------------------------------------------------------
+
+            val spaceBtn = VisTextButton("(SPACE)=14")
+            applyCustomFont(spaceBtn)
+
+            spaceBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[14] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[14] = false
+                }
+            })
+
+
+// Правая группа ------------------------------------------------------------
+
+            val rightGroup = Table()
+            rightGroup.defaults().pad(3f * density).width(keySize).height(keySize)
+
+// ← (индекс 16)
+            val leftBtn = VisTextButton("<=16")
+            applyCustomFont(leftBtn)
+
+            leftBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[16] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[16] = false
+                }
+            })
+
+            rightGroup.add(leftBtn)
+
+// ↓ (индекс 17)
+            val downBtn = VisTextButton("v=17")
+            applyCustomFont(downBtn)
+
+            downBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[17] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[17] = false
+                }
+            })
+
+            rightGroup.add(downBtn)
+
+// → (индекс 18)
+            val rightBtn = VisTextButton(">=18")
+            applyCustomFont(rightBtn)
+
+            rightBtn.addListener(object : ClickListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    simulationSystem.simulationData.controllerKeyTouched[18] = true
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    simulationSystem.simulationData.controllerKeyTouched[18] = false
+                }
+            })
+
+            rightGroup.add(rightBtn)
+
+
+// Компоновка ---------------------------------------------------------------
+
+            row3.add(leftGroup).left().expandX()
+
+            row3.add(spaceBtn)
+                .width(spaceSize)
+                .center()
+
+            row3.add(rightGroup).right().expandX()
+
+            bottomKeyboard.add(row3).growX().row()
+
+            root.add(bottomKeyboard)
+                .growX()
+                .bottom()
+                .left()
+                .padBottom(30f * density)
+                .row()
+        }
+
+        // === Слушатели (Listeners) ===
+
+        controllerKeysToggle.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                simulationSystem.simulationData.showControllerKeys = controllerKeysToggle.isChecked
+                rebuildMenu() // перестраиваем меню, чтобы показать/скрыть клавиатуру
+            }
+        })
+
+        // ... остальные слушатели остаются без изменений ...
         speedUpSimToggle.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                SpeedUpDialog(
-                    game, bundle
-                ).show(stage)
+                SpeedUpDialog(game, bundle).show(stage)
             }
         })
 
         drawRaysToggle.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 usePostProcess = drawRaysToggle.isChecked
-//                playGround.drawRays = drawRaysToggle.isChecked
-//                simulationSystem.simEntity.drawRays = drawRaysToggle.isChecked
             }
         })
 

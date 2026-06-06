@@ -3,6 +3,8 @@ package io.github.some_example_name.old.commands
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.ControllerData
+import io.github.some_example_name.old.cells.SpecialModData
 import io.github.some_example_name.old.cells.Zygote
 import io.github.some_example_name.old.core.DIContext
 import io.github.some_example_name.old.core.SubstrateSettings
@@ -23,7 +25,6 @@ import io.github.some_example_name.old.systems.physics.GridManager
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import kotlin.collections.map
 import kotlin.math.sqrt
-import kotlin.random.Random
 
 class WorldCommandsManager(
     val gridManager: GridManager,
@@ -43,6 +44,8 @@ class WorldCommandsManager(
     val diContext: DIContext,
     val isEditor: Boolean
 ): WorldResizable, Disposable {
+
+    var worldCommandSpecialModDataBuffer = Array(diContext.threadCount) { mutableListOf<SpecialModData>() }
     var worldCommandBuffer = Array(diContext.threadCount) { WorldCommandBuffer() }
     var worldCommandSecondBuffer = Array(diContext.threadCount) { WorldCommandBuffer(100) }
     val worldCommandLastBuffer = WorldCommandBuffer(100)
@@ -145,6 +148,8 @@ class WorldCommandsManager(
                                 if (isEditor) 0 else -1
                             } else parentOrganIndex
 
+                            val specialModDataIndex = ints[8]
+
                             val cellIndex = cellEntity.addCell(
                                 x = x,
                                 y = y,
@@ -165,7 +170,8 @@ class WorldCommandsManager(
                                 c = floats[10],
                                 isSum = booleans[0],
                                 activationFuncType = ints[6].toByte(),
-                                pheromoneType = ints[7]
+                                pheromoneType = ints[7],
+                                specialModData = if (specialModDataIndex == -1) null else worldCommandSpecialModDataBuffer[threadId][specialModDataIndex]
                             )
 
                             //TODO сделать без алокаций

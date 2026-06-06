@@ -72,8 +72,9 @@ class JsonEditorScreen(
             }
         })
 
-        val buttonsTable = VisTable()
-        buttonsTable.defaults().pad(10f)
+        val buttonsTableGlobal = VisTable()
+        val buttonsTable1 = VisTable()
+        buttonsTable1.defaults().pad(10f)
 
         val saveButton = VisTextButton(bundle.get("button.save"))
         game.applyCustomFont(saveButton)
@@ -82,7 +83,7 @@ class JsonEditorScreen(
                 saveJson()
             }
         })
-        buttonsTable.add(saveButton).height(40f * Gdx.graphics.density)
+        buttonsTable1.add(saveButton).height(40f * Gdx.graphics.density)
 
         val resetButton = VisTextButton(bundle.get("button.reset"))
         game.applyCustomFont(resetButton)
@@ -91,7 +92,7 @@ class JsonEditorScreen(
                 resetToDefault()
             }
         })
-        buttonsTable.add(resetButton).height(40f * Gdx.graphics.density)
+        buttonsTable1.add(resetButton).height(40f * Gdx.graphics.density)
 
         val menuButton = VisTextButton(bundle.get("button.menu"))
         game.applyCustomFont(menuButton)
@@ -100,7 +101,7 @@ class JsonEditorScreen(
                 game.screen = MenuScreen(game, multiPlatformFileProvider)
             }
         })
-        buttonsTable.add(menuButton).height(40f * Gdx.graphics.density)
+        buttonsTable1.add(menuButton).height(40f * Gdx.graphics.density).row()
 
         val copyToClipboardButton = VisTextButton(bundle.get("button.copyToClipboard"))
         game.applyCustomFont(copyToClipboardButton)
@@ -109,10 +110,13 @@ class JsonEditorScreen(
                 Gdx.app.clipboard.contents = textArea.text
             }
         })
-        buttonsTable.add(copyToClipboardButton).height(40f * Gdx.graphics.density)
+
+        buttonsTableGlobal.add(buttonsTable1).row()
+
+        buttonsTableGlobal.add(copyToClipboardButton).height(40f * Gdx.graphics.density)
 
         loadJson()
-        table.add(buttonsTable).center()
+        table.add(buttonsTableGlobal).center()
         table.row()
         validateJson()
 

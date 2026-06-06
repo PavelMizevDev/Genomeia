@@ -70,7 +70,8 @@ class Producer(cellTypeId: Int): Cell(
                 parentIndex,
                 colorDifferentiation,
                 activationFuncType,
-                pheromoneType
+                pheromoneType,
+                -1 //mod data
             )
         )
 

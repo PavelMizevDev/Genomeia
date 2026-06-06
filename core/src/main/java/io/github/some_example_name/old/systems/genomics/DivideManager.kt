@@ -2,6 +2,8 @@ package io.github.some_example_name.old.systems.genomics
 
 import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.NonWorkingCell1
+import io.github.some_example_name.old.cells.ControllerData
 import io.github.some_example_name.old.commands.WorldCommandType
 import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.core.utils.collectParticles
@@ -84,6 +86,20 @@ class DivideManager(
                 val isMorphogenesis = false
                 val pheromoneType = action.pheromoneType ?: -1
 
+//                val cell = cellList[cellType]
+//                val specialModDataIndex = when(cell) {
+//                    is NonWorkingCell1 -> {
+//                        if (action.specialData?.attachedKey != null) {
+//                            worldCommandsManager.worldCommandSpecialModDataBuffer[threadId].add(
+//                                ControllerData(action.specialData.attachedKey)
+//                            )
+//                            worldCommandsManager.worldCommandSpecialModDataBuffer[threadId].size - 1
+//                        } else -1
+//                    }
+//                    else -> -1
+//                }
+
+
                 worldCommandsManager.worldCommandBuffer[threadId].push(
                     type = WorldCommandType.ADD_CELL,
                     booleans = booleanArrayOf(isSum, isMorphogenesis),
@@ -96,7 +112,9 @@ class DivideManager(
                         parentIndex,
                         colorDifferentiation,
                         activationFuncType,
-                        pheromoneType
+                        pheromoneType,
+                        -1
+//                        specialModDataIndex
                     )
                 )
 

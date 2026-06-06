@@ -39,7 +39,8 @@ class GenomeManager(
                                     angle = 0f,
                                     cellType = 0,
                                     physicalLink = hashMapOf(0 to LinkData(length = 0.6f)),
-                                    color = Color(0.133f, 0.545f, 0.133f, 1f)
+                                    color = Color(0.133f, 0.545f, 0.133f, 1f),
+                                    specialData = null
                                 )
                             )
                         )
@@ -119,7 +120,8 @@ data class Action(
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
     val lengthDirected: Float? = null,
-    val pheromoneType: Int? = null
+    val pheromoneType: Int? = null,
+    val specialData: SpecialData? = null
 ) {
     fun deepCopy(): Action {
         return Action(
@@ -137,7 +139,24 @@ data class Action(
             isSum = isSum,
             colorRecognition = colorRecognition,
             lengthDirected = lengthDirected,
-            pheromoneType = pheromoneType
+            pheromoneType = pheromoneType,
+            specialData = specialData?.deepCopy()
+        )
+    }
+
+    override fun toString(): String {
+        val json = Json().apply { setOutputType(JsonWriter.OutputType.json) }
+        return json.prettyPrint(this)
+    }
+}
+
+data class SpecialData(
+    val attachedKey: Char
+    //TODO сделать парсинг Json-а по другому, что бы не приходилось каждый пареметр вручную прописывать и что бы можно было распарсить любую структуру
+) {
+    fun deepCopy(): SpecialData {
+        return SpecialData(
+            attachedKey = attachedKey
         )
     }
 

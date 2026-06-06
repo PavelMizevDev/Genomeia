@@ -2,7 +2,7 @@ package io.github.some_example_name.old.commands
 
 enum class WorldCommandType(val intParamsCount: Int, val floatParamsCount: Int, val booleanParamsCount: Int) {
     ADD_CELL(
-        intParamsCount = 8,
+        intParamsCount = 9,
         floatParamsCount = 11,
         booleanParamsCount = 2
     ),
@@ -147,7 +147,7 @@ enum class WorldCommandType(val intParamsCount: Int, val floatParamsCount: Int, 
     );
 
     companion object {
-        const val MAX_INT_PARAMS = 8    // Максимум int на команду (покрывает все)
+        const val MAX_INT_PARAMS = 9    // Максимум int на команду (покрывает все)
         const val MAX_FLOAT_PARAMS = 11  // Максимум float
         const val MAX_BOOLEAN_PARAMS = 3 // Максимум boolean
     }

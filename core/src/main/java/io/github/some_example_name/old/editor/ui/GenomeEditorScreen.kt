@@ -138,7 +138,7 @@ class GenomeEditorScreen(
     }
 
     override fun render(delta: Float) {
-        Gdx.gl.glClearColor(0.50f, 0.62f, 0.64f, 1f)
+        Gdx.gl.glClearColor(0.10f, 0.12f, 0.14f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         if (state.currentTick != editorLogicSystem.currentTick || state.currentStage != editorLogicSystem.currentStage) {
             state.currentTick = editorLogicSystem.currentTick

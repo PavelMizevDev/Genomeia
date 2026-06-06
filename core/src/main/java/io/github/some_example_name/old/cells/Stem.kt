@@ -24,6 +24,51 @@ class Stem(cellTypeId: Int): Cell(
             var xPheromone = -1f
             var yPheromone = -1f
 
+//            pheromonesManager.findAllPheromonesInPoint(posX, posY, 18) { pheromoneIndex ->
+//                val dx = posX - pheromoneEntity.x[pheromoneIndex]
+//                val dy = posY - pheromoneEntity.y[pheromoneIndex]
+//                val distSq = dx * dx + dy * dy
+//
+//                val radiusSquared = pheromoneEntity.radiusSquared[pheromoneIndex]
+//
+//                if (distSq <= radiusSquared) {
+////                    setColor(cellIndex, Color.WHITE.toIntBits())
+////                    cellType[cellIndex] = 2
+////                    cellEntity.setCellStiffness(cellIndex, cellsSettings[2].cellStiffness)
+//                    degreeOfShortening[cellIndex] -= 0.01f
+//                    degreeOfShortening[cellIndex] = degreeOfShortening[cellIndex].coerceIn(0.6f, 1.0f)
+//                    return@with
+//                }
+//            }
+
+            pheromonesManager.findAllPheromonesInPoint(posX, posY, 0) { pheromoneIndex ->
+                val dx = posX - pheromoneEntity.x[pheromoneIndex]
+                val dy = posY - pheromoneEntity.y[pheromoneIndex]
+                val distSq = dx * dx + dy * dy
+
+                val radiusSquared = pheromoneEntity.radiusSquared[pheromoneIndex]
+
+                if (distSq <= radiusSquared) {
+//                    setColor(cellIndex, Color.WHITE.toIntBits())
+//                    cellType[cellIndex] = 2
+//                    cellEntity.setCellStiffness(cellIndex, cellsSettings[2].cellStiffness)
+                    degreeOfShortening[cellIndex] += 0.01f
+                    degreeOfShortening[cellIndex] = degreeOfShortening[cellIndex].coerceIn(1.0f, 1.5f)
+                    return@with
+                }
+            }
+
+            if (degreeOfShortening[cellIndex] < 1.0f) {
+                degreeOfShortening[cellIndex] += 0.005f
+            } else {
+                degreeOfShortening[cellIndex] -= 0.005f
+            }
+
+
+            degreeOfShortening[cellIndex] = degreeOfShortening[cellIndex].coerceIn(0.6f, 1.5f)
+
+            if (!isOnEdge[cellIndex]) return@with
+
             pheromonesManager.findAllPheromonesInPoint(posX, posY, 31) { pheromoneIndex ->
                 val dx = posX - pheromoneEntity.x[pheromoneIndex]
                 val dy = posY - pheromoneEntity.y[pheromoneIndex]
@@ -35,11 +80,9 @@ class Stem(cellTypeId: Int): Cell(
                     setColor(cellIndex, Color.WHITE.toIntBits())
                     cellType[cellIndex] = 2
                     cellEntity.setCellStiffness(cellIndex, cellsSettings[2].cellStiffness)
-                    return@with
+//                    return@with
                 }
             }
-
-            if (!isOnEdge[cellIndex]) return@with
 
 
             //TODO думаю это можно как-то оптимизировать через среднее арифметическое для каждой ячекйи 32*32
@@ -167,7 +210,8 @@ class Stem(cellTypeId: Int): Cell(
                     parentIndex,
                     colorDifferentiation,
                     activationFuncType,
-                    pheromoneType
+                    pheromoneType,
+                    -1 //mod data
                 )
             )
 

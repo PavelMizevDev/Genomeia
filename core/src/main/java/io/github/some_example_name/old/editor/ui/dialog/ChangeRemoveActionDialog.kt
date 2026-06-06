@@ -11,7 +11,7 @@ import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisSlider
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
-import io.github.some_example_name.old.cells.Controller
+import io.github.some_example_name.old.cells.NonWorkingCell1
 import io.github.some_example_name.old.cells.Eye
 import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.cells.PheromoneSensor
@@ -19,6 +19,7 @@ import io.github.some_example_name.old.core.DIGenomeEditorContainer.cellList
 import io.github.some_example_name.old.systems.genomics.genome.Action
 import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.editor.entities.EditorCell
+import io.github.some_example_name.old.systems.genomics.genome.SpecialData
 import io.github.some_example_name.old.systems.physics.ParticlePhysicsSystem.Companion.PARTICLE_MAX_RADIUS
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.dialogs.setupTitleSize
@@ -174,6 +175,17 @@ class ChangeRemoveActionDialog(
             }.also { scrollContentTable.add(it).row() }
         }
 
+
+        if (cellType.isController()){
+            controller(
+                action = divide,
+                game = game,
+                bundle = bundle
+            ) { key ->
+                divide = divide.copy(specialData = SpecialData(key))
+            }.also { scrollContentTable.add(it).row() }
+        }
+
         val radiusLabel = VisLabel("Radius: ${divide.radius ?: PARTICLE_MAX_RADIUS}")
         game.applyCustomFontMedium(radiusLabel)
         val radiusSlider = VisSlider(0.2f, 0.5f, 0.01f, false).apply {
@@ -266,11 +278,25 @@ class ChangeRemoveActionDialog(
                 )
             }
         }
+
+
+        when {
+            fromCellType.isController() && !toCellType.isController() -> {
+                divide = divide.copy(
+                    specialData = null
+                )
+            }
+            !fromCellType.isController() && toCellType.isController() -> {
+                divide = divide.copy(
+                    specialData = SpecialData('W')
+                )
+            }
+        }
     }
 }
 
 fun Int.isEye() = cellList[this] is Eye
-fun Int.isController() = cellList[this] is Controller
+fun Int.isController() = cellList[this] is NonWorkingCell1
 fun Int.isDirected() = cellList[this].isDirected
 fun Int.isNeural() = cellList[this].isNeural
 fun Int.isPheromone() = cellList[this] is PheromoneEmitter || cellList[this] is PheromoneSensor

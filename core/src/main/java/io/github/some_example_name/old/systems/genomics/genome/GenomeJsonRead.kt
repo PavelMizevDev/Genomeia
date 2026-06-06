@@ -38,7 +38,8 @@ class ActionJsonRead(
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
     val lengthDirected: Float? = null,
-    val pheromoneType: Int? = null
+    val pheromoneType: Int? = null,
+    val specialData: SpecialDataJsonRead? = null
 )
 
 class LinkDataJsonRead(
@@ -47,6 +48,10 @@ class LinkDataJsonRead(
     val weight: Float? = null,
     val color: String? = null,
     val directedNeuronLink: Int? = null
+)
+
+class SpecialDataJsonRead(
+    val attachedKey: Char
 )
 
 
@@ -132,7 +137,14 @@ private fun ActionJsonRead.toDomain(): Action {
         isSum = isSum,
         colorRecognition = colorRecognition,
         lengthDirected = lengthDirected?.div(40f),
-        pheromoneType = pheromoneType
+        pheromoneType = pheromoneType,
+        specialData = specialData?.toDomain()
+    )
+}
+
+private fun SpecialDataJsonRead.toDomain(): SpecialData {
+    return SpecialData(
+        attachedKey
     )
 }
 

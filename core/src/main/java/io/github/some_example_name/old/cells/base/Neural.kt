@@ -23,7 +23,8 @@ val formulaType = arrayOf(
     "y = r(x)",
     "y = g(x)",
     "y = b(x)",
-    "y = energy"
+    "y = energy",
+    "y = controller(a)"
 )
 
 fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
@@ -87,6 +88,10 @@ fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
 
         15 -> {
             energy[cellIndex] / maxEnergy[cellIndex]
+        }
+
+        16 -> {
+            if (simulationData.controllerKeyTouched[getA(cellIndex).toInt()]) 1f else 0f
         }
 
         else -> x

@@ -11,6 +11,7 @@ class Excreta(cellTypeId: Int): Cell(
 
     override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
         if(energy[cellIndex] < substrateSettings.data.amountOfFoodEnergy) return
+        if (neuronImpulseOutput[cellIndex] <= 0) return
 
         val directionX = angleCos[cellIndex] * 0.05f
         val directionY = angleSin[cellIndex] * 0.05f
@@ -18,7 +19,7 @@ class Excreta(cellTypeId: Int): Cell(
         val x = getX(cellIndex) + directionX
         val y = getY(cellIndex) + directionY
         val radius = 0.1f
-        val color = getColor(cellIndex)//Color.WHITE.toIntBits()
+        val color = getColor(cellIndex)
         val subType = 0
 
         worldCommandsManager.worldCommandBuffer[threadId].push(

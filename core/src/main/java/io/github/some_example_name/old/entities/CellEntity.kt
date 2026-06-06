@@ -1,6 +1,7 @@
 package io.github.some_example_name.old.entities
 
 import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.SpecialModData
 import io.github.some_example_name.old.core.DISimulationContainer.cellsSettings
 import io.github.some_example_name.old.core.SubstrateSettings
 import io.github.some_example_name.old.systems.genomics.genome.CellAction
@@ -139,6 +140,7 @@ class CellEntity(
         activationFuncType: Byte = 7,
         speed: Float = 0f,
         pheromoneType: Int = -1,
+        specialModData: SpecialModData? = null
     ): Int {
         val cellIndex = add()
 
@@ -190,7 +192,8 @@ class CellEntity(
             cell = cell,
             colorDifferentiation = colorDifferentiation,
             visibilityRange = visibilityRange,
-            speed = speed
+            speed = speed,
+            specialModData = specialModData
         )
 
         return cellIndex

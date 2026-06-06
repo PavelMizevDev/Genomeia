@@ -14,6 +14,7 @@ import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.systems.genomics.genome.Action
 import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.editor.entities.EditorCell
+import io.github.some_example_name.old.systems.genomics.genome.SpecialData
 import io.github.some_example_name.old.systems.physics.ParticlePhysicsSystem.Companion.PARTICLE_MAX_RADIUS
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.dialogs.setupTitleSize
@@ -178,6 +179,16 @@ class DivideActionDialog(
             }.also { scrollContentTable.add(it).row() }
         }
 
+        if (cellType.isController()){
+            controller(
+                action = divide,
+                game = game,
+                bundle = bundle
+            ) { key ->
+                divide = divide.copy(specialData = SpecialData(key))
+            }.also { scrollContentTable.add(it).row() }
+        }
+
         val radiusLabel = VisLabel("Radius: $PARTICLE_MAX_RADIUS")
         game.applyCustomFontMedium(radiusLabel)
         val radiusSlider = VisSlider(0.2f, 0.5f, 0.01f, false).apply {
@@ -266,6 +277,19 @@ class DivideActionDialog(
             !fromCellType.isPheromone() && toCellType.isPheromone() -> {
                 divide = divide.copy(
                     pheromoneType = 0,
+                )
+            }
+        }
+
+        when {
+            fromCellType.isController() && !toCellType.isController() -> {
+                divide = divide.copy(
+                    specialData = null
+                )
+            }
+            !fromCellType.isController() && toCellType.isController() -> {
+                divide = divide.copy(
+                    specialData = SpecialData('W')
                 )
             }
         }

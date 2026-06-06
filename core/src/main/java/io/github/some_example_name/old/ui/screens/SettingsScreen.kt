@@ -60,56 +60,56 @@ class SettingsScreen(
         checkBoxStyle.tickDisabled?.minHeight = checkBoxSize * density
         checkBoxStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) game.mediumFont else game.largeFont
 
-        // === MSAA слайдер ===
-        val msaaLabel = VisLabel("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
-        game.applyCustomFontMedium(msaaLabel)
-        val msaaSlider = VisSlider(1f, 8f, 1f, false/*, sliderStyle*/).apply {
-            value = GlobalSettings.MSAA.toFloat()
-            addListener { e ->
-                if (valueChanged(e)) {
-                    GlobalSettings.MSAA = value.toInt()
-                    msaaLabel.setText("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
-                }
-                false
-            }
-            invalidateHierarchy()  // Обновляем layout после изменений
-        }
-        table.add(msaaLabel).left()
-        table.row()
-        table.add(msaaSlider).fillX()
-        table.row()
+//        // === MSAA слайдер ===
+//        val msaaLabel = VisLabel("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
+//        game.applyCustomFontMedium(msaaLabel)
+//        val msaaSlider = VisSlider(1f, 8f, 1f, false/*, sliderStyle*/).apply {
+//            value = GlobalSettings.MSAA.toFloat()
+//            addListener { e ->
+//                if (valueChanged(e)) {
+//                    GlobalSettings.MSAA = value.toInt()
+//                    msaaLabel.setText("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
+//                }
+//                false
+//            }
+//            invalidateHierarchy()  // Обновляем layout после изменений
+//        }
+//        table.add(msaaLabel).left()
+//        table.row()
+//        table.add(msaaSlider).fillX()
+//        table.row()
 
-        val drawLinks = VisCheckBox(bundle.get("checkbox.draw_links"), checkBoxStyle).apply {
-            isChecked = GlobalSettings.DRAW_LINK_SHADER
-            addListener { e ->
-                if (changed(e)) GlobalSettings.DRAW_LINK_SHADER = isChecked
-                false
-            }
-        }
-        table.add(drawLinks).left()
-        table.row()
+//        val drawLinks = VisCheckBox(bundle.get("checkbox.draw_links"), checkBoxStyle).apply {
+//            isChecked = GlobalSettings.DRAW_LINK_SHADER
+//            addListener { e ->
+//                if (changed(e)) GlobalSettings.DRAW_LINK_SHADER = isChecked
+//                false
+//            }
+//        }
+//        table.add(drawLinks).left()
+//        table.row()
 
-        val saveDivision = VisCheckBox(bundle.get("checkbox.safe_division_mode"), checkBoxStyle).apply {
-            game.applyCustomFont(this)
-            isChecked = GlobalSettings.SAFE_DIVISION_MODE
-            addListener { e ->
-                if (changed(e)) GlobalSettings.SAFE_DIVISION_MODE = isChecked
-                false
-            }
-        }
-        table.add(saveDivision).left()
-        table.row()
+//        val saveDivision = VisCheckBox(bundle.get("checkbox.safe_division_mode"), checkBoxStyle).apply {
+//            game.applyCustomFont(this)
+//            isChecked = GlobalSettings.SAFE_DIVISION_MODE
+//            addListener { e ->
+//                if (changed(e)) GlobalSettings.SAFE_DIVISION_MODE = isChecked
+//                false
+//            }
+//        }
+//        table.add(saveDivision).left()
+//        table.row()
 
-        val hydroDragBox = VisCheckBox(bundle.get("checkbox.hydroDrag"), checkBoxStyle).apply {
-            game.applyCustomFont(this)
-            isChecked = GlobalSettings.HYDRODYNAMIC_DRAG
-            addListener { e ->
-                if (changed(e)) GlobalSettings.HYDRODYNAMIC_DRAG = isChecked
-                false
-            }
-        }
-        table.add(hydroDragBox).left()
-        table.row()
+//        val hydroDragBox = VisCheckBox(bundle.get("checkbox.hydroDrag"), checkBoxStyle).apply {
+//            game.applyCustomFont(this)
+//            isChecked = GlobalSettings.HYDRODYNAMIC_DRAG
+//            addListener { e ->
+//                if (changed(e)) GlobalSettings.HYDRODYNAMIC_DRAG = isChecked
+//                false
+//            }
+//        }
+//        table.add(hydroDragBox).left()
+//        table.row()
 
 
         // === Громкость музыки ===
@@ -257,7 +257,7 @@ object GlobalSettings {
     var DRAW_LINK_SHADER = true
     var HYDRO_ENABLED = false
     var HYDRO_VISUALIZATION = false
-    var MUSIC_VOLUME = 0
+    var MUSIC_VOLUME = 50
     var SOUND_VOLUME = 50
     var GRID_WIDTH = gridWidth
     var GRID_HEIGHT = gridHeight

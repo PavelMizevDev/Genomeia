@@ -45,7 +45,8 @@ class ActionJsonWrite(
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
     val lengthDirected: Float? = null,
-    val pheromoneType: Int? = null
+    val pheromoneType: Int? = null,
+    val specialData: SpecialDataJsonWrite? = null
 ): Json.Serializable {
 
     override fun write(json: Json) {
@@ -71,12 +72,25 @@ class ActionJsonWrite(
         if (colorRecognition != null) json.writeValue("colorRecognition", colorRecognition)
         if (lengthDirected != null) json.writeValue("lengthDirected", lengthDirected)
         if (pheromoneType != null) json.writeValue("pheromoneType", pheromoneType)
+        if (specialData != null) json.writeValue("specialData", specialData)
     }
 
     override fun read(json: Json, jsonData: JsonValue) {
 
     }
 
+}
+
+class SpecialDataJsonWrite(
+    val attachedKey: Char?
+): Json.Serializable {
+    override fun write(json: Json) {
+        if (attachedKey != null) json.writeValue("attachedKey", attachedKey) // всегда пишем
+    }
+
+    override fun read(json: Json, jsonData: JsonValue) {
+
+    }
 }
 
 class LinkDataJsonWrite(
@@ -138,7 +152,14 @@ private fun Action.toJson(): ActionJsonWrite {
         isSum = this.isSum,
         colorRecognition = this.colorRecognition,
         lengthDirected = this.lengthDirected?.times(40f),
-        pheromoneType = pheromoneType
+        pheromoneType = pheromoneType,
+        specialData = specialData?.toJson()
+    )
+}
+
+private fun SpecialData.toJson(): SpecialDataJsonWrite {
+    return SpecialDataJsonWrite(
+        attachedKey = this.attachedKey
     )
 }
 

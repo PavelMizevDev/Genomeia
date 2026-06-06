@@ -3153,7 +3153,7 @@
 			"class": "java.util.LinkedHashMap",
 			"364": {
 				"mutate": {
-					"cellType": 19,
+					"cellType": 0,
 					"physicalLink": {},
 					"colorHsv": "8a0000ff",
 					"angleDirected": 0,

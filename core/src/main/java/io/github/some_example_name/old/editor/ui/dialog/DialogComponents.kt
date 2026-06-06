@@ -413,12 +413,49 @@ fun eye(
     return table
 }
 
-fun controller(): VisTextField {
-    val controllerKey = VisTextField("1")
-    controllerKey.textFieldFilter = IntDigitsOnlyFilter(false)
-    controllerKey.maxLength = 1
+fun controller(
+    action: Action,
+    game: MyGame,
+    bundle: I18NBundle,
+    onKeyChange: (key: Char) -> Unit   // ← теперь возвращает Char
+): VisTable {
+    val density = Gdx.graphics.density
+    val table = VisTable()
 
-    return controllerKey
+    val label = VisLabel("Attached key")
+    game.applyCustomFontMedium(label)
+
+    // === Выбор клавиш WASD + стрелки + цифры + SPACE ===
+    val keyDisplays = arrayOf(
+        "W", "A", "S", "D",
+        "^", "<", "v", ">",
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+        "(SPACE)"
+    )
+
+    val selectBox = VisSelectBox<String>().apply {
+        this.items = Array(keyDisplays)
+         val current = action.specialData?.attachedKey ?: 'W'
+         val display = if (current == ' ') "(SPACE)" else current.toString()
+         selectedIndex = keyDisplays.indexOf(display).coerceAtLeast(0)
+
+        addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent, actor: Actor) {
+                val selectedStr = keyDisplays[selectedIndex]
+                val keyChar = if (selectedStr == "(SPACE)") ' ' else selectedStr[0]
+                onKeyChange(keyChar)   // ← возвращаем Char
+            }
+        })
+    }
+    game.applyCustomFont(selectBox)
+
+    table.add(label).align(Align.left).padBottom(8f * density).row()
+    table.add(selectBox)
+        .width(140f * density)
+        .height(38f * density)
+        .align(Align.left)
+
+    return table
 }
 
 
@@ -435,7 +472,14 @@ fun pheromone(
     game.applyCustomFontMedium(label)
 
     // Создаём список из 32 элементов (0..31)
-    val items = Array(32) { i -> i.toString() }
+    val items = Array(32) { i ->
+        when (i) {
+            0 -> "Food - p$i"
+            11 -> "Stem grow - p$i"
+            18 -> "Dead cell - p$i"
+            else -> "p$i"
+        }
+    }
 
     val selectBox = VisSelectBox<String>().apply {
         this.items = Array(items)
