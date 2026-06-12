@@ -130,9 +130,10 @@ class PheromoneEntity(
             emitterIndex[pheromoneIndex] = -1
             color[pheromoneIndex] = 0
             type[pheromoneIndex] = -1
-        } else {
+        }/* else {
+        //TODO я не помню зачем я это сделал
             throw Exception("Not deleted")
-        }
+        }*/
     }
 
     override fun onCopy() {
