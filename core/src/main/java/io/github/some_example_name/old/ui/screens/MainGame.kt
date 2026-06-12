@@ -253,6 +253,12 @@ fun MyGame.applyCustomFontMedium(label: VisLabel) {
     label.style = newStyle  // Устанавливаем стиль обратно
 }
 
+fun MyGame.applyCustomFontSmall(label: VisLabel) {
+    val newStyle = Label.LabelStyle(label.style)  // Копируем текущий стиль (используем стандартный LabelStyle из scene2d.ui)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.smallFont else this.mediumFont  // Применяем большой шрифт
+    label.style = newStyle  // Устанавливаем стиль обратно
+}
+
 fun MyGame.applyCustomFontMedium(label: Label) {
     val newStyle = Label.LabelStyle(label.style)  // Копируем текущий стиль (используем стандартный LabelStyle из scene2d.ui)
     newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont  // Применяем большой шрифт

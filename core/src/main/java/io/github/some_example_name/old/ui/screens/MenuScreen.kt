@@ -33,18 +33,23 @@ class MenuScreen(
         val table = VisTable()
         TableUtils.setSpacingDefaults(table)
 //        table.defaults().minWidth(400f)  // Увеличьте для места под большой текст
-        table.columnDefaults(0).pad(10f * density)  // Больше отступов
+//        table.columnDefaults(0)//.pad(10f * density)  // Больше отступов
         table.setFillParent(true)
 
         val genomeia = VisLabel(bundle.get("title.genomeia"))
         game.applyCustomFont(genomeia)
         genomeia.setAlignment(Align.center)
-        table.add(genomeia).fillX().padBottom(10f).row()
+        table.add(genomeia).fillX().pad(10f * density).row()
+
+        val buggy = VisLabel(bundle.get("title.buggy"))
+        game.applyCustomFontSmall(buggy)
+        buggy.setAlignment(Align.center)
+        table.add(buggy).fillX().padBottom(10f).row()
 
         val emptyButton = VisTextButton(bundle.get("button.empty"))
         emptyButton.pad(4f)
         game.applyCustomFont(emptyButton)
-        table.add(emptyButton).fillX().height(30f * density).row()
+        table.add(emptyButton).fillX().height(30f * density).pad(10f * density).row()
         emptyButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 val oldScreen = game.screen
@@ -62,7 +67,7 @@ class MenuScreen(
         val genomeEditorButton = VisTextButton(bundle.get("button.editor"))
         genomeEditorButton.pad(4f)
         game.applyCustomFont(genomeEditorButton)
-        table.add(genomeEditorButton).fillX().height(30f * density).row()
+        table.add(genomeEditorButton).fillX().height(30f * density).pad(10f * density).row()
         genomeEditorButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 val genomes = genomeJsonReader.getGenomeFileNamesFromFolder("user_genomes")
@@ -111,7 +116,7 @@ class MenuScreen(
         val optionsButton = VisTextButton(bundle.get("button.options"))
         optionsButton.pad(4f)
         game.applyCustomFont(optionsButton)
-        table.add(optionsButton).fillX().height(30f * density).row()
+        table.add(optionsButton).fillX().height(30f * density).pad(10f * density).row()
         optionsButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 game.screen = SettingsScreen(game, multiPlatformFileProvider, bundle = bundle)
@@ -121,22 +126,37 @@ class MenuScreen(
         val substrateSettingsButton = VisTextButton(bundle.get("button.substrateSettings"))
         substrateSettingsButton.pad(4f)
         game.applyCustomFont(substrateSettingsButton)
-        table.add(substrateSettingsButton).fillX().height(30f * density).row()
+        table.add(substrateSettingsButton).fillX().height(30f * density).pad(10f * density).row()
         substrateSettingsButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 game.screen = JsonEditorScreen(game, multiPlatformFileProvider, bundle = bundle)
             }
         })
 
+        val supportBtn = VisTextButton(bundle.get("label.support"))
+        supportBtn.pad(4f)
+        game.applyCustomFont(supportBtn)
+        table.add(supportBtn).fillX().height(30f * density).pad(10f * density).row()
+        supportBtn.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                game.setScreen(SupportScreen(game, multiPlatformFileProvider))
+            }
+        })
+
         val exitButton = VisTextButton(bundle.get("button.exit"))
         emptyButton.pad(4f)
         game.applyCustomFont(exitButton)
-        table.add(exitButton).fillX().height(30f * density).row()
+        table.add(exitButton).fillX().height(30f * density).pad(10f * density).row()
         exitButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 Gdx.app.exit()
             }
         })
+
+        val guideSoon = VisLabel(bundle.get("title.guideSoon"))
+        game.applyCustomFontMedium(guideSoon)
+        guideSoon.setAlignment(Align.center)
+        table.add(guideSoon).fillX().padBottom(10f).row()
 
         stage.addActor(table)
         Gdx.input.inputProcessor = stage

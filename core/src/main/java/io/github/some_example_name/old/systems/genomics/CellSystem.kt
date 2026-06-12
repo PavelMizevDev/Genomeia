@@ -58,7 +58,7 @@ class CellSystem(
         val isNeural = isNeural[cellIndex]
 
         if (neuronImpulseInput[cellIndex].isNaN() || neuronImpulseOutput[cellIndex].isNaN()) {
-            throw Exception("neuronImpulseInput $cellIndex is Nan ${cellList[cellType[cellIndex].toInt()].name}")
+            throw Exception("neuronImpulseInput $cellIndex is Nan ${cellList[cellType[cellIndex].toInt()].name} ${neuronImpulseInput[cellIndex]} ${neuronImpulseOutput[cellIndex]}")
         }
 
         if (isNeural) {

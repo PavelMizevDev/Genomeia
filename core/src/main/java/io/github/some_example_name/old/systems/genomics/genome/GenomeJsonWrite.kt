@@ -55,9 +55,7 @@ class ActionJsonWrite(
         if (cellType != null) json.writeValue("cellType", cellType)
         json.writeObjectStart("physicalLink")
         for ((key, value) in physicalLink) {
-            if (value != null) {
-                json.writeValue(key, value) // value реализует Serializable, так что запишется как объект
-            }
+            json.writeValue(key, value)
         }
         json.writeObjectEnd()
         if (color != null) json.writeValue("colorHsv", color.toString())

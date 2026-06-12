@@ -206,8 +206,11 @@ fun neuron(
     buttonGroup.add(additionCheckBox)
     buttonGroup.add(multiplicationCheckBox)
 
-    additionCheckBox.isChecked = action.isSum ?: true
-    multiplicationCheckBox.isChecked = action.isSum != true
+    //TODO почему-то в каких-то частных случаях приходит null, но обычно не null
+    val isSum = action.isSum ?: true
+
+    additionCheckBox.isChecked = isSum
+    multiplicationCheckBox.isChecked = !isSum
 
     additionCheckBox.addListener(object : ChangeListener() {
         override fun changed(event: ChangeEvent, actor: Actor) {

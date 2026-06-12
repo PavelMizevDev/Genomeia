@@ -195,7 +195,7 @@ class EditorRenderSystem(
             }
         }
 
-        linkReplay.forEachInTick(nextStageTick) { isNeural, isLink1NeuralDirected, i, color, links1, links2 ->
+        linkReplay.forEachInTick(nextStageTick) { isNeural, isLink1NeuralDirected, color, links1, links2, isLongNeuralLink ->
             val cellA = links1
             val cellB = links2
 
@@ -246,14 +246,12 @@ class EditorRenderSystem(
                 }
 
                 if (showPhysicalLink || isNeural) {
-                    if (cellB != -1 && cellA != -1) {//TODO воспроизводится на N-2 от Абобы 05.06.26 (по идее безопасная проверка, ничего не ломает)
-                        shapeRenderer.line(
-                            particleEntity.x[cellB],
-                            particleEntity.y[cellB],
-                            particleEntity.x[cellA],
-                            particleEntity.y[cellA]
-                        )
-                    }
+                    shapeRenderer.line(
+                        particleEntity.x[cellB],
+                        particleEntity.y[cellB],
+                        particleEntity.x[cellA],
+                        particleEntity.y[cellA]
+                    )
                 }
             }
         }

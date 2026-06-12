@@ -27,7 +27,6 @@ class GenomeJsonReader() {
     }
 
     init {
-        //TODO перед чтением всех json-ов проверить наличие .bin, перевести их в json-ы и удалить
         json.setOutputType(JsonWriter.OutputType.json)
         json.setUsePrototypes(false)
     }

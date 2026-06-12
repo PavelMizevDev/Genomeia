@@ -165,9 +165,21 @@ class AddNeuralLinkCommand(
                         }
                         else -> {
                             current.also {
-                                it.mutate?.physicalLink?.compute(otherCellId) { _, old ->
-                                    if (old == null) return@compute linkData
-                                    null
+                                if (linkData != null) {
+                                    it.mutate?.physicalLink?.compute(otherCellId) { _, old ->
+                                        if (old == null) {
+                                            return@compute linkData
+                                        }
+                                        null
+                                    }
+                                } else {
+                                    it.mutate?.physicalLink?.let { map ->
+                                        if (!map.containsKey(otherCellId)) {
+                                            map[otherCellId] = linkData
+                                        } else {
+                                            map.remove(otherCellId)
+                                        }
+                                    }
                                 }
                                 if (current.mutate!!.physicalLink.isEmpty() && current.mutate == Action()) {
                                     val default = Action()
@@ -182,7 +194,7 @@ class AddNeuralLinkCommand(
                 }
 
                 if (genomeStageInstruction[currentStage].cellActions.isEmpty()) {
-                    genomeStageInstruction.removeLast()
+                    genomeStageInstruction.removeAt(genomeStageInstruction.lastIndex)
                 }
             }
         }

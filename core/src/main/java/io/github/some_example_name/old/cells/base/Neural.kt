@@ -27,7 +27,8 @@ val formulaType = arrayOf(
     "y = controller(a)"
 )
 
-fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
+fun activation(cellIndex: Int, nonSafeX: Float) = with(cellEntity) {
+    val x = nonSafeX.coerceIn(-1e10f, 1e10f)
     when (getActivationFuncType(cellIndex)) {
         0 -> getA(cellIndex) * x + getB(cellIndex)
         1 -> getC(cellIndex) * sin(getA(cellIndex) * x + getB(cellIndex))
