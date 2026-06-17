@@ -27,7 +27,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new MyGame(new DesktopFileProvider(), null, null, null), getDefaultConfiguration());
+        return new Lwjgl3Application(new MyGame(new DesktopFileProvider(), null, null, null, () -> new com.badlogic.gdx.video.SilentVideoPlayer())), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

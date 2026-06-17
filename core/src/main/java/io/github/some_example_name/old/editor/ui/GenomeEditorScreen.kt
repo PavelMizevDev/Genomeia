@@ -224,6 +224,7 @@ class GenomeEditorScreen(
     override fun hide() { }
 
     override fun dispose() {
+        menuUiBuilder.dispose()
         editorLogicSystem.dispose()
         stage.dispose()
         shape.dispose()

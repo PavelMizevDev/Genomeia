@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
@@ -19,6 +20,7 @@ import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextField
+import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.core.GlobalSimulationSettings
@@ -36,6 +38,7 @@ class JsonEditorScreen(
     private lateinit var fileHandle: FileHandle
     private val json = Json()
     private var validationTask: Timer.Task? = null
+    private val extraTextures = mutableListOf<Texture>()
 
     override fun show() {
         json.setOutputType(JsonWriter.OutputType.json)
@@ -71,52 +74,40 @@ class JsonEditorScreen(
             }
         })
 
-        val buttonsTableGlobal = VisTable()
-        val buttonsTable1 = VisTable()
-        buttonsTable1.defaults().pad(10f)
+        val btnH = Gdx.graphics.height * 0.065f
+        val buttonsTable = VisTable()
+        buttonsTable.defaults().pad(8f * Gdx.graphics.density)
 
-        val saveButton = VisTextButton(bundle.get("button.save"))
-        game.applyCustomFont(saveButton)
+        val saveButton = makeStyledButton(bundle.get("button.save"), game, extraTextures)
         saveButton.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent, actor: Actor?) {
-                saveJson()
-                substrateSettings.update()
-            }
+            override fun changed(event: ChangeEvent, actor: Actor?) { saveJson() }
         })
-        buttonsTable1.add(saveButton).height(40f * Gdx.graphics.density)
+        buttonsTable.add(saveButton).height(btnH)
 
-        val resetButton = VisTextButton(bundle.get("button.reset"))
-        game.applyCustomFont(resetButton)
+        val resetButton = makeStyledButton(bundle.get("button.reset"), game, extraTextures)
         resetButton.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent, actor: Actor?) {
-                resetToDefault()
-            }
+            override fun changed(event: ChangeEvent, actor: Actor?) { resetToDefault() }
         })
-        buttonsTable1.add(resetButton).height(40f * Gdx.graphics.density)
+        buttonsTable.add(resetButton).height(btnH)
 
-        val menuButton = VisTextButton(bundle.get("button.menu"))
-        game.applyCustomFont(menuButton)
+        val menuButton = makeStyledButton(bundle.get("button.menu"), game, extraTextures)
         menuButton.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent, actor: Actor?) {
                 game.screen = MenuScreen(game, multiPlatformFileProvider)
             }
         })
-        buttonsTable1.add(menuButton).height(40f * Gdx.graphics.density).row()
+        buttonsTable.add(menuButton).height(btnH)
 
-        val copyToClipboardButton = VisTextButton(bundle.get("button.copyToClipboard"))
-        game.applyCustomFont(copyToClipboardButton)
+        val copyToClipboardButton = makeStyledButton(bundle.get("button.copyToClipboard"), game, extraTextures)
         copyToClipboardButton.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent, actor: Actor?) {
                 Gdx.app.clipboard.contents = textArea.text
             }
         })
-
-        buttonsTableGlobal.add(buttonsTable1).row()
-
-        buttonsTableGlobal.add(copyToClipboardButton).height(40f * Gdx.graphics.density)
+        buttonsTable.add(copyToClipboardButton).height(btnH)
 
         loadJson()
-        table.add(buttonsTableGlobal).center()
+        table.add(buttonsTable).center()
         table.row()
         validateJson()
 
@@ -206,5 +197,6 @@ class JsonEditorScreen(
     override fun dispose() {
         stage.dispose()
         validationTask?.cancel()
+        extraTextures.forEach { it.dispose() }
     }
 }

@@ -2,6 +2,7 @@ package io.github.some_example_name.old.editor.ui
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -13,8 +14,11 @@ import com.badlogic.gdx.utils.Timer
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisSlider
 import com.kotcrab.vis.ui.widget.VisTextButton
+import io.github.some_example_name.old.ui.screens.makeStyledButton
+import io.github.some_example_name.old.ui.screens.makeStyledSlider
 import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.core.DIGameGlobalContainer.bundle
+import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.editor.system.logic.CtrlY
@@ -40,7 +44,6 @@ import io.github.some_example_name.old.ui.screens.MenuScreen
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.screens.SimulationScreen
 import io.github.some_example_name.old.ui.screens.applyCustomFont
-import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
 
 
 class MenuUiBuilder(
@@ -58,8 +61,14 @@ class MenuUiBuilder(
     lateinit var stageText: VisLabel
     lateinit var tickText: VisLabel
     var isCtrl = false
-
     var isProgrammaticChange = false
+
+    private val textures = mutableListOf<Texture>()
+
+    fun dispose() {
+        textures.forEach { it.dispose() }
+        textures.clear()
+    }
 
     fun setSliderValueProgrammatically(value: Float) {
         isProgrammaticChange = true
@@ -68,29 +77,23 @@ class MenuUiBuilder(
     }
 
     fun buildEditorMenu() {
+        dispose()
         val density = Gdx.graphics.density
         stage.clear()
         val root = Table()
         root.setFillParent(true)
         stage.addActor(root)
 
-        val prevStageButton = VisTextButton(" << ")
-        game.applyCustomFont(prevStageButton)
-        val prevTickButton = VisTextButton(" < ")
-        game.applyCustomFont(prevTickButton)
-        val nextTickButton = VisTextButton(" > ")
-        game.applyCustomFont(nextTickButton)
-        val nextStageButton = VisTextButton(" >> ")
-        game.applyCustomFont(nextStageButton)
+        val prevStageButton = makeStyledButton(" << ", game, textures)
+        val prevTickButton  = makeStyledButton(" < ",  game, textures)
+        val nextTickButton  = makeStyledButton(" > ",  game, textures)
+        val nextStageButton = makeStyledButton(" >> ", game, textures)
         stageText = VisLabel("0")
-        game.applyCustomFontMedium(stageText)
-        stageText.setAlignment(Align.left) // Center-align text
+        game.applyCustomFont(stageText)
+        stageText.setAlignment(Align.left)
         tickText = VisLabel("0")
-        game.applyCustomFontMedium(tickText)
-//        fpsText = VisLabel("0 FPS")
-//        game.applyCustomFontMedium(fpsText)
-
-        timeSlider = VisSlider(0f, lastTick.toFloat(), 1f, false)
+        game.applyCustomFont(tickText)
+        timeSlider = makeStyledSlider(0f, editorLogicSystem.lastTick.toFloat(), 1f, false, textures)
         timeSlider.value = 0f
 
         timeSlider.addListener { event ->
@@ -105,34 +108,28 @@ class MenuUiBuilder(
             false
         }
 
-        val goToMenuButton = VisTextButton(bundle.get("button.menu"))
+        val goToMenuButton = makeStyledButton(bundle.get("button.menu"), game, textures)
         goToMenuButton.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                saveDialog(true)
-            }
+            override fun clicked(event: InputEvent, x: Float, y: Float) { saveDialog(true) }
         })
 
-        val chooseColorButton = VisTextButton(bundle.get("button.saveGenome"))
+        val chooseColorButton = makeStyledButton(bundle.get("button.saveGenome"), game, textures)
         chooseColorButton.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                saveDialog(false)
-            }
+            override fun clicked(event: InputEvent, x: Float, y: Float) { saveDialog(false) }
         })
 
-        val showPhysicalLinkButton = VisTextButton(bundle.get("button.showPhysicalLink"), "toggle")
+        val showPhysicalLinkButton = makeStyledButton(bundle.get("button.showPhysicalLink"), game, textures, toggle = true)
         showPhysicalLinkButton.isChecked = renderSystem.showPhysicalLink
 
-        // Toggle кнопка
+
         showPhysicalLinkButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 renderSystem.showPhysicalLink = showPhysicalLinkButton.isChecked
             }
         })
 
-        val usePostProcessLinkButton = VisTextButton("Use post process", "toggle")
+        val usePostProcessLinkButton = makeStyledButton("Use post process", game, textures, toggle = true)
         usePostProcessLinkButton.isChecked = usePostProcess
-
-        // Toggle кнопка
         usePostProcessLinkButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 usePostProcess = usePostProcessLinkButton.isChecked
@@ -157,7 +154,7 @@ class MenuUiBuilder(
             colorInit = linkColor.cpy()
         )
 
-        val neuralColorLinkButton = VisTextButton("Neural link color")
+        val neuralColorLinkButton = makeStyledButton("Neural link color")
 
         // Toggle кнопка
         neuralColorLinkButton.addListener(object : ClickListener() {
@@ -167,35 +164,28 @@ class MenuUiBuilder(
             }
         })
 
-        val symmetryButton = VisTextButton("Symmetry")
-        symmetryButton.isChecked = usePostProcess
-
-        // Toggle кнопка
+        val symmetryButton = makeStyledButton("Symmetry", game, textures)
         symmetryButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                SymmetryDialog(
-                    game = game,
-                    bundle = bundle,
-                    symmetryManager = symmetryManager
-                ).show(stage)
+                SymmetryDialog(game = game, bundle = bundle, symmetryManager = symmetryManager).show(stage)
             }
         })
 
-        val ctrlZ = VisTextButton("Ctrl+z")
+        val ctrlZ = makeStyledButton("Ctrl+z", game, textures)
         ctrlZ.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 editorLogicSystem.putUiCommand(CtrlZ)
             }
         })
 
-        val ctrlY = VisTextButton("Ctrl+y")
+        val ctrlY = makeStyledButton("Ctrl+y", game, textures)
         ctrlY.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 editorLogicSystem.putUiCommand(CtrlY)
             }
         })
 
-        val ctrl = VisTextButton(bundle.get("button.neural-linking"), "toggle")
+        val ctrl = makeStyledButton(bundle.get("button.neural-linking"), game, textures, toggle = true)
         ctrl.isChecked = isCtrl
         ctrl.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -204,7 +194,7 @@ class MenuUiBuilder(
             }
         })
 
-        val rightClick = VisTextButton(bundle.get("button.performLastAction"), "toggle")
+        val rightClick = makeStyledButton(bundle.get("button.performLastAction"), game, textures, toggle = true)
         rightClick.isChecked = isRightClick
         rightClick.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -223,73 +213,72 @@ class MenuUiBuilder(
         }
 
         val controls = Table()
-        controls.defaults().pad(0f).space(0f) // Remove default padding/spacing
+        controls.defaults().pad(0f).space(0f)
 
-        // Nested table for the top row with wrapping
+
         val topControls = Table()
-        topControls.defaults().pad(8f * density).center() // Pad 8f around each cell, align center
+        topControls.defaults().pad(8f * density).center()
 
         var currentWidth = 0f
         var rowTable = Table()
         rowTable.defaults().pad(8f * density).center()
 
         for (button in buttons) {
-            game.applyCustomFont(button) // Uncomment if you have this function
-            val prefWidth = button.prefWidth + 16f * density // Approximate with padding
+            val prefWidth = button.prefWidth + 16f * density
             if (currentWidth + prefWidth > Gdx.graphics.width && currentWidth > 0f) {
                 topControls.add(rowTable).growX().center().row()
                 rowTable = Table()
                 rowTable.defaults().padLeft(8f * density).padRight(8f * density).center()
                 currentWidth = 0f
             }
-            rowTable.add(button).height(25f * density)
+            rowTable.add(button).height(Gdx.graphics.height * 0.05f)
             currentWidth += prefWidth
         }
         if (rowTable.hasChildren()) {
             topControls.add(rowTable).growX().center()
         }
 
-        // Add topControls to controls, left-aligned
+
         controls.add(topControls).center().pad(16f * density).row()
 
-        // Spacer
+
         controls.add().growY().row()
 
-        // Nested table for the labels row
+
         val labelsRow = Table()
 
         val labelsRow1 = Table()
         val labelsRow2 = Table()
 
 
-//        labelsRow1.defaults().pad(0f).space(0f)
         val tick = VisLabel(bundle.get("button.tick"))
-        game.applyCustomFontMedium(tick)
+        game.applyCustomFont(tick)
         labelsRow1.add(tick).padRight(4f * density).padLeft(40f * density)
         labelsRow1.add(tickText).size(40f * density, 30f * density).padRight(16f * density)
         val stage = VisLabel(bundle.get("button.stage"))
-        game.applyCustomFontMedium(stage)
+        game.applyCustomFont(stage)
         labelsRow2.add(stage).padRight(4f * density).padLeft(0f)
         labelsRow2.add(stageText).size(40f * density, 30f * density)
 
         labelsRow.add(labelsRow1)//.row()
         labelsRow.add(labelsRow2)
-        // Add labelsRow to controls, left-aligned
+
         controls.add(labelsRow).center().pad(8f * density).row()
 
-        // Nested table for the slider row (original buttonRow)
-        val sliderRow = Table()
-        sliderRow.defaults().pad(0f).space(0f) // Ensure no extra padding/spacing
-        sliderRow.add(prevStageButton).size(30f * density, 30f * density).padRight(8f * density)
-        sliderRow.add(prevTickButton).size(30f * density, 30f * density).padRight(8f * density)
-        sliderRow.add(timeSlider).growX() // Slider takes remaining width
-        sliderRow.add(nextTickButton).size(30f * density, 30f * density).padLeft(8f * density)
-        sliderRow.add(nextStageButton).size(30f * density, 30f * density).padLeft(8f * density)
 
-        // Add sliderRow to controls, stretching to full width
+        val sliderRow = Table()
+        sliderRow.defaults().pad(0f).space(0f)
+        val navBtnH = Gdx.graphics.height * 0.045f
+        sliderRow.add(prevStageButton).height(navBtnH).padRight(8f * density)
+        sliderRow.add(prevTickButton).height(navBtnH).padRight(8f * density)
+        sliderRow.add(timeSlider).growX()
+        sliderRow.add(nextTickButton).height(navBtnH).padLeft(8f * density)
+        sliderRow.add(nextStageButton).height(navBtnH).padLeft(8f * density)
+
+
         controls.add(sliderRow).growX().pad(32f * density).row()
 
-        // Add controls to root
+
         root.add(controls).expand().fill()
 
         prevStageButton.addListener(object : ClickListener() {

@@ -17,7 +17,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.kotcrab.vis.ui.widget.VisTextButton
-import com.kotcrab.vis.ui.widget.VisTextButton.VisTextButtonStyle
 import io.github.some_example_name.old.commands.PlayerCommand
 import io.github.some_example_name.old.core.DIGameGlobalContainer.genomeJsonReader
 import io.github.some_example_name.old.core.DISimulationContainer
@@ -60,6 +59,7 @@ class SimulationScreen(
 
     private var putOrgs = true
     var onResize: (() -> Unit)? = null
+    private val extraTextures = mutableListOf<Texture>()
 
     private var initialZoom = 0f
     private var currentPinchCenter: Vector2? = null
@@ -340,44 +340,37 @@ class SimulationScreen(
 
     override fun dispose() {
         renderSystem.dispose()
-
         simulationSystem.simulationData.isFinish = true
         simulationSystem.stopUpdateThread()
         stage.dispose()
         spriteBatch.dispose()
         font.dispose()
-
+        extraTextures.forEach { it.dispose() }
     }
 
 
-    private fun applyCustomFont(button: VisTextButton) {
-        val newStyle = VisTextButtonStyle(button.style as VisTextButtonStyle)  // Копируем текущий стиль
-        newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) game.mediumFont else game.largeFont  // Применяем большой шрифт
-        button.style = newStyle  // Устанавливаем стиль обратно
-    }
-
-    //TODO сделать работу с UI в другом месте
     private fun rebuildMenu() {
+        extraTextures.forEach { it.dispose() }
+        extraTextures.clear()
         root.clear()
+
         root.top().left()
 
-        val menuButton = VisTextButton(
-            if (genomeName == null) bundle.get("button.menu") else bundle.get("button.backToEditor")
+        val menuButton = makeStyledButton(
+            if (genomeName == null) bundle.get("button.menu") else bundle.get("button.backToEditor"),
+            game, extraTextures
         )
-        val putOrganismToggle = VisTextButton(bundle.get("button.putOrganism"), "toggle")
+        val putOrganismToggle = makeStyledButton(bundle.get("button.putOrganism"), game, extraTextures, toggle = true)
         putOrganismToggle.isChecked = putOrgs
-
-        val selectGenomeButton = VisTextButton(bundle.get("button.selectGenome"))
-        val speedUpSimToggle = VisTextButton(bundle.get("button.speedUp"))
-        val pauseSimToggle = VisTextButton(bundle.get("button.pause"), "toggle")
+        val selectGenomeButton = makeStyledButton(bundle.get("button.selectGenome"), game, extraTextures)
+        val speedUpSimToggle   = makeStyledButton(bundle.get("button.speedUp"),      game, extraTextures)
+        val pauseSimToggle     = makeStyledButton(bundle.get("button.pause"),         game, extraTextures, toggle = true)
         pauseSimToggle.isChecked = !simEntity.isPlay
-        val restartSimulationButton = VisTextButton(bundle.get("button.restart"))
-
-        val drawRaysToggle = VisTextButton(bundle.get("button.drawRays"), "toggle")
+        val restartSimulationButton = makeStyledButton(bundle.get("button.restart"), game, extraTextures)
+        val drawRaysToggle = makeStyledButton(bundle.get("button.drawRays"), game, extraTextures, toggle = true)
         drawRaysToggle.isChecked = usePostProcess
 
-        // === НОВАЯ TOGGLE-КНОПКА ===
-        val controllerKeysToggle = VisTextButton("Controller Keys", "toggle")
+        val controllerKeysToggle = makeStyledButton("Controller Keys", game, extraTextures, toggle = true)
         controllerKeysToggle.isChecked = simulationSystem.simulationData.showControllerKeys
 
         val buttons = if (genomeName == null) {
@@ -387,20 +380,19 @@ class SimulationScreen(
             )
         } else {
             listOf(
-                menuButton, putOrganismToggle, speedUpSimToggle,
-                pauseSimToggle, restartSimulationButton, drawRaysToggle, controllerKeysToggle
+                menuButton, putOrganismToggle, speedUpSimToggle, pauseSimToggle,
+                restartSimulationButton, drawRaysToggle, controllerKeysToggle
             )
         }
 
         val controls = Table()
-        controls.defaults().pad(8f * Gdx.graphics.density).left()
+        controls.defaults().pad(8f * Gdx.graphics.density).left() // Pad 8f around each cell, align left
 
         var currentWidth = 0f
         var rowTable = Table()
         rowTable.defaults().pad(8f * Gdx.graphics.density).left()
 
         for (button in buttons) {
-            applyCustomFont(button)
             val prefWidth = button.prefWidth + 16f * Gdx.graphics.density
             if (currentWidth + prefWidth > Gdx.graphics.width && currentWidth > 0f) {
                 controls.add(rowTable).growX().row()
@@ -408,7 +400,7 @@ class SimulationScreen(
                 rowTable.defaults().padLeft(8f * Gdx.graphics.density).padRight(8f * Gdx.graphics.density).left()
                 currentWidth = 0f
             }
-            rowTable.add(button).height(25f * Gdx.graphics.density)
+            rowTable.add(button).height(Gdx.graphics.height * 0.05f)
             currentWidth += prefWidth
         }
         if (rowTable.hasChildren()) {
