@@ -22,6 +22,7 @@ import io.github.some_example_name.old.entities.SubstancesEntity
 import io.github.some_example_name.old.systems.genomics.OrganManager
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
 import io.github.some_example_name.old.systems.physics.GridManager
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import kotlin.collections.map
 import kotlin.math.sqrt
@@ -44,6 +45,10 @@ class WorldCommandsManager(
     val diContext: DIContext,
     val isEditor: Boolean
 ): WorldResizable, Disposable {
+
+    val mapCellGenomeIdToIndex = Int2IntOpenHashMap().apply{
+        defaultReturnValue(-1)
+    }
 
     var worldCommandSpecialModDataBuffer = Array(diContext.threadCount) { mutableListOf<SpecialModData>() }
     var worldCommandBuffer = Array(diContext.threadCount) { WorldCommandBuffer() }
@@ -173,6 +178,9 @@ class WorldCommandsManager(
                                 pheromoneType = ints[7],
                                 specialModData = if (specialModDataIndex == -1) null else worldCommandSpecialModDataBuffer[threadId][specialModDataIndex]
                             )
+                            if (isEditor) {
+                                mapCellGenomeIdToIndex.put(cellGenomeId, cellIndex)
+                            }
 
                             //TODO сделать без алокаций
                             closestCells?.filter { particleEntity.isCell[it] }

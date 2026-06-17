@@ -72,7 +72,8 @@ fun CreatureJsonRead.jsonToDomain(isEditor: Boolean = false): Genome {
         genomeStageInstruction = genomeStageInstruction.toMutableList(),
         dividedTimes = dividedTimes,
         mutatedTimes = mutatedTimes,
-        name = this.name
+        name = this.name,
+        subGenomes = hashMapOf()
     )
 }
 

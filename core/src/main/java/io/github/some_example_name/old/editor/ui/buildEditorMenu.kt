@@ -17,17 +17,21 @@ import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.core.DIGameGlobalContainer.bundle
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.core.color_picker.ColorPicker
-import io.github.some_example_name.old.editor.commands.CtrlY
-import io.github.some_example_name.old.editor.commands.CtrlZ
-import io.github.some_example_name.old.editor.commands.NextStageButtonTap
-import io.github.some_example_name.old.editor.commands.NextTickButtonClamped
-import io.github.some_example_name.old.editor.commands.NextTickButtonTap
-import io.github.some_example_name.old.editor.commands.PrevStageButtonTap
-import io.github.some_example_name.old.editor.commands.PrevTickButtonTap
-import io.github.some_example_name.old.editor.commands.TimeSlider
-import io.github.some_example_name.old.editor.system.EditorLogicSystem
-import io.github.some_example_name.old.editor.system.EditorRenderSystem
-import io.github.some_example_name.old.editor.system.EditorSimulationSystem
+import io.github.some_example_name.old.editor.system.logic.CtrlY
+import io.github.some_example_name.old.editor.system.logic.CtrlZ
+import io.github.some_example_name.old.editor.system.logic.NextStageButtonTap
+import io.github.some_example_name.old.editor.system.logic.NextTickButtonClamped
+import io.github.some_example_name.old.editor.system.logic.NextTickButtonTap
+import io.github.some_example_name.old.editor.system.logic.PrevStageButtonTap
+import io.github.some_example_name.old.editor.system.logic.PrevTickButtonTap
+import io.github.some_example_name.old.editor.system.logic.TimeSlider
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.isRightClick
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.lastTick
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.linkColor
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.previousCtrlClicked
+import io.github.some_example_name.old.editor.system.logic.EditorLogicSystem
+import io.github.some_example_name.old.editor.system.render.EditorRenderSystem
+import io.github.some_example_name.old.editor.system.simulation.EditorSimulationSystem
 import io.github.some_example_name.old.editor.system.SymmetryManager
 import io.github.some_example_name.old.editor.ui.dialog.SymmetryDialog
 import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
@@ -86,7 +90,7 @@ class MenuUiBuilder(
 //        fpsText = VisLabel("0 FPS")
 //        game.applyCustomFontMedium(fpsText)
 
-        timeSlider = VisSlider(0f, editorLogicSystem.lastTick.toFloat(), 1f, false)
+        timeSlider = VisSlider(0f, lastTick.toFloat(), 1f, false)
         timeSlider.value = 0f
 
         timeSlider.addListener { event ->
@@ -147,10 +151,10 @@ class MenuUiBuilder(
                     super.finished(newColor)
                     if (newColor == null) return
                     val newColor = newColor.cpy()
-                    editorLogicSystem.linkColor = newColor
+                    linkColor = newColor
                 }
             },
-            colorInit = editorLogicSystem.linkColor.cpy()
+            colorInit = linkColor.cpy()
         )
 
         val neuralColorLinkButton = VisTextButton("Neural link color")
@@ -196,15 +200,15 @@ class MenuUiBuilder(
         ctrl.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 isCtrl = ctrl.isChecked
-                if (!isCtrl) editorLogicSystem.previousCtrlClicked = -1
+                if (!isCtrl) previousCtrlClicked = -1
             }
         })
 
         val rightClick = VisTextButton(bundle.get("button.performLastAction"), "toggle")
-        rightClick.isChecked = editorLogicSystem.isRightClick
+        rightClick.isChecked = isRightClick
         rightClick.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                editorLogicSystem.isRightClick = rightClick.isChecked
+                isRightClick = rightClick.isChecked
             }
         })
 

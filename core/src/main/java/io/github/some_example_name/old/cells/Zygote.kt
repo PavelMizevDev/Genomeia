@@ -5,7 +5,8 @@ import io.github.some_example_name.old.core.utils.pinkColors
 
 class Zygote(cellTypeId: Int) : Cell(
     defaultColor = pinkColors[0],
-    cellTypeId = cellTypeId
+    cellTypeId = cellTypeId,
+    isDirected = true
 ) {
 
     override fun onStart(cellIndex: Int, threadId: Int, genomeIndex: Int) {

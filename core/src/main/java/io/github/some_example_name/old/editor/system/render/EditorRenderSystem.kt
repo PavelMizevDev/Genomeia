@@ -1,22 +1,28 @@
-package io.github.some_example_name.old.editor.system
+package io.github.some_example_name.old.editor.system.render
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.gridHeight
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.gridWidth
+import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.Eye
 import io.github.some_example_name.old.core.utils.drawArrowWithRotationAngle
 import io.github.some_example_name.old.core.utils.drawTriangleMiddle
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.linkColor
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.previousCtrlClicked
 import io.github.some_example_name.old.editor.entities.CellReplay
 import io.github.some_example_name.old.editor.entities.LinkReplay
+import io.github.some_example_name.old.editor.system.CellSearchManager
+import io.github.some_example_name.old.editor.system.simulation.EditorSimulationSystem
+import io.github.some_example_name.old.editor.system.SymmetryManager
+import io.github.some_example_name.old.editor.system.logic.EditorLogicSystem
 import io.github.some_example_name.old.entities.CellEntity
-import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.ParticleEntity
-import io.github.some_example_name.old.systems.render.RenderSystem.Companion.INITIAL_PARTICLE_CAPACITY
-import io.github.some_example_name.old.systems.render.RenderSystem.Companion.PARTICLE_STRUCT_SIZE
+import io.github.some_example_name.old.systems.render.RenderSystem
 import io.github.some_example_name.old.systems.render.ShaderManager
+import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.cos
@@ -31,7 +37,9 @@ class EditorRenderSystem(
     val cellEntity: CellEntity,
     val particleEntity: ParticleEntity,
     val editorSimulationSystem: EditorSimulationSystem,
-    val symmetryManager: SymmetryManager
+    val symmetryManager: SymmetryManager,
+    val cellList: List<Cell>,
+    val cellSearchManager: CellSearchManager
 ) {
 
     private lateinit var shapeRenderer: ShapeRenderer
@@ -47,17 +55,17 @@ class EditorRenderSystem(
         this.camera = camera
     }
 
-    private var buffer = allocateBuffer(INITIAL_PARTICLE_CAPACITY)
+    private var buffer = allocateBuffer(RenderSystem.Companion.INITIAL_PARTICLE_CAPACITY)
     var isUpdateBuffer = true
 
     private fun allocateBuffer(numParticles: Int): ByteBuffer {
         return ByteBuffer
-            .allocateDirect(numParticles * PARTICLE_STRUCT_SIZE)
+            .allocateDirect(numParticles * RenderSystem.Companion.PARTICLE_STRUCT_SIZE)
             .order(ByteOrder.nativeOrder())
     }
 
     private fun ensureCapacityForWrite(neededParticles: Int) {
-        val currentCapacity = buffer.capacity() / PARTICLE_STRUCT_SIZE
+        val currentCapacity = buffer.capacity() / RenderSystem.Companion.PARTICLE_STRUCT_SIZE
         if (neededParticles + 10 <= currentCapacity) return
 
         var newCapacity = currentCapacity.toDouble()
@@ -101,8 +109,8 @@ class EditorRenderSystem(
 
     fun render(touchedCellX: Float, touchedCellY: Float) {
         if (isUpdateBuffer) {
-            (buffer as java.nio.Buffer).clear()
-            cellReplay.forEachInTick(editorLogicSystem.currentTick) { cellType, index, _, angleCos, angleSin, color ->
+            (buffer as Buffer).clear()
+            cellReplay.forEachInTick(DIGenomeEditorContainer.currentTick) { cellType, index, _, angleCos, angleSin, color ->
                 putBuffer(
                     cos = angleCos,
                     sin = angleSin,
@@ -114,7 +122,7 @@ class EditorRenderSystem(
                 )
             }
 
-            val stage = editorLogicSystem.currentStage
+            val stage = DIGenomeEditorContainer.currentStage
             val stageInstructions = editorSimulationSystem.genome.genomeStageInstruction
             if (stage < stageInstructions.size) {
                 val genomeStage = editorSimulationSystem.genome.genomeStageInstruction[stage]
@@ -138,7 +146,7 @@ class EditorRenderSystem(
                     }
                 }
             }
-            (buffer as java.nio.Buffer).flip()
+            (buffer as Buffer).flip()
         }
 
         val worldX = camera.position.x
@@ -166,42 +174,38 @@ class EditorRenderSystem(
         shapeRenderer.rect(
             0f,
             0f,
-            gridWidth.toFloat(),
-            gridHeight.toFloat()
+            DIGenomeEditorContainer.gridWidth.toFloat(),
+            DIGenomeEditorContainer.gridHeight.toFloat()
         )
 
         symmetryManager.drawSymmetry(shapeRenderer)
 
         Gdx.gl.glLineWidth(2f)
 
-        val nextStageTick = editorSimulationSystem.tickByStage[(editorLogicSystem.currentStage + 1).coerceIn(0, editorLogicSystem.lastStage)]
-
-        if (editorLogicSystem.grabbedCellIndex != -1) {
-            editorSimulationSystem.getAllCloseNeighboursEditor(
-                particleEntity.x[editorLogicSystem.grabbedCellIndex],
-                particleEntity.y[editorLogicSystem.grabbedCellIndex],
-                grabbedRadius = particleEntity.radius[editorLogicSystem.grabbedCellIndex],
-                editorLogicSystem.grabbedCellIndex,
-                currentTick = editorLogicSystem.currentTick,
-                nextStageTick = nextStageTick
+        if (DIGenomeEditorContainer.grabbedCellIndex != -1) {
+            cellSearchManager.getAllCloseNeighboursEditor(
+                particleEntity.x[DIGenomeEditorContainer.grabbedCellIndex],
+                particleEntity.y[DIGenomeEditorContainer.grabbedCellIndex],
+                grabbedRadius = particleEntity.radius[DIGenomeEditorContainer.grabbedCellIndex],
+                DIGenomeEditorContainer.grabbedCellIndex
             ).forEach {
                 shapeRenderer.color = Color.RED
                 shapeRenderer.line(
-                    particleEntity.x[editorLogicSystem.grabbedCellIndex],
-                    particleEntity.y[editorLogicSystem.grabbedCellIndex],
+                    particleEntity.x[DIGenomeEditorContainer.grabbedCellIndex],
+                    particleEntity.y[DIGenomeEditorContainer.grabbedCellIndex],
                     particleEntity.x[it],
                     particleEntity.y[it]
                 )
             }
         }
 
-        linkReplay.forEachInTick(nextStageTick) { isNeural, isLink1NeuralDirected, color, links1, links2, isLongNeuralLink ->
+        linkReplay.forEachInTick(DIGenomeEditorContainer.nextStageTick) { isNeural, isLink1NeuralDirected, color, links1, links2, isLongNeuralLink ->
             val cellA = links1
             val cellB = links2
 
             var isDrawLinkByDistance = true
-            if (editorLogicSystem.grabbedCellIndex != -1) {
-                if (editorLogicSystem.grabbedCellIndex == cellA || editorLogicSystem.grabbedCellIndex == cellB) {
+            if (DIGenomeEditorContainer.grabbedCellIndex != -1) {
+                if (DIGenomeEditorContainer.grabbedCellIndex == cellA || DIGenomeEditorContainer.grabbedCellIndex == cellB) {
                     val dx = particleEntity.x[cellB] - particleEntity.x[cellA]
                     val dy = particleEntity.y[cellB] - particleEntity.y[cellA]
 
@@ -256,10 +260,12 @@ class EditorRenderSystem(
             }
         }
 
-        cellReplay.forEachInTick(editorLogicSystem.currentTick) { cellType, index, _, angleCos, angleSin, _ ->
-            if (editorLogicSystem.grabbedCellIndex != index) {
-                when (cellType.toInt()) {
-                    14 -> {
+        cellReplay.forEachInTick(DIGenomeEditorContainer.currentTick) { cellType, index, _, angleCos, angleSin, _ ->
+            if (DIGenomeEditorContainer.grabbedCellIndex != index) {
+                val cell = cellList[cellType.toInt()]
+
+                when {
+                    cell is Eye -> {
                         shapeRenderer.color = Color.CYAN
                         shapeRenderer.drawArrowWithRotationAngle(
                             startX = particleEntity.x[index],
@@ -271,7 +277,7 @@ class EditorRenderSystem(
                         )
                     }
 
-                    3, 9, 15, 19, 21 -> {
+                    cell.isDirected -> {
                         shapeRenderer.color = Color.CYAN
                         shapeRenderer.drawArrowWithRotationAngle(
                             startX = particleEntity.x[index],
@@ -285,9 +291,10 @@ class EditorRenderSystem(
             }
         }
 
-        if (editorLogicSystem.previousCtrlClicked != -1 && cellReplay.getCellIndex(nextStageTick, editorLogicSystem.previousCtrlClicked) != null) {
-            val x = particleEntity.x[editorLogicSystem.previousCtrlClicked]
-            val y = particleEntity.y[editorLogicSystem.previousCtrlClicked]
+        if (previousCtrlClicked != -1 && cellReplay.getCellIndex(
+                DIGenomeEditorContainer.nextStageTick, previousCtrlClicked) != null) {
+            val x = particleEntity.x[previousCtrlClicked]
+            val y = particleEntity.y[previousCtrlClicked]
 
             shapeRenderer.color = Color.CYAN
             shapeRenderer.circle(x, y,  0.125f, 32)
@@ -300,7 +307,7 @@ class EditorRenderSystem(
 
             val maxDist = 3f
 
-            shapeRenderer.color = editorLogicSystem.linkColor
+            shapeRenderer.color = linkColor
 
             var endX = touchedCellX
             var endY = touchedCellY
@@ -317,11 +324,9 @@ class EditorRenderSystem(
                 shapeRenderer.line(x, y, touchedCellX, touchedCellY)
             }
 
-            val clickedCell = editorSimulationSystem.getClickedCellIndex(
+            val clickedCell = cellSearchManager.getClickedCellIndex(
                 clickX = endX,
-                clickY = endY,
-                currentTick = editorLogicSystem.currentTick,
-                nextStageTick = nextStageTick
+                clickY = endY
             )
 
             if (clickedCell != null) {
@@ -331,7 +336,7 @@ class EditorRenderSystem(
                 shapeRenderer.circle(x, y,  0.125f, 32)
             }
         } else {
-            editorLogicSystem.previousCtrlClicked = -1
+            previousCtrlClicked = -1
         }
 
         shapeRenderer.end()

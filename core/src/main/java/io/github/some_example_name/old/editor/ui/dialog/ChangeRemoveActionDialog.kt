@@ -15,7 +15,7 @@ import io.github.some_example_name.old.cells.NonWorkingCell1
 import io.github.some_example_name.old.cells.Eye
 import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.cells.PheromoneSensor
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.cellList
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.cellList
 import io.github.some_example_name.old.systems.genomics.genome.Action
 import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.editor.entities.EditorCell

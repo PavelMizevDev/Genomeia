@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.cells.Cell
 import io.github.some_example_name.old.cells.NonWorkingCell1
 import io.github.some_example_name.old.cells.ControllerData
+import io.github.some_example_name.old.cells.Zygote
 import io.github.some_example_name.old.commands.WorldCommandType
 import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.core.utils.collectParticles
@@ -36,8 +37,16 @@ class DivideManager(
             val parentCos = angleCos[index] * angleDirectedCos[index] + angleSin[index] * angleDirectedSin[index]
             val parentSin = angleSin[index] * angleDirectedCos[index] - angleCos[index] * angleDirectedSin[index]
 
-            val finalCos = parentCos * divideAngleCos - parentSin * divideAngleSin
-            val finalSin = parentSin * divideAngleCos + parentCos * divideAngleSin
+            var finalCos = parentCos * divideAngleCos - parentSin * divideAngleSin
+            var finalSin = parentSin * divideAngleCos + parentCos * divideAngleSin
+
+            if (cellList[cellType[index].toInt()] is Zygote) {
+                val finalZygoteCos = finalCos * angleDirectedCos[index] - finalSin * angleDirectedSin[index]
+                val finalZygoteSin = finalSin * angleDirectedCos[index] + finalCos * angleDirectedSin[index]
+
+                finalCos = finalZygoteCos
+                finalSin = finalZygoteSin
+            }
 
             var x = getX(index) + finalCos * parentLinkLength
             var y = getY(index) + finalSin * parentLinkLength

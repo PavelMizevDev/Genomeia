@@ -131,7 +131,7 @@ class UserCommandManager(
                                     dividedTimes = genome.dividedTimes[0],
                                     mutatedTimes = genome.mutatedTimes[0]
                                 )
-                                val randomAngle = Random.nextFloat() * 3.1415f * 2f
+                                val randomAngle = 0f//MathUtils.random(0f, MathUtils.PI2)
                                 cellEntity.addCell(
                                     x = cmd.x,
                                     y = cmd.y,

@@ -9,11 +9,10 @@ import com.badlogic.gdx.utils.I18NBundle
 import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.VisDialog
 import com.kotcrab.vis.ui.widget.VisLabel
-import com.kotcrab.vis.ui.widget.VisSlider
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.cells.base.formulaType
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.cellsTypeNames
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.cellsTypeNames
 import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.core.utils.invSqrt
 import io.github.some_example_name.old.editor.entities.CellReplay
@@ -25,7 +24,6 @@ import io.github.some_example_name.old.ui.dialogs.setupTitleSize
 import io.github.some_example_name.old.ui.screens.MyGame
 import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
 import kotlin.math.atan2
-
 
 fun getColorFromBits(bits: Int): Color {
     if (bits == 0) return Color.BLACK.cpy()

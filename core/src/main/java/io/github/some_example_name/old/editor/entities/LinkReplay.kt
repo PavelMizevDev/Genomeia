@@ -6,7 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList
 class LinkReplay(
     startCapacity: Int,
     val linkEntity: LinkEntity,
-) {
+): EditorReplay {
     var capacity = startCapacity
     var size = 0
     private val initialCapacity = startCapacity
@@ -36,14 +36,14 @@ class LinkReplay(
         }
     }
 
-    fun reset() {
+    override fun reset() {
         size = 0
         capacity = initialCapacity
         replayCellsCounterInTick.clear()
         tickStartIndices.clear()
     }
 
-    fun copy() {
+    override fun copy() {
         val cellBound = (linkEntity.lastId + 1).coerceAtLeast(0)
 
         replayCellsCounterInTick.add(cellBound)

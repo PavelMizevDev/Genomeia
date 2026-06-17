@@ -1,8 +1,8 @@
 package io.github.some_example_name.old.editor.system
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.gridHeight
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.gridWidth
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.gridHeight
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.gridWidth
 import io.github.some_example_name.old.core.utils.findNewOptimalCellPosition
 import io.github.some_example_name.old.editor.entities.EditorCell
 import io.github.some_example_name.old.entities.ParticleEntity
@@ -17,7 +17,7 @@ private const val EPSILON = 0.001f
 
 class SymmetryManager(
     val particleEntity: ParticleEntity,
-    val editorSimulationSystem: EditorSimulationSystem
+    val cellSearchManager: CellSearchManager
 ) {
 
     var symmetryMode: SymmetryMode = NoSymmetry
@@ -141,14 +141,12 @@ class SymmetryManager(
     fun snapPosition(
         x: Float,
         y: Float,
-        currentTick: Int,
-        nextStageTick: Int,
         cellIndex: Int
     ): Pair<Float, Float> {
         val symmetryMode = symmetryMode
         return when (symmetryMode) {
             Axial -> {
-                findAxialSymmetryPoint(Pair(x, y), currentTick, nextStageTick, cellIndex)
+                findAxialSymmetryPoint(Pair(x, y),  cellIndex)
             }
             NoSymmetry -> Pair(x, y)
             is SquareGrid -> {
@@ -159,7 +157,7 @@ class SymmetryManager(
                 val resultX = ((x - ox) / step).roundToInt() * step + ox
                 val resultY = ((y - oy) / step).roundToInt() * step + oy
 
-                if (isFreePosition(resultX, resultY, currentTick, nextStageTick, cellIndex)) {
+                if (isFreePosition(resultX, resultY, cellIndex)) {
                     Pair(resultX, resultY)
                 } else Pair(x, y)
             }
@@ -178,7 +176,7 @@ class SymmetryManager(
 
                 val resultX = ox + xShift + round((x - ox - xShift) / step) * step
 
-                if (isFreePosition(resultX, resultY, currentTick, nextStageTick, cellIndex)) {
+                if (isFreePosition(resultX, resultY, cellIndex)) {
                     Pair(resultX, resultY)
                 } else Pair(x, y)
             }
@@ -187,8 +185,6 @@ class SymmetryManager(
 
     private fun findAxialSymmetryPoint(
         it: Pair<Float, Float>,
-        currentTick: Int,
-        nextStageTick: Int,
         cellIndex: Int?
     ): Pair<Float, Float> {
         val distToLine = abs(it.second - AXIAL_LINE_Y)
@@ -199,11 +195,9 @@ class SymmetryManager(
             val searchSymmetryX = it.first
             val searchSymmetryY = 2f * AXIAL_LINE_Y - it.second
 
-            val symmetryCellIndex = editorSimulationSystem.getClickedCellIndex(
+            val symmetryCellIndex = cellSearchManager.getClickedCellIndex(
                 clickX = searchSymmetryX,
-                clickY = searchSymmetryY,
-                currentTick = currentTick,
-                nextStageTick = nextStageTick
+                clickY = searchSymmetryY
             )?.first
 
             val result = if (symmetryCellIndex != null) {
@@ -212,7 +206,7 @@ class SymmetryManager(
                 Pair(particleEntity.x[symmetryCellIndex], y)
             } else it
 
-            if (isFreePosition(result.first, result.second, currentTick, nextStageTick, cellIndex)) {
+            if (isFreePosition(result.first, result.second, cellIndex)) {
                 Pair(result.first, result.second)
             } else it
         }
@@ -221,16 +215,14 @@ class SymmetryManager(
     fun newPoint(
         clickedCell: EditorCell,
         xs: MutableList<Float>,
-        ys: MutableList<Float>,
-        currentTick: Int,
-        nextStageTick: Int
+        ys: MutableList<Float>
     ): Pair<Float, Float>? {
         val symmetryMode = symmetryMode
 
         return when (symmetryMode) {
             Axial -> {
                 findNewOptimalCellPosition(clickedCell.x, clickedCell.y, xs, ys)?.let {
-                    findAxialSymmetryPoint(it, currentTick, nextStageTick, null)
+                    findAxialSymmetryPoint(it, null)
                 }
             }
 
@@ -321,15 +313,11 @@ class SymmetryManager(
     private fun isFreePosition(
         x: Float,
         y: Float,
-        currentTick: Int,
-        nextStageTick: Int,
         itselfIndex: Int?
     ): Boolean {
-        val cellIndex = editorSimulationSystem.getClickedCellIndex(
+        val cellIndex = cellSearchManager.getClickedCellIndex(
             clickX = x,
             clickY = y,
-            currentTick = currentTick,
-            nextStageTick = nextStageTick,
             itselfIndex = itselfIndex
         )?.first ?: return true
 

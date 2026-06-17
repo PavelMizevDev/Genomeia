@@ -1,29 +1,21 @@
-package io.github.some_example_name.old.editor.commands
+package io.github.some_example_name.old.editor.undo_redo_commands
 
 import io.github.some_example_name.old.editor.entities.EditorCell
 import io.github.some_example_name.old.systems.genomics.genome.GenomeStage
 
 class RemoveCellCommand(
-    val currentStage: Int,
     val clickedCell: EditorCell,
     val parentCell: EditorCell,
-    val genomeStageInstruction: MutableList<GenomeStage>,
-) : Command {
-    override val stage = currentStage
-
-    private val oldGenomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }
-    private var newGenomeStageInstruction: List<GenomeStage>? = null
+    stageInstruction: MutableList<GenomeStage>,
+    currentStage: Int
+) : UndoRedoCommand(
+    stage = currentStage,
+    genomeStageInstruction = stageInstruction
+) {
 
     override fun execute() {
-
-        if (newGenomeStageInstruction != null) {
-            genomeStageInstruction.clear()
-            genomeStageInstruction.addAll(newGenomeStageInstruction!!)
-            return
-        }
-
         val clickedCellDivideId = parentCell.divide?.id ?: return
-        removeIfMutateNull(parentCell.id, currentStage)
+        removeIfMutateNull(parentCell.id, stage)
 
         val deleteCellsIdList = mutableListOf<Int>()
         deleteCellsIdList.add(clickedCellDivideId)
@@ -31,7 +23,7 @@ class RemoveCellCommand(
         val deleteEmptyStageLists = mutableListOf<Int>()
 
         val addDeleteCellsIdList = mutableListOf<Int>()
-        for (stage in currentStage + 1 until genomeStageInstruction.size ) {
+        for (stage in stage + 1 until genomeStageInstruction.size ) {
             deleteCellsIdList.forEach {
                 genomeStageInstruction[stage].cellActions.compute(it) { _, current ->
                     if (current == null) return@compute null
@@ -61,8 +53,6 @@ class RemoveCellCommand(
         deleteEmptyStageLists.sortedDescending().forEach {
             genomeStageInstruction.removeAt(it)
         }
-
-        newGenomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }
     }
 
     fun removeIfMutateNull(cellId: Int, currentStage: Int) {
@@ -71,10 +61,5 @@ class RemoveCellCommand(
             current.divide = null
             if (current.mutate == null) null else current
         }
-    }
-
-    override fun undo() {
-        genomeStageInstruction.clear()
-        genomeStageInstruction.addAll(oldGenomeStageInstruction)
     }
 }

@@ -8,7 +8,7 @@ class EyeReplay(
     startCapacity: Int,
     val specialEntity: SpecialEntity,
     val eyeEntity: EyeEntity
-) {
+): EditorReplay {
     private val initialCapacity = startCapacity
     var capacity = startCapacity
     var size = 0
@@ -28,14 +28,14 @@ class EyeReplay(
         }
     }
 
-    fun reset() {
+    override fun reset() {
         size = 0
         capacity = initialCapacity
         replayCellsCounterInTick.clear()
         tickStartIndices.clear()
     }
 
-    fun copy() {
+    override fun copy() {
         val cellsAmount = eyeEntity.aliveList.size
 
         // Запоминаем количество клеток и стартовую позицию этого тика

@@ -6,7 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList
 class NeuralReplay(
     startCapacity: Int,
     val neuralEntity: NeuralEntity
-) {
+): EditorReplay {
     private val initialCapacity = startCapacity
     var capacity = startCapacity
     var size = 0
@@ -34,14 +34,14 @@ class NeuralReplay(
         }
     }
 
-    fun reset() {
+    override fun reset() {
         size = 0
         capacity = initialCapacity
         replayCellsCounterInTick.clear()
         tickStartIndices.clear()
     }
 
-    fun copy() {
+    override fun copy() {
         val cellsAmount = neuralEntity.aliveList.size
 
         // Запоминаем количество клеток и стартовую позицию этого тика

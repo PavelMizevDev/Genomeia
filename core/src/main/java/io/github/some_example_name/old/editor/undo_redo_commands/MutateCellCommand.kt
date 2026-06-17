@@ -1,4 +1,4 @@
-package io.github.some_example_name.old.editor.commands
+package io.github.some_example_name.old.editor.undo_redo_commands
 
 import io.github.some_example_name.old.editor.entities.EditorCell
 import io.github.some_example_name.old.systems.genomics.genome.Action
@@ -6,22 +6,17 @@ import io.github.some_example_name.old.systems.genomics.genome.CellAction
 import io.github.some_example_name.old.systems.genomics.genome.GenomeStage
 
 class MutateCellCommand(
-    override val stage: Int,
     val action: Action,
     val clickedCell: EditorCell,
-    val genomeStageInstruction: MutableList<GenomeStage>,
-    val doesNeedAddNewStage: Boolean
-) : Command {
-    private val oldGenomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }
-    private var newGenomeStageInstruction: List<GenomeStage>? = null
+    val doesNeedAddNewStage: Boolean,
+    stageInstruction: MutableList<GenomeStage>,
+    currentStage: Int
+) : UndoRedoCommand(
+    stage = currentStage,
+    genomeStageInstruction = stageInstruction
+) {
 
     override fun execute() {
-        if (newGenomeStageInstruction != null) {
-            genomeStageInstruction.clear()
-            genomeStageInstruction.addAll(newGenomeStageInstruction!!)
-            return
-        }
-
         if (doesNeedAddNewStage) {
             genomeStageInstruction.add(GenomeStage())
         }
@@ -38,13 +33,5 @@ class MutateCellCommand(
                 )
             )
         }
-
-        newGenomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }
     }
-
-    override fun undo() {
-        genomeStageInstruction.clear()
-        genomeStageInstruction.addAll(oldGenomeStageInstruction)
-    }
-
 }

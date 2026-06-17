@@ -1,4 +1,4 @@
-package io.github.some_example_name.old.editor.commands
+package io.github.some_example_name.old.editor.system.logic
 
 sealed interface UiEditorCommands
 

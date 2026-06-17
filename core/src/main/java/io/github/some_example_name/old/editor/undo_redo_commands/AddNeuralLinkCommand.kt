@@ -1,4 +1,4 @@
-package io.github.some_example_name.old.editor.commands
+package io.github.some_example_name.old.editor.undo_redo_commands
 
 import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.editor.entities.EditorCell
@@ -7,13 +7,10 @@ import io.github.some_example_name.old.systems.genomics.genome.CellAction
 import io.github.some_example_name.old.systems.genomics.genome.GenomeStage
 import io.github.some_example_name.old.systems.genomics.genome.LinkData
 
-
 //TODO тут происходит какая-то жесть, очень сложная и запутанная логика с нейролинками, надо как-то упростить
 class AddNeuralLinkCommand(
-    val currentStage: Int,
     val cellFrom: EditorCell,
     val cellTo: EditorCell,
-    val genomeStageInstruction: MutableList<GenomeStage>,
     val doesNeedAddNewStage: Boolean,
     val isNeural: Boolean,
     val isLongNeuralLink: Boolean,
@@ -21,22 +18,15 @@ class AddNeuralLinkCommand(
     val linkId: Int,
     val isLink1NeuralDirected: Boolean,
     val cellAId: Int,
-    val cellBId: Int
-) : Command {
-
-    override val stage = currentStage
-
-    private val oldGenomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }
-    private var newGenomeStageInstruction: List<GenomeStage>? = null
+    val cellBId: Int,
+    stageInstruction: MutableList<GenomeStage>,
+    currentStage: Int
+) : UndoRedoCommand(
+    stage = currentStage,
+    genomeStageInstruction = stageInstruction
+) {
 
     override fun execute() {
-
-        if (newGenomeStageInstruction != null) {
-            genomeStageInstruction.clear()
-            genomeStageInstruction.addAll(newGenomeStageInstruction!!)
-            return
-        }
-
         val linkData = when {
             linkId == -1 && isLongNeuralLink -> {
                 LinkData(
@@ -155,7 +145,7 @@ class AddNeuralLinkCommand(
 
                 val mutate = Action(physicalLink = hashMapOf(otherCellId to linkData))
 
-                genomeStageInstruction[currentStage].cellActions.compute(parentCell) { _, current ->
+                genomeStageInstruction[stage].cellActions.compute(parentCell) { _, current ->
                     return@compute when {
                         current == null -> {
                             CellAction(mutate = mutate)
@@ -193,17 +183,10 @@ class AddNeuralLinkCommand(
                     }
                 }
 
-                if (genomeStageInstruction[currentStage].cellActions.isEmpty()) {
+                if (genomeStageInstruction[stage].cellActions.isEmpty()) {
                     genomeStageInstruction.removeAt(genomeStageInstruction.lastIndex)
                 }
             }
         }
-
-        newGenomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }
-    }
-
-    override fun undo() {
-        genomeStageInstruction.clear()
-        genomeStageInstruction.addAll(oldGenomeStageInstruction)
     }
 }

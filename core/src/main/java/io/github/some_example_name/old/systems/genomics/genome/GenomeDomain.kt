@@ -48,6 +48,7 @@ class GenomeManager(
                 ),
                 dividedTimes = IntArray(1) { 1 },
                 mutatedTimes = IntArray(1),
+                subGenomes = hashMapOf()
             )
             if (genomeName != null) {
                 val genome = genomeJsonReader.readGenomeFromFolder("user_genomes", genomeName, false)
@@ -66,11 +67,27 @@ class Genome(
     var name: String,
     val genomeStageInstruction: MutableList<GenomeStage>,
     val dividedTimes: IntArray,
-    val mutatedTimes: IntArray
+    val mutatedTimes: IntArray,
+    val subGenomes: HashMap<Int, SubGenome>
 ) {
     fun deepCopy(): Genome {
         return Genome(
             name = name,
+            genomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }.toMutableList(),
+            dividedTimes = dividedTimes.copyOf(),
+            mutatedTimes = mutatedTimes.copyOf(),
+            subGenomes = HashMap(subGenomes.mapValues { (_, subGenome) -> subGenome.deepCopy() })
+        )
+    }
+}
+
+class SubGenome(
+    val genomeStageInstruction: MutableList<GenomeStage>,
+    val dividedTimes: IntArray,
+    val mutatedTimes: IntArray,
+) {
+    fun deepCopy(): SubGenome {
+        return SubGenome(
             genomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }.toMutableList(),
             dividedTimes = dividedTimes.copyOf(),
             mutatedTimes = mutatedTimes.copyOf()

@@ -1,48 +1,63 @@
-package io.github.some_example_name.old.core
+package io.github.some_example_name.old.editor.di
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.base.CellListBuilder
+import io.github.some_example_name.old.commands.UserCommandManager
 import io.github.some_example_name.old.commands.WorldCommandsManager
-import io.github.some_example_name.old.core.DIGameGlobalContainer.genomeJsonReader
-import io.github.some_example_name.old.core.DIGameGlobalContainer.shaderManager
-import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
-import io.github.some_example_name.old.editor.commands.CommandEditorStackManager
-import io.github.some_example_name.old.editor.system.EditorLogicSystem
-import io.github.some_example_name.old.editor.system.EditorRenderSystem
-import io.github.some_example_name.old.editor.system.EditorSimulationSystem
+import io.github.some_example_name.old.core.DIContext
+import io.github.some_example_name.old.core.DIGameGlobalContainer
+import io.github.some_example_name.old.editor.system.command.CommandEditorStackManager
+import io.github.some_example_name.old.editor.entities.CellReplay
+import io.github.some_example_name.old.editor.entities.EyeReplay
+import io.github.some_example_name.old.editor.entities.LinkReplay
+import io.github.some_example_name.old.editor.entities.NeuralReplay
+import io.github.some_example_name.old.editor.system.CellSearchManager
+import io.github.some_example_name.old.editor.system.control.LeftRightClickManager
+import io.github.some_example_name.old.editor.system.logic.EditorLogicSystem
+import io.github.some_example_name.old.editor.system.render.EditorRenderSystem
+import io.github.some_example_name.old.editor.system.simulation.EditorSimulationSystem
+import io.github.some_example_name.old.editor.system.SymmetryManager
+import io.github.some_example_name.old.editor.system.logic.ToEditorDataMapper
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.EyeEntity
 import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.NeuralEntity
 import io.github.some_example_name.old.entities.OrganEntity
 import io.github.some_example_name.old.entities.ParticleEntity
+import io.github.some_example_name.old.entities.PheromoneEmitterEntity
+import io.github.some_example_name.old.entities.PheromoneEntity
+import io.github.some_example_name.old.entities.ProducerEntity
 import io.github.some_example_name.old.entities.SpecialEntity
 import io.github.some_example_name.old.entities.SpecialModDataEntity
 import io.github.some_example_name.old.entities.SubstancesEntity
 import io.github.some_example_name.old.entities.TailEntity
-import io.github.some_example_name.old.editor.entities.CellReplay
-import io.github.some_example_name.old.editor.entities.EyeReplay
-import io.github.some_example_name.old.editor.entities.LinkReplay
-import io.github.some_example_name.old.editor.entities.NeuralReplay
-import io.github.some_example_name.old.editor.system.SymmetryManager
-import io.github.some_example_name.old.entities.PheromoneEmitterEntity
-import io.github.some_example_name.old.entities.PheromoneEntity
-import io.github.some_example_name.old.entities.ProducerEntity
-import io.github.some_example_name.old.systems.pheromone.PheromonesManager
 import io.github.some_example_name.old.systems.genomics.CellSystem
 import io.github.some_example_name.old.systems.genomics.DivideManager
 import io.github.some_example_name.old.systems.genomics.MutateManager
 import io.github.some_example_name.old.systems.genomics.OrganManager
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
+import io.github.some_example_name.old.systems.pheromone.PheromonesManager
 import io.github.some_example_name.old.systems.physics.GridManager
 import io.github.some_example_name.old.systems.simulation.SimulationData
 
-object DIGenomeEditorContainer: DIContext, Disposable {
+object DIGenomeEditorContainer: DIContext, Disposable, EditorVariables {
     override var gridWidth = 128
     override var gridHeight = 128
     override var threadCount = 1
     override var chunkSize = gridWidth * gridHeight
     override var totalChunks = 1
+
+    override var currentTick = 0
+    override var currentStage = 0
+    override var lastTick = 0
+    override var lastStage = 0
+    override var grabbedCellIndex = -1
+    override var lastGrabbedCellX = 0.0f
+    override var lastGrabbedCellY = 0.0f
+    override var isRightClick = false
+    var previousCtrlClicked = -1
+    var linkColor: Color = Color.CYAN
 
     override val gridManager = GridManager(
         gridWidth = gridWidth,
@@ -59,7 +74,7 @@ object DIGenomeEditorContainer: DIContext, Disposable {
     val simulationData = SimulationData()
 
     override val genomeManager = GenomeManager(
-        genomeJsonReader = genomeJsonReader,
+        genomeJsonReader = DIGameGlobalContainer.genomeJsonReader,
         simulationData = simulationData,
         isGenomeEditor = true,
         genomeName = null
@@ -109,7 +124,7 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         cellsStartMaxAmount = 100,
         particleEntity = particleEntity,
         simulationData = simulationData,
-        substrateSettings = substrateSettings,
+        substrateSettings = DIGameGlobalContainer.substrateSettings,
         cellList = cellList,
         neuralEntity = neuralEntity,
         specialEntity = specialEntity
@@ -125,7 +140,7 @@ object DIGenomeEditorContainer: DIContext, Disposable {
     override val substancesEntity = SubstancesEntity(
         startMaxAmount = 1,
         particleEntity = particleEntity,
-        substrateSettings = substrateSettings
+        substrateSettings = DIGameGlobalContainer.substrateSettings
     )
     override val pheromoneEntity = PheromoneEntity(gridManager)
 
@@ -142,7 +157,7 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         cellEntity = cellEntity,
         linkEntity = linkEntity,
         particleEntity = particleEntity,
-        substrateSettings = substrateSettings,
+        substrateSettings = DIGameGlobalContainer.substrateSettings,
         genomeManager = genomeManager,
         simulationData = simulationData,
         cellList = cellList,
@@ -229,31 +244,63 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         pheromoneEmitterEntity
     )
 
+    private val replays = listOf(
+        cellReplay,
+        linkReplay,
+        eyeReplay,
+        neuralReplay
+    )
+
+    val userCommandManager = UserCommandManager(
+        organEntity = organEntity,
+        cellEntity = cellEntity,
+        genomeManager = genomeManager,
+        cellList = cellList,
+        simulationData = simulationData,
+        gridManager = gridManager,
+        particleEntity = particleEntity,
+        zygote = zygote
+    )
+
     val editorSimulationSystem = EditorSimulationSystem(
         cellEntity = cellEntity,
         organEntity = organEntity,
         organManager = organManager,
         worldCommandsManager = worldCommandsManager,
         genomeManager = genomeManager,
-        cellReplay = cellReplay,
-        linkReplay = linkReplay,
-        eyeReplay = eyeReplay,
-        neuralReplay = neuralReplay,
-        particleEntity = particleEntity,
+        replays = replays,
         cellSystem = cellSystem,
         gridManager = gridManager,
         zygote = zygote,
-        entityList = entityList
+        entityList = entityList,
+        userCommandManager = userCommandManager
     )
+
+    val nextStageTick
+        get() = editorSimulationSystem.tickByStage[(currentStage + 1).coerceIn(0, lastStage)]
 
     val commandEditorStackManager = CommandEditorStackManager()
 
-    val symmetryManager = SymmetryManager(
-        particleEntity = particleEntity,
-        editorSimulationSystem = editorSimulationSystem
+    val toEditorDataMapper = ToEditorDataMapper(
+        cellEntity = cellEntity,
+        cellReplay = cellReplay,
+        editorSimulationSystem = editorSimulationSystem,
+        particleEntity = particleEntity
     )
 
-    val editorLogicSystem = EditorLogicSystem(
+    val cellSearchManager = CellSearchManager(
+        cellReplay = cellReplay,
+        particleEntity = particleEntity,
+        gridManager = gridManager,
+        toEditorDataMapper = toEditorDataMapper
+    )
+
+    val symmetryManager = SymmetryManager(
+        particleEntity = particleEntity,
+        cellSearchManager = cellSearchManager
+    )
+
+    val leftRightClickManager = LeftRightClickManager(
         commandEditorStackManager = commandEditorStackManager,
         editorSimulationSystem = editorSimulationSystem,
         cellReplay = cellReplay,
@@ -261,20 +308,37 @@ object DIGenomeEditorContainer: DIContext, Disposable {
         eyeReplay = eyeReplay,
         neuralReplay = neuralReplay,
         cellEntity = cellEntity,
+        linkEntity = linkEntity,
+        symmetryManager = symmetryManager,
+        cellSearchManager = cellSearchManager,
+        toEditorDataMapper = toEditorDataMapper
+    )
+
+    val editorLogicSystem = EditorLogicSystem(
+        commandEditorStackManager = commandEditorStackManager,
+        editorSimulationSystem = editorSimulationSystem,
+        cellReplay = cellReplay,
+        cellEntity = cellEntity,
         particleEntity = particleEntity,
         linkEntity = linkEntity,
-        symmetryManager = symmetryManager
+        symmetryManager = symmetryManager,
+        gridManager = gridManager,
+        cellSearchManager = cellSearchManager,
+        toEditorDataMapper = toEditorDataMapper,
+        leftRightClickManager = leftRightClickManager
     )
 
     val editorRenderSystem = EditorRenderSystem(
-        shaderManager = shaderManager,
+        shaderManager = DIGameGlobalContainer.shaderManager,
         cellReplay = cellReplay,
         linkReplay = linkReplay,
         editorLogicSystem = editorLogicSystem,
         cellEntity = cellEntity,
         particleEntity = particleEntity,
         editorSimulationSystem = editorSimulationSystem,
-        symmetryManager = symmetryManager
+        symmetryManager = symmetryManager,
+        cellList = cellList,
+        cellSearchManager = cellSearchManager
     )
 
     override fun dispose() {

@@ -8,7 +8,7 @@ class CellReplay(
     startCapacity: Int,
     val particleEntity: ParticleEntity,
     val cellEntity: CellEntity
-) {
+): EditorReplay {
     private val initialCapacity = startCapacity
     var capacity = startCapacity
     var size = 0
@@ -42,14 +42,14 @@ class CellReplay(
         }
     }
 
-    fun reset() {
+    override fun reset() {
         size = 0
         capacity = initialCapacity
         replayCellsCounterInTick.clear()
         tickStartIndices.clear()
     }
 
-    fun copy() {
+    override fun copy() {
         val cellsAmount = particleEntity.aliveList.size
 
         // Запоминаем количество клеток и стартовую позицию этого тика
