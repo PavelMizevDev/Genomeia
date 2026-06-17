@@ -93,7 +93,7 @@ class MenuUiBuilder(
         stageText.setAlignment(Align.left)
         tickText = VisLabel("0")
         game.applyCustomFont(tickText)
-        timeSlider = makeStyledSlider(0f, editorLogicSystem.lastTick.toFloat(), 1f, false, textures)
+        timeSlider = makeStyledSlider(0f, lastTick.toFloat(), 1f, false, textures)
         timeSlider.value = 0f
 
         timeSlider.addListener { event ->
@@ -154,7 +154,7 @@ class MenuUiBuilder(
             colorInit = linkColor.cpy()
         )
 
-        val neuralColorLinkButton = makeStyledButton("Neural link color")
+        val neuralColorLinkButton = makeStyledButton("Neural link color", game, textures)
 
         // Toggle кнопка
         neuralColorLinkButton.addListener(object : ClickListener() {
