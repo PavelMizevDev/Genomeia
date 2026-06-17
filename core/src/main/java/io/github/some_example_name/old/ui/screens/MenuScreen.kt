@@ -112,7 +112,8 @@ class MenuScreen(
                 game.screen = SettingsScreen(game, multiPlatformFileProvider, bundle = bundle)
             },
             Btn(bundle.get("button.substrateSettings")) {
-                game.screen = JsonEditorScreen(game, multiPlatformFileProvider, bundle = bundle)
+                game.screen = EcoSystemScreen(game, multiPlatformFileProvider, bundle = bundle)
+//                game.screen = JsonEditorScreen(game, multiPlatformFileProvider, bundle = bundle)
             },
             Btn(bundle.get("button.exit")) { Gdx.app.exit() }
         )

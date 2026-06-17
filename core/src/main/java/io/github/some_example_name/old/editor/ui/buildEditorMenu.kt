@@ -16,6 +16,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import io.github.some_example_name.old.ui.screens.makeStyledButton
 import io.github.some_example_name.old.ui.screens.makeStyledSlider
 import io.github.some_example_name.old.core.DIGameGlobalContainer.bundle
+import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.editor.commands.CtrlY
 import io.github.some_example_name.old.editor.commands.CtrlZ
@@ -113,7 +114,7 @@ class MenuUiBuilder(
         val showPhysicalLinkButton = makeStyledButton(bundle.get("button.showPhysicalLink"), game, textures, toggle = true)
         showPhysicalLinkButton.isChecked = renderSystem.showPhysicalLink
 
-        
+
         showPhysicalLinkButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 renderSystem.showPhysicalLink = showPhysicalLinkButton.isChecked
@@ -177,11 +178,11 @@ class MenuUiBuilder(
         }
 
         val controls = Table()
-        controls.defaults().pad(0f).space(0f) 
+        controls.defaults().pad(0f).space(0f)
 
-        
+
         val topControls = Table()
-        topControls.defaults().pad(8f * density).center() 
+        topControls.defaults().pad(8f * density).center()
 
         var currentWidth = 0f
         var rowTable = Table()
@@ -202,13 +203,13 @@ class MenuUiBuilder(
             topControls.add(rowTable).growX().center()
         }
 
-        
+
         controls.add(topControls).center().pad(16f * density).row()
 
-        
+
         controls.add().growY().row()
 
-        
+
         val labelsRow = Table()
 
         val labelsRow1 = Table()
@@ -226,12 +227,12 @@ class MenuUiBuilder(
 
         labelsRow.add(labelsRow1)//.row()
         labelsRow.add(labelsRow2)
-        
+
         controls.add(labelsRow).center().pad(8f * density).row()
 
-        
+
         val sliderRow = Table()
-        sliderRow.defaults().pad(0f).space(0f) 
+        sliderRow.defaults().pad(0f).space(0f)
         val navBtnH = Gdx.graphics.height * 0.045f
         sliderRow.add(prevStageButton).height(navBtnH).padRight(8f * density)
         sliderRow.add(prevTickButton).height(navBtnH).padRight(8f * density)
@@ -239,10 +240,10 @@ class MenuUiBuilder(
         sliderRow.add(nextTickButton).height(navBtnH).padLeft(8f * density)
         sliderRow.add(nextStageButton).height(navBtnH).padLeft(8f * density)
 
-        
+
         controls.add(sliderRow).growX().pad(32f * density).row()
 
-        
+
         root.add(controls).expand().fill()
 
         prevStageButton.addListener(object : ClickListener() {

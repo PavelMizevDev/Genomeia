@@ -18,6 +18,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.utils.I18NBundle
+import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.DISimulationContainer.gridHeight
 import io.github.some_example_name.old.core.DISimulationContainer.gridWidth
 import io.github.some_example_name.old.core.DISimulationContainer.heightMultiplier
