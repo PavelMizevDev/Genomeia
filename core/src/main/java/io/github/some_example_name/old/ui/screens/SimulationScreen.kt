@@ -424,8 +424,7 @@ class SimulationScreen(
             numbersTable.defaults().pad(3f * density).width(keySize).height(keySize)
 
             for (num in 0..9) {
-                val btn = VisTextButton(num.toString())
-                applyCustomFont(btn)
+                val btn = makeStyledButton(num.toString(), game, extraTextures)
 
                 // === Слушатель для цифр ===
                 val index = num          // 0..9
@@ -456,8 +455,8 @@ class SimulationScreen(
             row2.defaults().height(keySize)
 
             // Левая кнопка
-            val wBtn = VisTextButton("W=10")
-            applyCustomFont(wBtn)
+            val wBtn = makeStyledButton("W=10", game, extraTextures)
+//            applyCustomFont(wBtn)
 
             wBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -471,8 +470,8 @@ class SimulationScreen(
             })
 
             // Правая кнопка
-            val upBtn = VisTextButton("^=15")
-            applyCustomFont(upBtn)
+            val upBtn = makeStyledButton("^=15", game, extraTextures)
+//            applyCustomFont(upBtn)
 
             upBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -515,8 +514,8 @@ class SimulationScreen(
             leftGroup.defaults().pad(3f * density).width(keySize).height(keySize)
 
 // A (индекс 11)
-            val aBtn = VisTextButton("A=11")
-            applyCustomFont(aBtn)
+            val aBtn = makeStyledButton("A=11", game, extraTextures)
+//            applyCustomFont(aBtn)
 
             aBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -532,8 +531,8 @@ class SimulationScreen(
             leftGroup.add(aBtn)
 
 // S (индекс 12)
-            val sBtn = VisTextButton("S=12")
-            applyCustomFont(sBtn)
+            val sBtn = makeStyledButton("S=12", game, extraTextures)
+//            applyCustomFont(sBtn)
 
             sBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -549,8 +548,8 @@ class SimulationScreen(
             leftGroup.add(sBtn)
 
 // D (индекс 13)
-            val dBtn = VisTextButton("D=13")
-            applyCustomFont(dBtn)
+            val dBtn = makeStyledButton("D=13", game, extraTextures)
+//            applyCustomFont(dBtn)
 
             dBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -568,8 +567,8 @@ class SimulationScreen(
 
 // Центральная кнопка -------------------------------------------------------
 
-            val spaceBtn = VisTextButton("(SPACE)=14")
-            applyCustomFont(spaceBtn)
+            val spaceBtn = makeStyledButton("(SPACE)=14", game, extraTextures)
+//            applyCustomFont(spaceBtn)
 
             spaceBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -589,8 +588,8 @@ class SimulationScreen(
             rightGroup.defaults().pad(3f * density).width(keySize).height(keySize)
 
 // ← (индекс 16)
-            val leftBtn = VisTextButton("<=16")
-            applyCustomFont(leftBtn)
+            val leftBtn = makeStyledButton("<=16", game, extraTextures)
+//            applyCustomFont(leftBtn)
 
             leftBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -606,8 +605,8 @@ class SimulationScreen(
             rightGroup.add(leftBtn)
 
 // ↓ (индекс 17)
-            val downBtn = VisTextButton("v=17")
-            applyCustomFont(downBtn)
+            val downBtn = makeStyledButton("v=17", game, extraTextures)
+//            applyCustomFont(downBtn)
 
             downBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -623,8 +622,8 @@ class SimulationScreen(
             rightGroup.add(downBtn)
 
 // → (индекс 18)
-            val rightBtn = VisTextButton(">=18")
-            applyCustomFont(rightBtn)
+            val rightBtn = makeStyledButton(">=18", game, extraTextures)
+//            applyCustomFont(rightBtn)
 
             rightBtn.addListener(object : ClickListener() {
                 override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {

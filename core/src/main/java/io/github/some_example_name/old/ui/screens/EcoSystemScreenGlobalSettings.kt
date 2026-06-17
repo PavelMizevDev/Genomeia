@@ -15,6 +15,7 @@ import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextField
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.core.GlobalSimulationSettings
@@ -80,7 +81,7 @@ class EcoSystemScreenGlobalSettings(
             table.add(splitter)
             table.add(input).padLeft(25f).row()
 
-            values.addLast(element.key.name to input)
+            values.add(values.size, element.key.name to input)
         }
 
         val buttonsTable = VisTable()
@@ -160,7 +161,7 @@ class EcoSystemScreenGlobalSettings(
         val prettyJson = json.prettyPrint(defaultSettings)
         fileHandle.writeString(prettyJson, false)
 
-        DISimulationContainer.substrateSettings.update()
+        substrateSettings.update()
 
         errorLabel.setText("")
     }
@@ -225,7 +226,7 @@ class EcoSystemScreenGlobalSettings(
 
             errorLabel.setText("")
 
-            DISimulationContainer.substrateSettings.update()
+            substrateSettings.update()
         } catch (e: Exception) {
             errorLabel.setText("Error: Invalid JSON - ${e.message}")
         }

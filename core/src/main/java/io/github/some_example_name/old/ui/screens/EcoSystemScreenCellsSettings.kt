@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.util.TableUtils
 import com.kotcrab.vis.ui.widget.*
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.core.GlobalSimulationSettings
@@ -276,7 +277,7 @@ class EcoSystemScreenCellsSettings(
 
             errorLabel.setText("")
 
-            DISimulationContainer.substrateSettings.update()
+            substrateSettings.update()
         } catch (e: Exception) {
             errorLabel.setText("Error: Invalid JSON - ${e.message}")
         }
