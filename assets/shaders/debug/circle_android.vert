@@ -31,7 +31,7 @@ void main() {
     float cosA = v1.x * 2.0 - 1.0;
     float sinA = v1.y * 2.0 - 1.0;
 
-    ex_R = 0.1 + v1.w * 0.4;
+    ex_R = 0.05 + v1.w * 0.7;
     int cellType = int(round(v2.y * 255.0));
 
     vec2 worldPos = a_position * ex_R + a_pos;
@@ -40,7 +40,7 @@ void main() {
     ex_Centroid = a_pos;
     ex_Color = unpackUnorm4x8(a_color).rgb;
     ex_R_2 = ex_R * ex_R;
-    ex_Energy = v2.x * 10.0 * 0.0;
+    ex_Energy = v2.x * v2.x * 0.25;
     ex_UV = a_position * 0.5 + 0.5;
     ex_cellType = cellType;
 

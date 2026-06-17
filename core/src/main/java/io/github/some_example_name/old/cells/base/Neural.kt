@@ -18,10 +18,17 @@ val formulaType = arrayOf(
     "y = impulse(a), x>=1",
     "y = x in (a, b) else y = c",
     "y = x^(a)",
-    "y = remember(x), 0, 1"
+    "y = remember(x), 0, 1",
+    "y = random(a, b)",
+    "y = r(x)",
+    "y = g(x)",
+    "y = b(x)",
+    "y = energy",
+    "y = controller(a)"
 )
 
-fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
+fun activation(cellIndex: Int, nonSafeX: Float) = with(cellEntity) {
+    val x = nonSafeX.coerceIn(-1e10f, 1e10f)
     when (getActivationFuncType(cellIndex)) {
         0 -> getA(cellIndex) * x + getB(cellIndex)
         1 -> getC(cellIndex) * sin(getA(cellIndex) * x + getB(cellIndex))
@@ -62,6 +69,44 @@ fun activation(cellIndex: Int, x: Float) = with(cellEntity) {
             getRemember(cellIndex)
         }
 
+        11 -> {
+            val a = getA(cellIndex)
+            val b = getB(cellIndex)
+            randomFromFloat(x, a, b)
+        }
+
+        12 -> {
+            (x * 255f).toInt().toFloat()
+        }
+
+        13 -> {
+            ((x * 255f).toInt() * 256).toFloat()
+        }
+
+        14 -> {
+            ((x * 255f).toInt() * 65536).toFloat()
+        }
+
+        15 -> {
+            energy[cellIndex] / maxEnergy[cellIndex]
+        }
+
+        16 -> {
+            if (simulationData.controllerKeyTouched[getA(cellIndex).toInt()]) 1f else 0f
+        }
+
         else -> x
     }
+}
+
+fun randomFromFloat(seed: Float, min: Float, max: Float): Float {
+    var x = seed.toBits()
+
+    x = x xor (x shl 13)
+    x = x xor (x shr 17)
+    x = x xor (x shl 5)
+
+    val normalized = (x.toUInt().toDouble() / UInt.MAX_VALUE.toDouble()).toFloat()
+
+    return min + normalized * (max - min)
 }

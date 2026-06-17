@@ -1,8 +1,10 @@
 package io.github.some_example_name.old.systems.genomics
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.Eye
 import io.github.some_example_name.old.cells.Muscle
+import io.github.some_example_name.old.cells.PheromoneEmitter
 import io.github.some_example_name.old.cells.Producer
 import io.github.some_example_name.old.cells.Tail
 import io.github.some_example_name.old.cells.Zygote
@@ -31,7 +33,7 @@ class MutateManager(
 ): Disposable {
 
     fun mutateCell(index: Int, threadId: Int) = with(cellEntity) {
-        //TODO очень легко запутсаться и потерять какие-то значения при мутации, нужно либо перепроверить, либо менять все параметры разом
+        //TODO очень легко запутсаться и потерять какие-то значения при мутации, нужно либо перепроверить, либо менять все параметры разом или сделать общий метод с addCell
         if (!isMutateInThisStage[index] && energy[index] >= energyNecessaryToMutate[index]) {
             isMutateInThisStage[index] = true
 
@@ -108,7 +110,20 @@ class MutateManager(
                         ints = intArrayOf(index)
                     )
                 }
+                if (lastCell is PheromoneEmitter && newCell !is PheromoneEmitter) {
+                    worldCommandsManager.worldCommandBuffer[threadId].push(
+                        type = WorldCommandType.DELETE_PHEROMONE_EMITTER,
+                        ints = intArrayOf(index, specialEntity.getPheromoneEmitterGeneration(index))
+                    )
+                }
+                if (lastCell !is PheromoneEmitter && newCell is PheromoneEmitter) {
+                    worldCommandsManager.worldCommandBuffer[threadId].push(
+                        type = WorldCommandType.ADD_PHEROMONE_EMITTER,
+                        ints = intArrayOf(index)
+                    )
+                }
                 cellType[index] = it.toByte()
+                maxEnergy[index] = cellsSettings[it].maxEnergy
                 setDragCoefficient(index, substrateSettings.data.viscosityOfTheEnvironment)
                 setEffectOnContact(index, newCell.effectOnContact)
                 setIsCollidable(index, newCell.isCollidable)
@@ -123,10 +138,12 @@ class MutateManager(
             }
 
             if (isFromMuscleToAnother) {
-                //TODO придумать как выприямить все линки, если мышца превратиалсь в дргую клетку
+                degreeOfShortening[index] = 1f
             }
 
             action.color?.let { setColor(index, it.toIntBits()) }
+
+            action.radius?.let { setRadius(index, it) }
 
             if (lastCell.isNeural && newCell.isNeural) {
                 action.funActivation?.let { setActivationFuncType(index, it.toByte()) }
@@ -163,6 +180,10 @@ class MutateManager(
                 action.lengthDirected?.let { specialEntity.setVisibilityRange(index, it) }
             }
 
+            action.pheromoneType?.let {
+                pheromoneType[index] = it
+            }
+
             if (action.physicalLink.isNotEmpty()) {
                 val gridX = getX(index).toInt()
                 val gridY = getY(index).toInt()
@@ -179,35 +200,36 @@ class MutateManager(
                         val linkIndex = linkEntity.linkIndexMap.get(index, linkedCellIndex)
                         if (linkData != null) {
                             if (linkIndex == -1) {
-                                if (linkData.length != null) {
-                                    if (linkData.isNeuronal && linkData.directedNeuronLink != cellGenomeId[index]
-                                        && linkData.directedNeuronLink != cellGenomeIdToConnectWith
-                                    ) {
-                                        throw Exception("Incorrect logic in the neural-link")
-                                    }
-
-                                    val cellIndex: Int = index
-                                    val otherCellIndex: Int = linkedCellIndex
-                                    val linksLength: Float = linkData.length
-                                    val degreeOfShortening: Float = 1f
-                                    val isStickyLink: Boolean = false
-                                    val isNeuronLink: Boolean = linkData.isNeuronal
-                                    val isLink1NeuralDirected: Boolean = linkData.directedNeuronLink == cellGenomeId[index]
-
-                                    if (otherCellIndex == -1) throw Exception("otherCellIndex == -1 in Mutate")
-                                    worldCommandsManager.worldCommandBuffer[threadId].push(
-                                        type = WorldCommandType.ADD_LINK,
-                                        booleans = booleanArrayOf(
-                                            isStickyLink,
-                                            isNeuronLink,
-                                            isLink1NeuralDirected
-                                        ),
-                                        floats = floatArrayOf(linksLength, degreeOfShortening),
-                                        ints = intArrayOf(cellIndex, otherCellIndex)
-                                    )
+                                if (linkData.isNeuronal && linkData.directedNeuronLink != cellGenomeId[index]
+                                    && linkData.directedNeuronLink != cellGenomeIdToConnectWith
+                                ) {
+                                    throw Exception("Incorrect logic in the neural-link")
                                 }
+
+                                val cellIndex: Int = index
+                                val otherCellIndex: Int = linkedCellIndex
+                                val linksLength: Float = linkData.length ?: -1f
+                                val degreeOfShortening: Float = 1f
+                                val isStickyLink: Boolean = false
+                                val isNeuronLink: Boolean = linkData.isNeuronal
+                                val isLink1NeuralDirected: Boolean = linkData.directedNeuronLink == cellGenomeId[index]
+                                val linkColor = (linkData.color ?: if (linkData.isNeuronal) Color.CYAN else Color.RED).toIntBits()
+
+                                if (otherCellIndex == -1) throw Exception("otherCellIndex == -1 in Mutate")
+                                worldCommandsManager.worldCommandBuffer[threadId].push(
+                                    type = WorldCommandType.ADD_LINK,
+                                    booleans = booleanArrayOf(
+                                        isStickyLink,
+                                        isNeuronLink,
+                                        isLink1NeuralDirected
+                                    ),
+                                    floats = floatArrayOf(linksLength, degreeOfShortening),
+                                    ints = intArrayOf(cellIndex, otherCellIndex, linkColor)
+                                )
                             } else {
                                 with(linkEntity) {
+                                    color[linkIndex] = (linkData.color ?: if (linkData.isNeuronal) Color.CYAN else Color.RED).toIntBits()
+
                                     if (!linkData.isNeuronal) {
                                         val cellIndex = if (isLink1NeuralDirected[linkIndex]) links1[linkIndex] else links2[linkIndex]
                                         if (isNeural[cellIndex]) {
@@ -233,6 +255,7 @@ class MutateManager(
                             }
                         } else {
                             if (linkIndex != -1) {
+                                linkEntity.reinitParentLink(linkIndex)
                                 worldCommandsManager.worldCommandBuffer[threadId].push(
                                     type = WorldCommandType.DELETE_LINK,
                                     ints = intArrayOf(linkIndex, linkEntity.getGeneration(linkIndex))

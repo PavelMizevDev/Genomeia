@@ -1,17 +1,18 @@
 package io.github.some_example_name.old.systems.physics
 
-import com.badlogic.gdx.utils.Disposable
+import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.commands.WorldCommandType
+import io.github.some_example_name.old.core.DIContext
 import io.github.some_example_name.old.core.DISimulationContainer.linkMaxLength2
-import io.github.some_example_name.old.core.DISimulationContainer.threadCount
 import io.github.some_example_name.old.core.DISimulationContainer.threadManager
 import io.github.some_example_name.old.core.SubstrateSettings
-import io.github.some_example_name.old.core.utils.invSqrt
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.ParticleEntity
 import io.github.some_example_name.old.systems.genomics.CellSystem
+import it.unimi.dsi.fastutil.ints.IntArrayList
+import kotlin.math.sqrt
 
 class LinkPhysicsSystem(
     val linkEntity: LinkEntity,
@@ -19,78 +20,81 @@ class LinkPhysicsSystem(
     val substrateSettings: SubstrateSettings,
     val cellEntity: CellEntity,
     val cellSystem: CellSystem,
-    val worldCommandsManager: WorldCommandsManager
-): Disposable {
+    val worldCommandsManager: WorldCommandsManager,
+    val diContext: DIContext
+) {
 
     fun iterateLinks() {
-        for (chunk in 0..<threadCount) {
-            threadManager.futures.add(threadManager.executor.submit {
-                for (i in 0..<worldCommandsManager.oddCounter[chunk]) {
-                    stretchLinks(worldCommandsManager.oddChunkPositionStack[chunk][i], threadId = chunk)
-                }
-            })
-        }
-        threadManager.futures.forEach { it.get() }
-        threadManager.futures.clear()
-
-        for (chunk in 0..<threadCount) {
-            threadManager.futures.add(threadManager.executor.submit {
-                for (i in 0..<worldCommandsManager.evenCounter[chunk]) {
-                    stretchLinks(worldCommandsManager.evenChunkPositionStack[chunk][i], threadId = chunk)
-                }
-            })
-        }
-        threadManager.futures.forEach { it.get() }
-        threadManager.futures.clear()
+        processPhase(worldCommandsManager.oddLinkLists)
+        processPhase(worldCommandsManager.evenLinkLists)
     }
 
-    private fun stretchLinks(particleIndex: Int, threadId: Int) = with(linkEntity) {
-        if (!particleEntity.isCell[particleIndex]) return@with
-        val cellIndex = particleEntity.holderEntityIndex[particleIndex]
-        with(cellEntity) {
-            val base = cellIndex * MAX_LINK_AMOUNT
-            val amount = linksAmount[cellIndex]
-            if (amount == 0) return
+    private fun processPhase(lists: Array<IntArrayList>) {
+        threadManager.futures.clear()
 
-            for (i in 0 until amount) {
-                val idx = base + i
-                val linkIndex = links[idx]
-                val c1 = links1[linkIndex]
-                val c2 = links2[linkIndex]
-                if (!cellEntity.isAlive[c1] || !cellEntity.isAlive[c2]) {
-                    throw Exception("link $linkIndex exist, but some cell is deleted ($c1 $c2)")
-                }
-
-                val otherCellIndex = if (c1 != cellIndex) c1 else if (c2 != cellIndex) c2 else continue
-                val gridCellAId = getGridId(cellIndex)
-                val gridCellBId = getGridId(otherCellIndex)
-                if (gridCellAId < gridCellBId) {
-                    processLink(linkIndex, threadId)
-                } else if (gridCellAId == gridCellBId) {
-                    val yCellA = getY(cellIndex)
-                    val yCellB = getY(otherCellIndex)
-                    if (yCellA < yCellB) {
-                        processLink(linkIndex, threadId)
-                    } else if (yCellA == yCellB) {
-                        if (getX(cellIndex) < getX(otherCellIndex)) {
-                            processLink(linkIndex, threadId)
-                        }
+        for (t in 0 until diContext.threadCount) {
+            threadManager.futures.add(
+                threadManager.executor.submit {
+                    val list = lists[t]
+                    for (i in 0 until list.size) {
+                        val linkIndex = list.getInt(i)
+                        processLink(linkIndex,t)
                     }
                 }
-            }
+            )
         }
+        threadManager.futures.forEach { it.get() }
+        threadManager.futures.clear()
     }
 
-    private fun processLink(linkIndex: Int, threadId: Int) = with(particleEntity) {
-        with(cellEntity){
+
+    private fun processLink(
+        linkIndex: Int,
+        threadId: Int
+    ) = with(particleEntity) {
+        with(cellEntity) {
             with(linkEntity) {
                 val linkCellA = links1[linkIndex]
                 val linkCellB = links2[linkIndex]
+
+                val linkCellAIsDead = !cellEntity.isAlive[linkCellA] || cellEntity.getGeneration(linkCellA) != linksGeneration1[linkIndex]
+                val linkCellBIsDead = !cellEntity.isAlive[linkCellB] || cellEntity.getGeneration(linkCellB) != linksGeneration2[linkIndex]
+
+                if (linkCellAIsDead || linkCellBIsDead) {
+                    linkEntity.reinitParentLink(linkIndex)
+                    worldCommandsManager.worldCommandBuffer[threadId].push(
+                        type = WorldCommandType.DELETE_LINK,
+                        ints = intArrayOf(linkIndex, linkEntity.getGeneration(linkIndex))
+                    )
+                    if (linkCellAIsDead && !linkCellBIsDead) {
+                        isOnEdge[linkCellB] = true
+                        setColor(linkCellB, Color.RED.toIntBits())
+                    }
+                    if (linkCellBIsDead && !linkCellAIsDead) {
+                        isOnEdge[linkCellA] = true
+                        setColor(linkCellA, Color.RED.toIntBits())
+                    }
+                    return@with
+                }
+
                 val linkParticleA = getParticleIndex(linkCellA)
                 val linkParticleB = getParticleIndex(linkCellB)
 
                 val dx = x[linkParticleA] - x[linkParticleB]
                 val dy = y[linkParticleA] - y[linkParticleB]
+                val distanceSquared = dx * dx + dy * dy
+
+                if (isLongNeuralLink[linkIndex]) {
+                    if (distanceSquared > 16) {
+                        worldCommandsManager.worldCommandBuffer[threadId].push(
+                            type = WorldCommandType.DELETE_LINK,
+                            ints = intArrayOf(linkIndex, linkEntity.getGeneration(linkIndex))
+                        )
+                        return@with
+                    }
+                    cellSystem.transportNeuralSignal(linkIndex, linkCellA, linkCellB)
+                    return@with
+                }
 
                 cellSystem.transportEnergy(linkCellA, linkCellB)
                 cellSystem.transportNeuralSignal(linkIndex, linkCellA, linkCellB)
@@ -102,24 +106,32 @@ class LinkPhysicsSystem(
                 if (linkCellB == parentCellA) {
                     cellSystem.processCellAngle(linkCellA, linkCellB)
                 }
-                val distanceSquared = dx * dx + dy * dy
 
                 if (distanceSquared > linkMaxLength2) {
+                    linkEntity.reinitParentLink(linkIndex)
                     worldCommandsManager.worldCommandBuffer[threadId].push(
                         type = WorldCommandType.DELETE_LINK,
                         ints = intArrayOf(linkIndex, linkEntity.getGeneration(linkIndex))
                     )
+                    isOnEdge[linkCellB] = true
+                    setColor(linkCellB, Color.RED.toIntBits())
+                    isOnEdge[linkCellA] = true
+                    setColor(linkCellA, Color.RED.toIntBits())
                     return
                 }
-                // TODO: for physical accuracy this should be changed to a harmonic mean
+
                 val stiffnessA = cellStiffness[linkParticleA]
                 val stiffnessB = cellStiffness[linkParticleB]
                 val stiffness = 2 * stiffnessA * stiffnessB / (stiffnessA + stiffnessB)
 
                 if (distanceSquared < 0) throw Exception("distanceSquared < 0, distanceSquared = $distanceSquared")
-                val dist = 1.0f / invSqrt(distanceSquared)
+                val dist = sqrt(distanceSquared)
 
-                val force = (dist - linksNaturalLength[linkIndex] * degreeOfShortening[linkIndex]) * stiffness
+                val degreeOfShorteningA = degreeOfShortening[linkCellA]
+                val degreeOfShorteningB = degreeOfShortening[linkCellB]
+                val degreeOfShortening = 2 * degreeOfShorteningA * degreeOfShorteningB / (degreeOfShorteningA + degreeOfShorteningB)
+
+                val force = (dist - linksNaturalLength[linkIndex] * degreeOfShortening) * stiffness
 
                 val dirX = dx / dist
                 val dirY = dy / dist
@@ -138,15 +150,10 @@ class LinkPhysicsSystem(
                 vy[linkParticleB] += fy
                 vx[linkParticleA] -= fx
                 vy[linkParticleA] -= fy
+
+                if (parentIndex[linkCellA] == -1) reinitParentIndex(linkCellA, linkCellB)
+                if (parentIndex[linkCellB] == -1) reinitParentIndex(linkCellB, linkCellA)
             }
         }
-    }
-
-    override fun dispose() {
-
-    }
-
-    companion object {
-        const val MAX_LINK_AMOUNT = 10
     }
 }

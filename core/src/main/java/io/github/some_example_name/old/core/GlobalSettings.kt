@@ -20,7 +20,6 @@ data class GlobalSimulationSettings(
     var rateOfPheromoneDegradation: Float = 1.6e-4f,
     var theNumberOfTicksHungryCellDies: Int = 200,
     var gravity: Float = 0.0f,
-    var linkMaxLength: Float = 4f,
     var cellsSettings: MutableMap<String, CellSettings> = defaultCellSettingsMap()
 )
 
@@ -221,7 +220,7 @@ class SubstrateSettings {
 
     fun getFileHandle(): FileHandle {
         val relativeFolderName = "settings"
-        val fileName = "GlobalSubstrateSettings.json"
+        val fileName = "GlobalSubstrateSettings-0.2.3.json"
 
         val saveDir: FileHandle = when (Gdx.app.type) {
             Application.ApplicationType.Desktop -> {

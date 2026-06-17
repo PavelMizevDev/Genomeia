@@ -37,14 +37,21 @@ class ActionJsonRead(
     val c: Float? = null,
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
-    val lengthDirected: Float? = null
+    val lengthDirected: Float? = null,
+    val pheromoneType: Int? = null,
+    val specialData: SpecialDataJsonRead? = null
 )
 
 class LinkDataJsonRead(
     val length: Float? = null,
     val isNeuronal: Boolean? = null,
     val weight: Float? = null,
+    val color: String? = null,
     val directedNeuronLink: Int? = null
+)
+
+class SpecialDataJsonRead(
+    val attachedKey: Char
 )
 
 
@@ -65,7 +72,8 @@ fun CreatureJsonRead.jsonToDomain(isEditor: Boolean = false): Genome {
         genomeStageInstruction = genomeStageInstruction.toMutableList(),
         dividedTimes = dividedTimes,
         mutatedTimes = mutatedTimes,
-        name = this.name
+        name = this.name,
+        subGenomes = hashMapOf()
     )
 }
 
@@ -129,15 +137,24 @@ private fun ActionJsonRead.toDomain(): Action {
         c = c,
         isSum = isSum,
         colorRecognition = colorRecognition,
-        lengthDirected = lengthDirected?.div(40f)
+        lengthDirected = lengthDirected?.div(40f),
+        pheromoneType = pheromoneType,
+        specialData = specialData?.toDomain()
+    )
+}
+
+private fun SpecialDataJsonRead.toDomain(): SpecialData {
+    return SpecialData(
+        attachedKey
     )
 }
 
 private fun LinkDataJsonRead.toDomain(): LinkData {
     return LinkData(
-        length = (length ?: 10f) / 40f,
+        length = if(length != null) (length / 40f) else null,
         isNeuronal = directedNeuronLink != null,
         weight = weight,
+        color = if (color != null) Color.valueOf(color) else null,
         directedNeuronLink = directedNeuronLink
     )
 }

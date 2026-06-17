@@ -1,10 +1,10 @@
 package io.github.some_example_name.old.entities
 
 import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.SpecialModData
 import io.github.some_example_name.old.core.DISimulationContainer.cellsSettings
 import io.github.some_example_name.old.core.SubstrateSettings
 import io.github.some_example_name.old.systems.genomics.genome.CellAction
-import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem.Companion.MAX_LINK_AMOUNT
 import io.github.some_example_name.old.systems.simulation.SimulationData
 
 class CellEntity(
@@ -36,12 +36,14 @@ class CellEntity(
     fun getCellStiffness(index: Int) = particleEntity.cellStiffness[particleIndexes[index]]
     fun setCellStiffness(index: Int, value: Float) { particleEntity.cellStiffness[particleIndexes[index]] = value }
     fun getRadius(index: Int) = particleEntity.radius[particleIndexes[index]]
-    fun seRadius(index: Int, value: Float) { particleEntity.radius[particleIndexes[index]] = value }
+    fun setRadius(index: Int, value: Float) { particleEntity.radius[particleIndexes[index]] = value }
     fun getGridId(index: Int) = particleEntity.gridId[particleIndexes[index]]
     fun seGridId(index: Int, value: Int) { particleEntity.gridId[particleIndexes[index]] = value }
     fun getSimTime(index: Int) = simulationData.timeSimulation
     fun getColor(index: Int) = particleEntity.color[particleIndexes[index]]
     fun setColor(index: Int, value: Int) { particleEntity.color[particleIndexes[index]] = value }
+    fun getIsPheromoneEmitter(index: Int) = particleEntity.isPheromoneEmitter[particleIndexes[index]]
+    fun setIsPheromoneEmitter(index: Int, value: Boolean) { particleEntity.isPheromoneEmitter[particleIndexes[index]] = value }
     var cellGenomeId = IntArray(maxAmount) { -1 }
     var cellActions: Array<CellAction?> = arrayOfNulls(maxAmount)
     var organIndex = IntArray(maxAmount) { -1 }
@@ -62,6 +64,9 @@ class CellEntity(
     var isNeural = BooleanArray(maxAmount)
     var neuronImpulseInput = FloatArray(maxAmount)
     var neuronImpulseOutput = FloatArray(maxAmount)
+    var isOnEdge = BooleanArray(maxAmount)
+    var degreeOfShortening = FloatArray(maxAmount) { 1f }
+    var pheromoneType = IntArray(maxAmount) { -1 }
 
     //Neural entity
     var neuralIndexes = IntArray(maxAmount) { -1 }
@@ -86,6 +91,11 @@ class CellEntity(
     fun deleteNeural(cellIndex: Int, neuralGeneration: Int? = null) {
         val neuralIndex = neuralIndexes[cellIndex]
         if (neuralIndex == -1) return
+
+        neuronImpulseInput[cellIndex] = 0f
+        neuronImpulseOutput[cellIndex] = 0f
+        isNeural[cellIndex] = false
+
         if (neuralEntity.isAlive[neuralIndex] && (neuralGeneration == null
                 || neuralEntity.getGeneration(neuralIndex) == neuralGeneration)) {
             neuralEntity.deleteNeural(neuralIndex)
@@ -108,39 +118,6 @@ class CellEntity(
         neuralIndexes[index] = neuralEntity.addNeural(cellType, a, b, c, isSum, activationFuncType)
     }
 
-
-    //Link
-    var linksAmount = IntArray(maxAmount)
-    var links = IntArray(maxAmount * MAX_LINK_AMOUNT) { -1 }
-
-    fun addLink(cellId: Int, linkId: Int) {
-        val base = cellId * MAX_LINK_AMOUNT
-        if (cellId < 0) return
-        val amount = linksAmount[cellId]
-        if (amount >= MAX_LINK_AMOUNT) {
-            links[base + MAX_LINK_AMOUNT - 1] = linkId
-        } else {
-            links[base + amount] = linkId
-            linksAmount[cellId] += 1
-        }
-    }
-
-    fun deleteLinkedCellLink(cellId: Int, linkId: Int) {
-        val base = cellId * MAX_LINK_AMOUNT
-        val amount = linksAmount[cellId]
-        if (amount == 0) return
-
-        for (i in 0 until amount) {
-            val idx = base + i
-            if (links[idx] == linkId) {
-                links[idx] = links[base + amount - 1]
-                links[base + amount - 1] = -1
-                linksAmount[cellId] -= 1
-                return
-            }
-        }
-    }
-
     fun addCell(
         x: Float,
         y: Float,
@@ -161,7 +138,9 @@ class CellEntity(
         c: Float = 0f,
         isSum: Boolean = true,
         activationFuncType: Byte = 7,
-        speed: Float = 0f
+        speed: Float = 0f,
+        pheromoneType: Int = -1,
+        specialModData: SpecialModData? = null
     ): Int {
         val cellIndex = add()
 
@@ -175,6 +154,7 @@ class CellEntity(
             isCollidable = cellList[cellType].isCollidable,
             cellStiffness = cellsSettings[cellType].cellStiffness,
             isCell = true,
+            isSub = false,
             holderEntityIndex = cellIndex
         )
         this.cellGenomeId[cellIndex] = cellGenomeId
@@ -194,7 +174,9 @@ class CellEntity(
         this.cellType[cellIndex] = cellType.toByte()
         energy[cellIndex] = 0f
         maxEnergy[cellIndex] = cellsSettings[cellType].maxEnergy
-        linksAmount[cellIndex] = 0
+        isOnEdge[cellIndex] = true
+        this.degreeOfShortening[cellIndex] = 1f
+        this.pheromoneType[cellIndex] = pheromoneType
         val cell = cellList[cellType]
 
         if (cell.isNeural) {
@@ -210,7 +192,8 @@ class CellEntity(
             cell = cell,
             colorDifferentiation = colorDifferentiation,
             visibilityRange = visibilityRange,
-            speed = speed
+            speed = speed,
+            specialModData = specialModData
         )
 
         return cellIndex
@@ -244,9 +227,9 @@ class CellEntity(
         isNeural[cellIndex] = false
         neuronImpulseInput[cellIndex] = 0f
         neuronImpulseOutput[cellIndex] = 0f
-        linksAmount[cellIndex] = 0
-        val base = cellIndex * MAX_LINK_AMOUNT
-        links.fill(-1, base, base + MAX_LINK_AMOUNT)
+        isOnEdge[cellIndex] = true
+        this.degreeOfShortening[cellIndex] = 1f
+        pheromoneType[cellIndex] = -1
 
         deleteNeural(cellIndex = cellIndex)
 
@@ -284,8 +267,9 @@ class CellEntity(
         neuronImpulseInput.clear()
         neuronImpulseOutput.clear()
         neuralIndexes.clear()
-        linksAmount.clear()
-        links.fill(-1, 0, bound * MAX_LINK_AMOUNT)
+        isOnEdge.clear(true)
+        degreeOfShortening.clear(1f)
+        pheromoneType.clear(-1)
     }
 
     override fun onResize(oldMax: Int) {
@@ -315,13 +299,8 @@ class CellEntity(
         neuronImpulseInput = neuronImpulseInput.resize()
         neuronImpulseOutput = neuronImpulseOutput.resize()
         neuralIndexes = neuralIndexes.resize()
-        linksAmount = linksAmount.resize()
-        run {
-            val oldLinks = links
-            links = IntArray(maxAmount * MAX_LINK_AMOUNT) { -1 }
-            for (i in 0 until oldMax) {
-                System.arraycopy(oldLinks, i * MAX_LINK_AMOUNT, links, i * MAX_LINK_AMOUNT, MAX_LINK_AMOUNT)
-            }
-        }
+        isOnEdge = isOnEdge.resize(true)
+        degreeOfShortening = degreeOfShortening.resize(1f)
+        pheromoneType = pheromoneType.resize(-1)
     }
 }

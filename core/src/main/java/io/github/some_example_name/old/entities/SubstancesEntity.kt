@@ -48,6 +48,8 @@ class SubstancesEntity(
             effectOnContact = false,
             cellStiffness = 0.05f,
             isCell = false,
+            isSub = true,
+            isPheromoneEmitter = true,
             holderEntityIndex = subIndex
         )
 

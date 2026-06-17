@@ -29,7 +29,6 @@ sealed class Cell(
     val linkEntity get() = context.linkEntity
     val substancesEntity get() = context.substancesEntity
     val specialEntity get() = context.specialEntity
-    val substrateSettings get() = context.substrateSettings
     val worldCommandsManager get() = context.worldCommandsManager
     val organEntity get() = context.organEntity
     val genomeManager get() = context.genomeManager
@@ -37,6 +36,7 @@ sealed class Cell(
 
     val gridManager get() = context.gridManager
     val organManager get() = context.organManager
+    val pheromonesManager get() = context.pheromonesManager
 
     open fun onStart(cellIndex: Int, threadId: Int, genomeIndex: Int = -1) {
 

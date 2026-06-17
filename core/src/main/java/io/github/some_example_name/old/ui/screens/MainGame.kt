@@ -23,12 +23,13 @@ import com.kotcrab.vis.ui.widget.VisTextField
 import com.kotcrab.vis.ui.widget.VisValidatableTextField
 import io.github.some_example_name.old.core.DI
 import io.github.some_example_name.old.core.DIGameGlobalContainer
-import io.github.some_example_name.old.core.DIGenomeEditorContainer
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer
 import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.ui.screens.GlobalSettings.MSAA
 import io.github.some_example_name.old.ui.screens.GlobalSettings.MUSIC_VOLUME
 import io.github.some_example_name.old.ui.screens.GlobalSettings.UI_SCALE
 import io.github.some_example_name.old.core.FileProvider
+import io.github.some_example_name.old.systems.pheromone.PheromoneShaderManager
 import io.github.some_example_name.old.systems.render.ShaderManager
 import com.badlogic.gdx.video.VideoPlayer
 import kotlin.math.max
@@ -38,12 +39,14 @@ interface KeyBoardListener {
 }
 var openKeyBoardListenerGlobal: KeyBoardListener? = null
 var androidRendererFactory: (() -> ShaderManager)? = null
+var androidPheromoneRendererFactory: (() -> PheromoneShaderManager)? = null
 
 //Entry point
 class MyGame(
     val multiPlatformFileProvider: FileProvider,
     val openKeyBoardListener: KeyBoardListener? = null,
-    private val rendererFactory: (() -> ShaderManager)? = null,
+    rendererFactory: (() -> ShaderManager)? = null,
+    rendererPheromoneShaderManagerLibgdx: (() -> PheromoneShaderManager)? = null,
     val videoFactory: (() -> VideoPlayer)? = null
 ) : Game() {
 
@@ -68,6 +71,7 @@ class MyGame(
 
     init {
         androidRendererFactory = rendererFactory
+        androidPheromoneRendererFactory = rendererPheromoneShaderManagerLibgdx
     }
 
     override fun create() {
@@ -234,6 +238,12 @@ fun MyGame.applyCustomFont(label: VisLabel) {
 fun MyGame.applyCustomFontMedium(label: VisLabel) {
     val newStyle = Label.LabelStyle(label.style)
     newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.mediumFont else this.largeFont
+    label.style = newStyle
+}
+
+fun MyGame.applyCustomFontSmall(label: VisLabel) {
+    val newStyle = Label.LabelStyle(label.style)
+    newStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) this.smallFont else this.mediumFont
     label.style = newStyle
 }
 

@@ -10,6 +10,7 @@ import io.github.some_example_name.old.core.utils.invSqrt
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.SubstancesEntity
+import io.github.some_example_name.old.systems.pheromone.PheromonesManager
 import io.github.some_example_name.old.systems.simulation.SimulationData
 import io.github.some_example_name.old.ui.screens.GlobalSettings.GRAVITATION
 import kotlin.math.sqrt
@@ -23,7 +24,8 @@ class ParticlePhysicsSystem(
     val cellEntity: CellEntity,
     val linkEntity: LinkEntity,
     val cellList: List<Cell>,
-    val substancesEntity: SubstancesEntity
+    val substancesEntity: SubstancesEntity,
+    val pheromonesManager: PheromonesManager
 ) {
 
     val halfChunkHeight2 = HALF_CHUNK_HEIGHT * HALF_CHUNK_HEIGHT
@@ -49,10 +51,10 @@ class ParticlePhysicsSystem(
         threadId: Int,
         isOdd: Boolean
     ) {
-        val stacks = if (isOdd) worldCommandsManager.oddChunkPositionStack
-        else worldCommandsManager.evenChunkPositionStack
-        val counters = if (isOdd) worldCommandsManager.oddCounter
-        else worldCommandsManager.evenCounter
+        val stacks = if (isOdd) worldCommandsManager.oddCellChunkPositionStack
+        else worldCommandsManager.evenCellChunkPositionStack
+        val counters = if (isOdd) worldCommandsManager.oddCellCounter
+        else worldCommandsManager.evenCellCounter
 
         val index = counters[threadId]
         var arr = stacks[threadId]
@@ -91,12 +93,6 @@ class ParticlePhysicsSystem(
     }
 
     private fun repulse(particleAId: Int, particleBId: Int, threadId: Int) = with(entity) {
-        val isParticleAIsCell = isCell[particleAId]
-        val isParticleBIsCell = isCell[particleBId]
-        if (isParticleAIsCell && isParticleBIsCell) {
-            if (linkEntity.linkIndexMap.get(holderEntityIndex[particleAId], holderEntityIndex[particleBId]) != -1) return@with
-        }
-
         val dx = x[particleAId] - x[particleBId]
         val dy = y[particleAId] - y[particleBId]
         val dx2 = dx * dx
@@ -109,7 +105,17 @@ class ParticlePhysicsSystem(
 
         val distanceSquared = dx2 + dy2
         if (distanceSquared < radiusSquared) {
-            val distance = 1.0f / invSqrt(distanceSquared)
+
+            val isParticleAIsCell = isCell[particleAId]
+            val isParticleBIsCell = isCell[particleBId]
+            if (isParticleAIsCell && isParticleBIsCell ) {
+                val linkIndex = linkEntity.linkIndexMap.get(holderEntityIndex[particleAId], holderEntityIndex[particleBId])
+                if (linkIndex != -1 && !linkEntity.isLongNeuralLink[linkIndex]) {
+                    return@with
+                }
+            }
+
+            val distance = sqrt(distanceSquared)
             if (isParticleAIsCell) {
                 if (effectOnContact[particleAId]) {
                     val cellAIndex = holderEntityIndex[particleAId]
@@ -136,76 +142,75 @@ class ParticlePhysicsSystem(
             }
 
             if (!isParticleAIsCell && !isParticleBIsCell) {
-                val subAIndex = holderEntityIndex[particleAId]
-                val subBIndex = holderEntityIndex[particleBId]
-                if (subAIndex != -1 && subBIndex != -1) {
-                    //TODO вынести в SubManager
-                    val rA2 = radius[particleAId] * radius[particleAId]
-                    val rB2 = radius[particleBId] * radius[particleBId]
-                    val radiusSumSquared = rA2 + rB2
-                    if (radiusSumSquared < PARTICLE_MAX_RADIUS_SQUARED) {
+                //TODO вынести в SubManager
+                val rA2 = radius[particleAId] * radius[particleAId]
+                val rB2 = radius[particleBId] * radius[particleBId]
+                val radiusSumSquared = rA2 + rB2
+                if (radiusSumSquared < PARTICLE_MAX_RADIUS_SQUARED) {
 
-                        val maxRadius = maxOf(radius[particleAId], radius[particleBId])
-                        if (distance < maxRadius) {
-                            val radius = 1.0f / invSqrt(radiusSumSquared)
-                            val deleteIndex = if (this.radius[particleAId] < this.radius[particleBId]) {
-                                this.radius[particleBId] = radius
-                                subAIndex
-                            } else {
-                                this.radius[particleAId] = radius
-                                subBIndex
-                            }
-
-                            worldCommandsManager.worldCommandBuffer[threadId].push(
-                                type = WorldCommandType.DELETE_SUBSTANCE,
-                                ints = intArrayOf(
-                                    deleteIndex,
-                                    substancesEntity.getGeneration(deleteIndex)
-                                )
-                            )
+                    val maxRadius = maxOf(radius[particleAId], radius[particleBId])
+                    if (distance < maxRadius && isSub[particleAId] && isSub[particleBId]) {
+                        val subAIndex = holderEntityIndex[particleAId]
+                        val subBIndex = holderEntityIndex[particleBId]
+                        val radius = sqrt(radiusSumSquared)
+                        val deleteIndex = if (this.radius[particleAId] < this.radius[particleBId]) {
+                            this.radius[particleBId] = radius
+                            subAIndex
                         } else {
-                            val force = 0.02f * rA2 * rB2 / distanceSquared
-                            val dirX = dx / distance
-                            val dirY = dy / distance
-                            val fx = force * dirX
-                            val fy = force * dirY
-                            vx[particleBId] += fx
-                            vy[particleBId] += fy
-                            vx[particleAId] -= fx
-                            vy[particleAId] -= fy
+                            this.radius[particleAId] = radius
+                            subBIndex
                         }
+
+                        worldCommandsManager.worldCommandBuffer[threadId].push(
+                            type = WorldCommandType.DELETE_SUBSTANCE,
+                            ints = intArrayOf(
+                                deleteIndex,
+                                substancesEntity.getGeneration(deleteIndex)
+                            )
+                        )
                     } else {
-
-                        val stiffness = 0.009f
-
-                        if (distanceSquared < 0) throw Exception("distanceSquared < 0, distanceSquared = $distanceSquared")
-
-                        val force = (distance - 0.35f) * stiffness
-
+                        val force = 0.02f * rA2 * rB2 / distanceSquared
                         val dirX = dx / distance
                         val dirY = dy / distance
-
-                        // Spring dampening
-                        val dvx = vx[particleAId] - vx[particleBId]
-                        val dvy = vy[particleAId] - vy[particleBId]
-
-                        val dampeningConstant = 0.3f
-                        val dampeningForce = dampeningConstant * (dvx * dirX + dvy * dirY)
-
-                        val cellStrengthAverage = 0.01f
-                        val forceRepulsion = cellStrengthAverage - cellStrengthAverage * distanceSquared / radiusSquared
-
-                        val fx = (force + dampeningForce - forceRepulsion) * dirX
-                        val fy = (force + dampeningForce - forceRepulsion) * dirY
-
+                        val fx = force * dirX
+                        val fy = force * dirY
                         vx[particleBId] += fx
                         vy[particleBId] += fy
                         vx[particleAId] -= fx
                         vy[particleAId] -= fy
                     }
+                } else {
 
-                    return@with
+                    val stiffness = 0.009f
+
+                    if (distanceSquared < 0) throw Exception("distanceSquared < 0, distanceSquared = $distanceSquared")
+
+                    val force = (distance - 0.35f) * stiffness
+
+                    val dirX = dx / distance
+                    val dirY = dy / distance
+
+                    // Spring dampening
+                    val dvx = vx[particleAId] - vx[particleBId]
+                    val dvy = vy[particleAId] - vy[particleBId]
+
+                    val dampeningConstant = 0.3f
+                    val dampeningForce = dampeningConstant * (dvx * dirX + dvy * dirY)
+
+                    val cellStrengthAverage = 0.01f
+                    val forceRepulsion =
+                        cellStrengthAverage - cellStrengthAverage * distanceSquared / radiusSquared
+
+                    val fx = (force + dampeningForce - forceRepulsion) * dirX
+                    val fy = (force + dampeningForce - forceRepulsion) * dirY
+
+                    vx[particleBId] += fx
+                    vy[particleBId] += fy
+                    vx[particleAId] -= fx
+                    vy[particleAId] -= fy
                 }
+
+                return@with
             }
 
             if (isCollidable[particleAId] && isCollidable[particleBId]) {
@@ -247,15 +252,16 @@ class ParticlePhysicsSystem(
         }
     }
 
-    fun moveParticle(particleIndex: Int) = with(entity) {
+    fun moveParticle(particleIndex: Int, threadId: Int) = with(entity) {
         val oldX = x[particleIndex].toInt()
         val oldY = y[particleIndex].toInt()
         val gridCellIndex = gridId[particleIndex]
+        vy[particleIndex] -= GRAVITATION
 
         processCellFrictionOld(particleIndex)
 
-//        vx[particleIndex] -= 0.04f * sin((500f - particleIndex) * simulationData.timeSimulation)
-        vx[particleIndex] -= GRAVITATION //* cos((500f - particleIndex) * simulationData.timeSimulation)
+        //-= 0.04f * sin((500f - particleIndex) * simulationData.timeSimulation)
+//        vx[particleIndex] -= GRAVITATION //* cos((500f - particleIndex) * simulationData.timeSimulation)
 
         val vxv = vx[particleIndex]
         val vyv = vy[particleIndex]
@@ -271,9 +277,15 @@ class ParticlePhysicsSystem(
         y[particleIndex] += vy[particleIndex]
 
         processWorldBorders(particleIndex)
-        val newX = x[particleIndex].toInt()
-        val newY = y[particleIndex].toInt()
+        val x = x[particleIndex]
+        val y = y[particleIndex]
+
+        val newX = x.toInt()
+        val newY = y.toInt()
         if (newX != oldX || newY != oldY) {
+            if (isPheromoneEmitter[particleIndex]) {
+                pheromonesManager.newGridCell(x, y, particleIndex, threadId)
+            }
             gridManager.removeParticle(gridCellIndex, particleIndex)
             gridId[particleIndex] = gridManager.addParticle(newX, newY, particleIndex)
         }

@@ -1,5 +1,6 @@
 package io.github.some_example_name.old.core
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
@@ -13,12 +14,14 @@ import io.github.some_example_name.old.commands.UserCommandManager
 import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.core.DIGameGlobalContainer.genomeJsonReader
 import io.github.some_example_name.old.core.DIGameGlobalContainer.shaderManager
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.EyeEntity
 import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.NeuralEntity
 import io.github.some_example_name.old.entities.OrganEntity
 import io.github.some_example_name.old.entities.ParticleEntity
+import io.github.some_example_name.old.entities.PheromoneEmitterEntity
 import io.github.some_example_name.old.entities.PheromoneEntity
 import io.github.some_example_name.old.entities.ProducerEntity
 import io.github.some_example_name.old.entities.SpecialEntity
@@ -26,26 +29,32 @@ import io.github.some_example_name.old.entities.SpecialModDataEntity
 import io.github.some_example_name.old.systems.simulation.SimulationData
 import io.github.some_example_name.old.entities.SubstancesEntity
 import io.github.some_example_name.old.entities.TailEntity
+import io.github.some_example_name.old.systems.pheromone.PheromonesManager
 import io.github.some_example_name.old.systems.genomics.CellSystem
 import io.github.some_example_name.old.systems.genomics.DivideManager
 import io.github.some_example_name.old.systems.genomics.MutateManager
 import io.github.some_example_name.old.systems.genomics.OrganManager
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
+import io.github.some_example_name.old.systems.pheromone.PheromoneShaderManager
+import io.github.some_example_name.old.systems.pheromone.PheromoneShaderManagerLibgdx
 import io.github.some_example_name.old.systems.physics.GridManager
 import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem
 import io.github.some_example_name.old.systems.physics.ParticlePhysicsSystem
 import io.github.some_example_name.old.systems.render.RenderBufferManager
 import io.github.some_example_name.old.systems.render.RenderSystem
+import io.github.some_example_name.old.systems.render.ShaderManager
 import io.github.some_example_name.old.systems.simulation.SimulationSystem
 import io.github.some_example_name.old.systems.simulation.ThreadManager
 import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_HEIGHT
 import io.github.some_example_name.old.ui.screens.GlobalSettings.GRID_WIDTH
+import io.github.some_example_name.old.ui.screens.androidPheromoneRendererFactory
+import io.github.some_example_name.old.ui.screens.androidRendererFactory
 import kotlin.getValue
 
 object DISimulationContainer:  DIContext, Disposable {
 
-    override var gridWidth = 64
-    override var gridHeight = 64
+    override var gridWidth = 128
+    override var gridHeight = 128
     const val HALF_CHUNK_HEIGHT = 4 // Also max particle speed
     var chunkHeight = HALF_CHUNK_HEIGHT * 2
     var heightMultiplier = chunkHeight * 2
@@ -53,10 +62,9 @@ object DISimulationContainer:  DIContext, Disposable {
     override var threadCount = (gridHeight / chunkHeight) / 2
     override var totalChunks = threadCount * 2
     override var chunkSize = gridSize / totalChunks
-    override val substrateSettings = SubstrateSettings()
 
     var energyTransportRate = substrateSettings.data.rateOfEnergyTransferInLinks
-    var linkMaxLength2 = substrateSettings.data.linkMaxLength * substrateSettings.data.linkMaxLength
+    var linkMaxLength2 = 3f * 3f
     var cellsSettings = substrateSettings.cellsSettings
     var roundStyle: VisTextButton.VisTextButtonStyle
     var roundStyleToggle: VisTextButton.VisTextButtonStyle
@@ -131,12 +139,17 @@ object DISimulationContainer:  DIContext, Disposable {
     val specialModDataEntity = SpecialModDataEntity(
         specialModDataStartMaxAmount = 100
     )
+    val pheromoneEmitterEntity = PheromoneEmitterEntity(
+        pheromoneEmitterStartMaxAmount = 100
+    )
+
     override val specialEntity = SpecialEntity(
         cellsStartMaxAmount = 10_000,
         eyeEntity = eyeEntity,
         tailEntity = tailEntity,
         specialModDataEntity = specialModDataEntity,
-        producerEntity = producerEntity
+        producerEntity = producerEntity,
+        pheromoneEmitterEntity = pheromoneEmitterEntity
     )
     override val cellEntity = CellEntity(
         cellsStartMaxAmount = 10_000,
@@ -149,7 +162,10 @@ object DISimulationContainer:  DIContext, Disposable {
     )
     override val linkEntity = LinkEntity(
         20_000,
-        cellEntity = cellEntity
+        cellEntity = cellEntity,
+        gridManager = gridManager,
+        particleEntity = particleEntity,
+        diContext = this
     )
     override val pheromoneEntity = PheromoneEntity(
         gridManager = gridManager
@@ -170,9 +186,10 @@ object DISimulationContainer:  DIContext, Disposable {
         specialEntity,
         cellEntity,
         linkEntity,
-//        pheromoneEntity,
+        pheromoneEntity,
         substancesEntity,
-        producerEntity
+        producerEntity,
+        pheromoneEmitterEntity
     )
 
     override val genomeManager = GenomeManager(
@@ -181,11 +198,25 @@ object DISimulationContainer:  DIContext, Disposable {
         isGenomeEditor = false,
         genomeName = null
     )
+
     override val organManager = OrganManager(
         organEntity = organEntity,
         genomeManager = genomeManager,
         cellEntity = cellEntity
     )
+
+
+    var androidPheromoneRenderer: PheromoneShaderManager? = androidPheromoneRendererFactory?.invoke()
+    val pheromoneShaderManager: PheromoneShaderManager = when (Gdx.app.type) {
+        Application.ApplicationType.Desktop -> PheromoneShaderManagerLibgdx()
+        Application.ApplicationType.Android -> androidPheromoneRenderer!!
+        Application.ApplicationType.HeadlessDesktop -> TODO()
+        Application.ApplicationType.Applet -> TODO()
+        Application.ApplicationType.WebGL -> TODO()
+        Application.ApplicationType.iOS -> TODO()
+    }
+
+
 
     val renderBufferManager = RenderBufferManager(
         simulationData = simulationData,
@@ -193,16 +224,19 @@ object DISimulationContainer:  DIContext, Disposable {
         particleEntity = particleEntity,
         linkEntity = linkEntity,
         cellList = cellList,
-        specialEntity = specialEntity
+        specialEntity = specialEntity,
+        pheromoneEntity = pheromoneEntity
     )
 
     val renderSystem = RenderSystem(
         cellEntity = cellEntity,
         linkEntity = linkEntity,
         shaderManager = shaderManager,
+        pheromoneShaderManager = pheromoneShaderManager,
         particleEntity = particleEntity,
         renderBufferManager = renderBufferManager,
-        diContext = this
+        diContext = this,
+        pheromoneEntity = pheromoneEntity
     )
 
     val userCommandManager = UserCommandManager(
@@ -223,6 +257,7 @@ object DISimulationContainer:  DIContext, Disposable {
         cellEntity = cellEntity,
         linkEntity = linkEntity,
         particleEntity = particleEntity,
+        pheromoneEntity = pheromoneEntity,
         substrateSettings = substrateSettings,
         genomeManager = genomeManager,
         simulationData = simulationData,
@@ -234,6 +269,13 @@ object DISimulationContainer:  DIContext, Disposable {
         isEditor = false
     )
 
+    override val pheromonesManager = PheromonesManager(
+        pheromoneEntity = pheromoneEntity,
+        worldCommandsManager = worldCommandsManager,
+        particleEntity = particleEntity,
+        cellEntity = cellEntity
+    )
+
     val particlePhysicsSystem = ParticlePhysicsSystem(
         entity = particleEntity,
         gridManager = gridManager,
@@ -243,7 +285,8 @@ object DISimulationContainer:  DIContext, Disposable {
         linkEntity = linkEntity,
         cellList = cellList,
         cellEntity = cellEntity,
-        substancesEntity = substancesEntity
+        substancesEntity = substancesEntity,
+        pheromonesManager = pheromonesManager
     )
 
     val threadManager = ThreadManager(
@@ -287,7 +330,8 @@ object DISimulationContainer:  DIContext, Disposable {
         particleEntity = particleEntity,
         cellEntity = cellEntity,
         worldCommandsManager = worldCommandsManager,
-        cellSystem = cellSystem
+        cellSystem = cellSystem,
+        diContext = this
     )
 
 
@@ -313,7 +357,8 @@ object DISimulationContainer:  DIContext, Disposable {
             shaderManager = shaderManager,
             renderSystem = renderSystem,
             entityList = entityList,
-            renderBufferManager = renderBufferManager
+            renderBufferManager = renderBufferManager,
+            pheromonesManager = pheromonesManager
         )
     }
 

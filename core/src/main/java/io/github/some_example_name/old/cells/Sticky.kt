@@ -1,9 +1,6 @@
 package io.github.some_example_name.old.cells
 
-import io.github.some_example_name.old.cells.base.activation
-import io.github.some_example_name.old.commands.WorldCommandType
 import io.github.some_example_name.old.core.utils.pinkColors
-import io.github.some_example_name.old.systems.physics.LinkPhysicsSystem.Companion.MAX_LINK_AMOUNT
 
 class Sticky(cellTypeId: Int) : Cell(
     defaultColor = pinkColors[3],
@@ -12,58 +9,45 @@ class Sticky(cellTypeId: Int) : Cell(
     effectOnContact = true
 ) {
 
-    //TODO при -1 сброс всех StickyLink, при 0 ничего нового не добавляется и не удаляется, а при 1 создаются новые линки
 
     override fun onContact(
         cellIndex: Int,
         particleIndexCollided: Int,
         distance: Float,
         threadId: Int
-    ) = with(cellEntity) {
-        if (!particleEntity.isCell[particleIndexCollided]) return@with
+    ) = with(particleEntity) {
+        //TODO тут полное повторение кода с приоипанием частиц стен и еды
+        val particleAId = cellEntity.particleIndexes[cellIndex]
+        val particleBId = particleIndexCollided
+        val distanceSquared = distance * distance
+        val particleRadius = radius[particleAId] + radius[particleBId]
+        val radiusSquared = particleRadius * particleRadius
 
-        if (activation(cellIndex, neuronImpulseInput[cellIndex]) < 1f) {
-            val cellIndex: Int = cellIndex
-            val otherCellIndex: Int = particleEntity.holderEntityIndex[particleIndexCollided]
+        val stiffness = 0.009f * cellEntity.neuronImpulseOutput[cellIndex].coerceIn(0f, 1f)
 
-            if (cellList[cellType[otherCellIndex].toInt()] is Punisher) return@with
-            val linksLength: Float = distance
-            val degreeOfShortening: Float = 1f
-            val isStickyLink = true
-            val isNeuronLink = false
-            val isLink1NeuralDirected = false
+        val force = (distance - 0.35f) * stiffness
+        val dx = x[particleAId] - x[particleBId]
+        val dy = y[particleAId] - y[particleBId]
+        val dirX = dx / distance
+        val dirY = dy / distance
 
-            worldCommandsManager.worldCommandBuffer[threadId].push(
-                type = WorldCommandType.ADD_LINK,
-                booleans = booleanArrayOf(
-                    isStickyLink,
-                    isNeuronLink,
-                    isLink1NeuralDirected
-                ),
-                floats = floatArrayOf(linksLength, degreeOfShortening),
-                ints = intArrayOf(cellIndex, otherCellIndex)
-            )
-            return
-        }
-    }
+        // Spring dampening
+        val dvx = vx[particleAId] - vx[particleBId]
+        val dvy = vy[particleAId] - vy[particleBId]
 
-    override fun doOnTick(cellIndex: Int, threadId: Int) = with(cellEntity) {
-        if (neuronImpulseOutput[cellIndex] >= 1) {
-            val base = cellIndex * MAX_LINK_AMOUNT
-            val amount = linksAmount[cellIndex]
-            if (amount == 0) return
+        val dampeningConstant = 0.3f
+        val dampeningForce = dampeningConstant * (dvx * dirX + dvy * dirY)
 
-            for (i in 0 until amount) {
-                val idx = base + i
-                val linkIndex = links[idx]
-                if (linkEntity.isStickyLink[linkIndex]) {
-                    worldCommandsManager.worldCommandBuffer[threadId].push(
-                        type = WorldCommandType.DELETE_LINK,
-                        ints = intArrayOf(linkIndex, linkEntity.getGeneration(linkIndex))
-                    )
-                }
-            }
-        }
+        val cellStrengthAverage = 0.01f
+        val forceRepulsion = cellStrengthAverage - cellStrengthAverage * distanceSquared / radiusSquared
+
+        val fx = (force + dampeningForce - forceRepulsion) * dirX
+        val fy = (force + dampeningForce - forceRepulsion) * dirY
+
+        vx[particleBId] += fx
+        vy[particleBId] += fy
+        vx[particleAId] -= fx
+        vy[particleAId] -= fy
     }
 
 }

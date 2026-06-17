@@ -1,5 +1,6 @@
 package io.github.some_example_name.old.commands
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.Disposable
 import io.github.some_example_name.old.cells.Cell
@@ -15,6 +16,7 @@ import io.github.some_example_name.old.systems.simulation.SimulationData
 import io.github.some_example_name.old.systems.genomics.genome.GenomeManager
 import io.github.some_example_name.old.systems.physics.GridManager
 import io.github.some_example_name.old.systems.physics.ParticlePhysicsSystem.Companion.PARTICLE_MAX_RADIUS
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.collections.forEach
 import kotlin.math.cos
 import kotlin.math.sin
@@ -31,38 +33,26 @@ class UserCommandManager(
     val particleEntity: ParticleEntity,
     val zygote: Zygote
 ): Disposable {
-    private val bufferA = mutableListOf<PlayerCommand>()
-    private val bufferB = mutableListOf<PlayerCommand>()
 
-    var writeBuffer = bufferA
-    var readBuffer = bufferB
+    private val commandQueue = ConcurrentLinkedQueue<PlayerCommand>()
 
-    var grabbedParticleIndex = -1
-    var tapX = 0f
-    var tapY = 0f
-    var isDragging = false
+    @Volatile var grabbedParticleIndex = -1
+    @Volatile var tapX = 0f
+    @Volatile var tapY = 0f
+    @Volatile var isDragging = false
 
     fun push(cmd: PlayerCommand) {
-        writeBuffer.add(cmd)
-    }
-
-    inline fun swapAndConsume(consumer: (PlayerCommand) -> Unit) {
-        val tmp = writeBuffer
-        writeBuffer = readBuffer
-        readBuffer = tmp
-
-        if (readBuffer.isNotEmpty()) {
-            readBuffer.forEach(consumer)
-            readBuffer.clear()
-        }
+        commandQueue.offer(cmd)
     }
 
     fun processingCommandsFromUser() {
         var isAlreadyDragged = false
-        swapAndConsume { cmd ->
+
+        while (true) {
+            val cmd = commandQueue.poll() ?: break
+
             when (cmd) {
                 PlayerCommand.StopDrag -> {
-                    println("StopDrag")
                     grabbedParticleIndex = -1
                     simulationData.selectedCellIndex = -1
                     isDragging = false
@@ -87,8 +77,6 @@ class UserCommandManager(
                     tapX = cmd.x
                     tapY = cmd.y
                     simulationData.selectedCellIndex = -1
-
-                    println("TouchDown (${cmd.x}, ${cmd.y} ${cmd.isLeftButton} ${grabbedParticleIndex})")
                 }
 
                 is PlayerCommand.Drag -> {
@@ -108,14 +96,12 @@ class UserCommandManager(
                         tapY = cmd.y
                         simulationData.selectedCellIndex = -1
                     }
-
-                    println("Drag (${cmd.x}, ${cmd.y} ${cmd.dx} ${cmd.dy} ${grabbedParticleIndex})")
                 }
 
                 is PlayerCommand.Tap -> {
                     val neighborsCellIndexes =
                         gridManager.collectParticles(cmd.x.toInt(), cmd.y.toInt(), radius = 1)
-                    val grabbedParticleIndex = neighborsCellIndexes
+                    val grabbedParticleIndexTap = neighborsCellIndexes
                         .minByOrNull {
                             distanceTo(cmd.x, cmd.y, particleEntity.x[it], particleEntity.y[it])
                         }?.takeIf {
@@ -127,10 +113,10 @@ class UserCommandManager(
                             ) < particleEntity.radius[it]
                         } ?: -1
 
-                    simulationData.selectedCellIndex = if (grabbedParticleIndex != -1) {
-                        if (particleEntity.isCell[grabbedParticleIndex]) {
+                    simulationData.selectedCellIndex = if (grabbedParticleIndexTap != -1) {
+                        if (particleEntity.isCell[grabbedParticleIndexTap]) {
                             isDragging = false
-                            particleEntity.holderEntityIndex[grabbedParticleIndex]
+                            particleEntity.holderEntityIndex[grabbedParticleIndexTap]
                         } else -1
                     } else -1
 
@@ -145,7 +131,7 @@ class UserCommandManager(
                                     dividedTimes = genome.dividedTimes[0],
                                     mutatedTimes = genome.mutatedTimes[0]
                                 )
-                                val randomAngle = Random.nextFloat() * 3.1415f * 2f
+                                val randomAngle = 0f//MathUtils.random(0f, MathUtils.PI2)
                                 cellEntity.addCell(
                                     x = cmd.x,
                                     y = cmd.y,
@@ -159,7 +145,7 @@ class UserCommandManager(
                             }
                         } else {
                             val radius = 7.0f
-                            repeat(500) {
+                            repeat(10) {
                                 val angle = MathUtils.random(0f, MathUtils.PI2)
 
                                 val r = radius * sqrt(MathUtils.random())
@@ -184,12 +170,7 @@ class UserCommandManager(
                                     }
 
                                     if (neighborIndex == null) {
-                                        val r = Random.nextInt(255)
-                                        val g = Random.nextInt(255)
-                                        val b = Random.nextInt(255)
-                                        val a = 255
-
-                                        val color = (a shl 24) or (r shl 16) or (g shl 8) or b
+                                        val color = Color.RED.toIntBits()
                                         val radius = Random.nextFloat() * (0.5f - 0.1f) + 0.1f
 
                                         worldCommandsManager.worldCommandBuffer[Random.nextInt(
@@ -206,7 +187,7 @@ class UserCommandManager(
                         }
                     }
 
-                    println("Tap (${cmd.x}, ${cmd.y} ${cmd.isLeftButton} ${grabbedParticleIndex})")
+//                    println("Tap (${cmd.x}, ${cmd.y} ${cmd.isLeftButton} ${grabbedParticleIndex})")
                 }
             }
         }
@@ -223,6 +204,6 @@ class UserCommandManager(
     }
 
     override fun dispose() {
-
+        commandQueue.clear()
     }
 }

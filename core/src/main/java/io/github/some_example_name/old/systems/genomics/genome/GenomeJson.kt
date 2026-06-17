@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonWriter
+import io.github.some_example_name.old.core.DIGameGlobalContainer.genomeJsonReader
 import io.github.some_example_name.old.core.DISimulationContainer
 import java.io.File
 
@@ -26,7 +27,6 @@ class GenomeJsonReader() {
     }
 
     init {
-        //TODO перед чтением всех json-ов проверить наличие .bin, перевести их в json-ы и удалить
         json.setOutputType(JsonWriter.OutputType.json)
         json.setUsePrototypes(false)
     }
@@ -98,7 +98,7 @@ class GenomeJsonReader() {
         //Костыль
         val reservedCount = getGenomeFileNamesFromAssetsFolder("genomes").size
 
-        val genomeEditor = genome
+        val genomeEditor = readGenomeFromFolder("user_genomes", name)?.jsonToDomain() ?: throw Exception("Unexpected")//genome
 
         val existingIndex = DISimulationContainer.genomeManager.genomes.indexOfFirst { it.name == genomeEditor.name }
 

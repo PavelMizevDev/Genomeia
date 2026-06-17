@@ -2,17 +2,17 @@ package io.github.some_example_name.old.commands
 
 enum class WorldCommandType(val intParamsCount: Int, val floatParamsCount: Int, val booleanParamsCount: Int) {
     ADD_CELL(
-        intParamsCount = 7,
+        intParamsCount = 9,
         floatParamsCount = 11,
-        booleanParamsCount = 1
+        booleanParamsCount = 2
     ),
     ADD_LINK(
-        intParamsCount = 2,
+        intParamsCount = 3,
         floatParamsCount = 2,
         booleanParamsCount = 3
     ),
     ADD_LINK_BY_ID(
-        intParamsCount = 3,
+        intParamsCount = 4,
         floatParamsCount = 1,
         booleanParamsCount = 2
     ),
@@ -124,10 +124,30 @@ enum class WorldCommandType(val intParamsCount: Int, val floatParamsCount: Int, 
         intParamsCount = 1,
         floatParamsCount = 0,
         booleanParamsCount = 0
+    ),
+    ADD_PHEROMONE(
+        intParamsCount = 2,
+        floatParamsCount = 2,
+        booleanParamsCount = 0
+    ),
+    DELETE_PHEROMONE(
+        intParamsCount = 2,
+        floatParamsCount = 0,
+        booleanParamsCount = 0
+    ),
+    DELETE_PHEROMONE_EMITTER(
+        intParamsCount = 2,
+        floatParamsCount = 0,
+        booleanParamsCount = 0
+    ),
+    ADD_PHEROMONE_EMITTER(
+        intParamsCount = 1,
+        floatParamsCount = 0,
+        booleanParamsCount = 0
     );
 
     companion object {
-        const val MAX_INT_PARAMS = 7    // Максимум int на команду (покрывает все)
+        const val MAX_INT_PARAMS = 9    // Максимум int на команду (покрывает все)
         const val MAX_FLOAT_PARAMS = 11  // Максимум float
         const val MAX_BOOLEAN_PARAMS = 3 // Максимум boolean
     }

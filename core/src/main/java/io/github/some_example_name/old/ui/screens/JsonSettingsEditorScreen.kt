@@ -21,6 +21,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextField
 import io.github.some_example_name.old.core.DISimulationContainer
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.core.FileProvider
 import io.github.some_example_name.old.core.GlobalSimulationSettings
 import io.github.some_example_name.old.core.SubstrateSettings
@@ -42,8 +43,6 @@ class JsonEditorScreen(
     override fun show() {
         json.setOutputType(JsonWriter.OutputType.json)
         json.setUsePrototypes(false)
-
-        val substrateSettings = SubstrateSettings()
 
         fileHandle = substrateSettings.getFileHandle()
 

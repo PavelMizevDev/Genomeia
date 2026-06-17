@@ -1,5 +1,6 @@
 package io.github.some_example_name.old.cells
 
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.core.utils.pinkColors
 
 class Neuron(cellTypeId: Int) : Cell(
@@ -7,6 +8,11 @@ class Neuron(cellTypeId: Int) : Cell(
     cellTypeId = cellTypeId,
     isNeural = true
 ) {
+
+    override fun onStart(cellIndex: Int, threadId: Int, genomeIndex: Int) {
+        //TODO понять до конца, почему neuronImpulseOutput может оказаться Nan при мутации из обычной Leaf в нейрон
+        cellEntity.neuronImpulseOutput[cellIndex] = 0f
+    }
 
     override fun doOnTick(cellIndex: Int, threadId: Int) {
         cellEntity.energy[cellIndex] -= substrateSettings

@@ -6,7 +6,7 @@ import com.badlogic.gdx.utils.JsonWriter
 import io.github.some_example_name.old.systems.simulation.SimulationData
 
 class GenomeManager(
-    val genomeJsonReader: GenomeJsonReader = GenomeJsonReader(),
+    val genomeJsonReader: GenomeJsonReader,
     val simulationData: SimulationData,
     val isGenomeEditor: Boolean,
     val genomeName: String?
@@ -39,7 +39,8 @@ class GenomeManager(
                                     angle = 0f,
                                     cellType = 0,
                                     physicalLink = hashMapOf(0 to LinkData(length = 0.6f)),
-                                    color = Color(0.133f, 0.545f, 0.133f, 1f)
+                                    color = Color(0.133f, 0.545f, 0.133f, 1f),
+                                    specialData = null
                                 )
                             )
                         )
@@ -47,6 +48,7 @@ class GenomeManager(
                 ),
                 dividedTimes = IntArray(1) { 1 },
                 mutatedTimes = IntArray(1),
+                subGenomes = hashMapOf()
             )
             if (genomeName != null) {
                 val genome = genomeJsonReader.readGenomeFromFolder("user_genomes", genomeName, false)
@@ -65,11 +67,27 @@ class Genome(
     var name: String,
     val genomeStageInstruction: MutableList<GenomeStage>,
     val dividedTimes: IntArray,
-    val mutatedTimes: IntArray
+    val mutatedTimes: IntArray,
+    val subGenomes: HashMap<Int, SubGenome>
 ) {
     fun deepCopy(): Genome {
         return Genome(
             name = name,
+            genomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }.toMutableList(),
+            dividedTimes = dividedTimes.copyOf(),
+            mutatedTimes = mutatedTimes.copyOf(),
+            subGenomes = HashMap(subGenomes.mapValues { (_, subGenome) -> subGenome.deepCopy() })
+        )
+    }
+}
+
+class SubGenome(
+    val genomeStageInstruction: MutableList<GenomeStage>,
+    val dividedTimes: IntArray,
+    val mutatedTimes: IntArray,
+) {
+    fun deepCopy(): SubGenome {
+        return SubGenome(
             genomeStageInstruction = genomeStageInstruction.map { it.deepCopy() }.toMutableList(),
             dividedTimes = dividedTimes.copyOf(),
             mutatedTimes = mutatedTimes.copyOf()
@@ -118,7 +136,9 @@ data class Action(
     val c: Float? = null,
     val isSum: Boolean? = null,
     val colorRecognition: Int? = null,
-    val lengthDirected: Float? = null
+    val lengthDirected: Float? = null,
+    val pheromoneType: Int? = null,
+    val specialData: SpecialData? = null
 ) {
     fun deepCopy(): Action {
         return Action(
@@ -135,7 +155,25 @@ data class Action(
             c = c,
             isSum = isSum,
             colorRecognition = colorRecognition,
-            lengthDirected = lengthDirected
+            lengthDirected = lengthDirected,
+            pheromoneType = pheromoneType,
+            specialData = specialData?.deepCopy()
+        )
+    }
+
+    override fun toString(): String {
+        val json = Json().apply { setOutputType(JsonWriter.OutputType.json) }
+        return json.prettyPrint(this)
+    }
+}
+
+data class SpecialData(
+    val attachedKey: Char
+    //TODO сделать парсинг Json-а по другому, что бы не приходилось каждый пареметр вручную прописывать и что бы можно было распарсить любую структуру
+) {
+    fun deepCopy(): SpecialData {
+        return SpecialData(
+            attachedKey = attachedKey
         )
     }
 
@@ -148,6 +186,7 @@ data class Action(
 data class LinkData(
     val length: Float? = null,
     val isNeuronal: Boolean = false,
+    val color: Color? = null,
     val weight: Float? = null,
     val directedNeuronLink: Int? = null,
     val isExtra: Boolean = false
@@ -156,6 +195,7 @@ data class LinkData(
         return LinkData(
             length = length,
             isNeuronal = isNeuronal,
+            color = color,
             weight = weight,
             directedNeuronLink = directedNeuronLink,
             isExtra = isExtra

@@ -5,6 +5,7 @@ import io.github.some_example_name.old.cells.base.formulaType
 import io.github.some_example_name.old.entities.CellEntity
 import io.github.some_example_name.old.entities.LinkEntity
 import io.github.some_example_name.old.entities.ParticleEntity
+import io.github.some_example_name.old.entities.PheromoneEntity
 import io.github.some_example_name.old.entities.SpecialEntity
 import io.github.some_example_name.old.systems.simulation.SimulationData
 import kotlin.math.round
@@ -14,17 +15,23 @@ class RenderBufferManager(
     val simulationData: SimulationData,
     val cellEntity: CellEntity,
     val particleEntity: ParticleEntity,
+    val pheromoneEntity: PheromoneEntity,
     val linkEntity: LinkEntity,
     val cellList: List<Cell>,
     val specialEntity: SpecialEntity,
     initialCellCapacity: Int = 50_000,
-    initialLinkCapacity: Int = 50_000
+    initialLinkCapacity: Int = 50_000,
+    initialPheromoneCapacity: Int = 1_000
 ) {
 
     // Двойные буферы
     private val cellBuffers = arrayOf(
         RenderCellBufferData(initialCellCapacity),
         RenderCellBufferData(initialCellCapacity)
+    )
+    private val pheromoneBuffers = arrayOf(
+        PheromoneBufferData(initialPheromoneCapacity),   // подбери нужный начальный размер (можно initialCellCapacity)
+        PheromoneBufferData(initialPheromoneCapacity)
     )
     private val linkBuffers = arrayOf(
         RenderLinkBufferData(initialLinkCapacity),
@@ -34,10 +41,12 @@ class RenderBufferManager(
     private val specificBuffer1 = RenderSpecificBufferData()
 
     private val cellFrontIndex = AtomicInteger(0)
+    private val pheromoneFrontIndex = AtomicInteger(0)
     private val linkFrontIndex = AtomicInteger(0)
     private val specificFrontIndex = AtomicInteger(0)
 
     fun getCurrentCellBuffer(): RenderCellBufferData = cellBuffers[cellFrontIndex.get()]
+    fun getCurrentPheromoneBuffer(): PheromoneBufferData = pheromoneBuffers[pheromoneFrontIndex.get()]
     fun getCurrentLinkBuffer(): RenderLinkBufferData = linkBuffers[linkFrontIndex.get()]
     fun getCurrentSpecificBufferData(): RenderSpecificBufferData =
         if (specificFrontIndex.get() == 0) specificBuffer0 else specificBuffer1
@@ -63,8 +72,8 @@ class RenderBufferManager(
                     val cosByte = ((cellEntity.angleCos[cellIndex] * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val sinByte = ((cellEntity.angleSin[cellIndex] * 0.5f + 0.5f) * 255f + 0.5f).toInt().coerceIn(0, 255)
 
-                    val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
-                    val bEnergy = 0//((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bRadius = ((((radius[i] * cellEntity.degreeOfShortening[cellIndex]) - 0.05f) / 0.7f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bEnergy = ((cellEntity.energy[cellIndex] / 10f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val bCell = cellEntity.cellType[cellIndex].toInt().coerceIn(0, 255)
 
                     back.packed1[bufIndex] = cosByte or (sinByte shl 8) or (bRadius shl 24)
@@ -86,7 +95,7 @@ class RenderBufferManager(
                         }
                     }
                 } else {
-                    val bRadius = (((radius[i] - 0.1f) / 0.4f) * 255f + 0.5f).toInt().coerceIn(0, 255)
+                    val bRadius = (((radius[i] - 0.05f) / 0.7f) * 255f + 0.5f).toInt().coerceIn(0, 255)
                     val bCell = (cellList.size + 1).coerceIn(0, 255)
 
                     back.packed1[bufIndex] = bRadius shl 24
@@ -102,6 +111,27 @@ class RenderBufferManager(
         }
         cellFrontIndex.set(1 - cellFrontIndex.get())   // swap
 
+        // ==================== PHEROMONE ===============
+        val backPheromoneIndex = 1 - pheromoneFrontIndex.get()
+        val back = pheromoneBuffers[backPheromoneIndex]
+        with(pheromoneEntity) {
+            val needed = aliveList.size
+
+            back.ensureCapacity(needed)
+
+            for (bufIndex in 0..<aliveList.size) {
+                val i = aliveList.getInt(bufIndex)
+                back.x[bufIndex] = x[i]
+                back.y[bufIndex] = y[i]
+                back.a[bufIndex] = time[i]
+                back.color[bufIndex] = color[i]
+                back.radiusSquared[bufIndex] = radiusSquared[i]
+            }
+
+            back.pheromoneBufferSize = aliveList.size
+        }
+        pheromoneFrontIndex.set(backPheromoneIndex)
+
         // ==================== LINK ====================
         if (!usePostProcess) {
             val needed = linkEntity.aliveList.size
@@ -113,6 +143,11 @@ class RenderBufferManager(
             with(linkEntity) {
                 for (bufIndex in 0..<aliveList.size) {
                     val i = aliveList.getInt(bufIndex)
+                    val linkCellA = links1[i]
+                    val linkCellB = links2[i]
+                    val linkCellAIsDead = !cellEntity.isAlive[linkCellA] || cellEntity.getGeneration(linkCellA) != linksGeneration1[i]
+                    val linkCellBIsDead = !cellEntity.isAlive[linkCellB] || cellEntity.getGeneration(linkCellB) != linksGeneration2[i]
+                    if (linkCellAIsDead || linkCellBIsDead) continue
                     val particleAIndex = cellEntity.getParticleIndex(links1[i])
                     val particleBIndex = cellEntity.getParticleIndex(links2[i])
 
@@ -192,6 +227,30 @@ class RenderCellBufferData(initialCapacity: Int) {
             packed2 = packed2.copyOf(newCapacity)
             directedAngleCos = directedAngleCos.copyOf(newCapacity)
             directedAngleSin = directedAngleSin.copyOf(newCapacity)
+        }
+    }
+}
+
+class PheromoneBufferData(initialCapacity: Int) {
+    var capacity = initialCapacity
+    var pheromoneBufferSize = 0
+
+    var x = FloatArray(initialCapacity)
+    var y = FloatArray(initialCapacity)
+    var a = FloatArray(initialCapacity)
+    var color = IntArray(initialCapacity)
+    var radiusSquared = FloatArray(initialCapacity)
+
+    fun ensureCapacity(minCapacity: Int) {
+        if (minCapacity > capacity) {
+            val newCapacity = if (capacity == 0) minCapacity else (capacity * 2).coerceAtLeast(minCapacity)
+            capacity = newCapacity
+
+            x = x.copyOf(newCapacity)
+            y = y.copyOf(newCapacity)
+            a = a.copyOf(newCapacity)
+            color = color.copyOf(newCapacity)
+            radiusSquared = radiusSquared.copyOf(newCapacity)
         }
     }
 }

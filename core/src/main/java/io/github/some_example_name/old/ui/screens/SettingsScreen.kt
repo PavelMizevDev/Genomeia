@@ -63,58 +63,6 @@ class SettingsScreen(
         checkBoxStyle.tickDisabled?.minHeight = checkBoxSize * density
         checkBoxStyle.font = if (Gdx.app.type == Application.ApplicationType.Android) game.largeFont else game.extraLargeFont
 
-        // === MSAA слайдер ===
-        val msaaLabel = VisLabel("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
-        game.applyCustomFont(msaaLabel)
-        val msaaSlider = makeStyledSlider(1f, 8f, 1f, false, extraTextures).apply {
-            value = GlobalSettings.MSAA.toFloat()
-            addListener { e ->
-                if (valueChanged(e)) {
-                    GlobalSettings.MSAA = value.toInt()
-                    msaaLabel.setText("${bundle.get("label.msaa")}: ${GlobalSettings.MSAA}")
-                }
-                false
-            }
-            invalidateHierarchy()
-        }
-        table.add(msaaLabel).left()
-        table.row()
-        table.add(msaaSlider).fillX()
-        table.row()
-
-        val drawLinks = VisCheckBox(bundle.get("checkbox.draw_links"), checkBoxStyle).apply {
-            game.applyCustomFont(this)
-            isChecked = GlobalSettings.DRAW_LINK_SHADER
-            addListener { e ->
-                if (changed(e)) GlobalSettings.DRAW_LINK_SHADER = isChecked
-                false
-            }
-        }
-        table.add(drawLinks).left()
-        table.row()
-
-        val saveDivision = VisCheckBox(bundle.get("checkbox.safe_division_mode"), checkBoxStyle).apply {
-            game.applyCustomFont(this)
-            isChecked = GlobalSettings.SAFE_DIVISION_MODE
-            addListener { e ->
-                if (changed(e)) GlobalSettings.SAFE_DIVISION_MODE = isChecked
-                false
-            }
-        }
-        table.add(saveDivision).left()
-        table.row()
-
-        val hydroDragBox = VisCheckBox(bundle.get("checkbox.hydroDrag"), checkBoxStyle).apply {
-            game.applyCustomFont(this)
-            isChecked = GlobalSettings.HYDRODYNAMIC_DRAG
-            addListener { e ->
-                if (changed(e)) GlobalSettings.HYDRODYNAMIC_DRAG = isChecked
-                false
-            }
-        }
-        table.add(hydroDragBox).left()
-        table.row()
-
 
         // === Громкость музыки ===
         val musicLabel = VisLabel("${bundle.get("label.music_volume")}: ${GlobalSettings.MUSIC_VOLUME}")
@@ -192,10 +140,10 @@ class SettingsScreen(
         table.row()
 
 
-        val gravitationLabel = VisLabel("Gravitation: $GRAVITATION")
+        val gravitationLabel = VisLabel("Gravitation: ${GRAVITATION  * 100}")
         game.applyCustomFont(gravitationLabel)
         val gravitationSlider = makeStyledSlider(-0.1f, 0.1f, 0.01f, false, extraTextures).apply {
-            value = GRAVITATION
+            value = GRAVITATION  * 100
             addListener { e ->
                 if (valueChanged(e)) {
                     GRAVITATION = round((value / 100f) * 10000f) / 10000f

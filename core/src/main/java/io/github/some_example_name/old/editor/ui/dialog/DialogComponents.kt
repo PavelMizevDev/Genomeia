@@ -15,7 +15,6 @@ import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.I18NBundle
 import com.kotcrab.vis.ui.util.FloatDigitsOnlyFilter
-import com.kotcrab.vis.ui.util.IntDigitsOnlyFilter
 import com.kotcrab.vis.ui.widget.VisCheckBox
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisSelectBox
@@ -27,6 +26,7 @@ import kotlin.math.PI
 import kotlin.math.roundToInt
 import com.kotcrab.vis.ui.widget.VisTextButton
 import io.github.some_example_name.old.cells.base.formulaType
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.cellsTypeNames
 import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.color_picker.ColorPicker
 import io.github.some_example_name.old.ui.screens.MyGame
@@ -34,34 +34,6 @@ import io.github.some_example_name.old.ui.screens.applyCustomFont
 import io.github.some_example_name.old.ui.screens.applyCustomFontMedium
 import io.github.some_example_name.old.ui.screens.makeStyledSlider
 import io.github.some_example_name.old.ui.screens.makeStyledTextField
-
-val cellsType = arrayOf(
-    "Leaf",
-    "Fat",
-    "Bone",
-    "Tail",
-    "Neuron",
-    "Muscle",
-    "Sensor",
-    "Sucker",
-    "AccelerationSensor",
-    "Excreta",
-    "SkinCell",
-    "Sticky",
-    "Pumper",
-    "Chameleon",
-    "Eye",
-    "Compass",
-    "Controller",
-    "TouchTrigger",
-    "Zygote",
-    "Producer",
-    "Breakaway",
-    "Vascular",
-    "PheromoneEmitter",
-    "PheromoneSensor",
-    "Punisher",
-)
 
 fun actionButton(
     text: String,
@@ -107,7 +79,7 @@ fun cellTypePicker(
     onAction: (Int) -> Unit
 ): VisSelectBox<String> {
     val celTypePicker = VisSelectBox<String>().apply {
-        items = Array(cellsType)
+        items = Array(cellsTypeNames)
         selectedIndex = cellTypeFrom
         setSize(100f, 40f)
         addListener(object : ChangeListener() {
@@ -235,8 +207,11 @@ fun neuron(
     buttonGroup.add(additionCheckBox)
     buttonGroup.add(multiplicationCheckBox)
 
-    additionCheckBox.isChecked = action.isSum ?: true
-    multiplicationCheckBox.isChecked = action.isSum != true
+    //TODO почему-то в каких-то частных случаях приходит null, но обычно не null
+    val isSum = action.isSum ?: true
+
+    additionCheckBox.isChecked = isSum
+    multiplicationCheckBox.isChecked = !isSum
 
     additionCheckBox.addListener(object : ChangeListener() {
         override fun changed(event: ChangeEvent, actor: Actor) {
@@ -445,12 +420,92 @@ fun eye(
     return table
 }
 
-fun controller(game: MyGame): VisTextField {
-    return makeStyledTextField(game, mutableListOf()).also {
-        it.text = "1"
-        it.textFieldFilter = IntDigitsOnlyFilter(false)
-        it.maxLength = 1
+fun controller(
+    action: Action,
+    game: MyGame,
+    bundle: I18NBundle,
+    onKeyChange: (key: Char) -> Unit   // ← теперь возвращает Char
+): VisTable {
+    val density = Gdx.graphics.density
+    val table = VisTable()
+
+    val label = VisLabel("Attached key")
+    game.applyCustomFontMedium(label)
+
+    // === Выбор клавиш WASD + стрелки + цифры + SPACE ===
+    val keyDisplays = arrayOf(
+        "W", "A", "S", "D",
+        "^", "<", "v", ">",
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+        "(SPACE)"
+    )
+
+    val selectBox = VisSelectBox<String>().apply {
+        this.items = Array(keyDisplays)
+         val current = action.specialData?.attachedKey ?: 'W'
+         val display = if (current == ' ') "(SPACE)" else current.toString()
+         selectedIndex = keyDisplays.indexOf(display).coerceAtLeast(0)
+
+        addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent, actor: Actor) {
+                val selectedStr = keyDisplays[selectedIndex]
+                val keyChar = if (selectedStr == "(SPACE)") ' ' else selectedStr[0]
+                onKeyChange(keyChar)   // ← возвращаем Char
+            }
+        })
     }
+    game.applyCustomFont(selectBox)
+
+    table.add(label).align(Align.left).padBottom(8f * density).row()
+    table.add(selectBox)
+        .width(140f * density)
+        .height(38f * density)
+        .align(Align.left)
+
+    return table
+}
+
+
+fun pheromone(
+    action: Action,
+    game: MyGame,
+    bundle: I18NBundle,
+    onTypeChange: (type: Int) -> Unit
+): VisTable {
+    val density = Gdx.graphics.density
+    val table = VisTable()
+
+    val label = VisLabel("Pheromone Type")
+    game.applyCustomFontMedium(label)
+
+    // Создаём список из 32 элементов (0..31)
+    val items = Array(32) { i ->
+        when (i) {
+            0 -> "Food - p$i"
+            11 -> "Stem grow - p$i"
+            18 -> "Dead cell - p$i"
+            else -> "p$i"
+        }
+    }
+
+    val selectBox = VisSelectBox<String>().apply {
+        this.items = Array(items)
+        // Предполагается, что в классе Action есть поле pheromoneType (Int?)
+        // Если поле называется иначе — замени на правильное имя
+        selectedIndex = (action.pheromoneType ?: 0).coerceIn(0, 31)
+
+        addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent, actor: Actor) {
+                onTypeChange(selectedIndex)
+            }
+        })
+    }
+    game.applyCustomFont(selectBox)
+
+    table.add(label).align(Align.left).padBottom(8f * density).row()
+    table.add(selectBox).width(140f * density).height(38f * density).align(Align.left)
+
+    return table
 }
 
 

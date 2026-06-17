@@ -1,80 +1,112 @@
 package io.github.some_example_name.old.core
 
+import io.github.some_example_name.old.ui.screens.GlobalSettings
 import kotlin.random.Random
 
 var randomWallSeed = Random(12)
 
 class WorldGenerator {
     companion object {
-        var GENERATOR_WORLD_SIZE = 1024
         var GENERATOR_DAY_NIGHT = 15
         var GENERATOR_INTERPOLATE = 12
     }
 
-
-    private var map: Array<BooleanArray>? = null // Храним карту
-
-    fun generateWorld(seed: Long = 12): Array<BooleanArray> {
-        map = Array(GENERATOR_WORLD_SIZE) { BooleanArray(GENERATOR_WORLD_SIZE) }
+    fun generateWorld(
+        width: Int,
+        height: Int,
+        seed: Long = 12L
+    ): Array<BooleanArray> {
+        val map = Array(height) { BooleanArray(width) }
         val random = Random(seed)
-        generateMap(map!!, random)
-        return map!!
+        generateMap(map, random, width, height)
+        return map
     }
 
-    private fun generateMap(map: Array<BooleanArray>, random: Random) {
-        randomFillMap(map, random)
-        repeat(GENERATOR_DAY_NIGHT) { simulateDayNightCycle(map) }
-        repeat(GENERATOR_INTERPOLATE) { interpolateMap(map) }
+    private fun generateMap(
+        map: Array<BooleanArray>,
+        random: Random,
+        width: Int,
+        height: Int
+    ) {
+        randomFillMap(map, random, width, height)
+        repeat(GENERATOR_DAY_NIGHT) { simulateDayNightCycle(map, width, height) }
+        repeat(GENERATOR_INTERPOLATE) { interpolateMap(map, width, height) }
     }
 
-    private fun randomFillMap(map: Array<BooleanArray>, random: Random) {
-        for (y in 0 until GENERATOR_WORLD_SIZE) {
-            for (x in 0 until GENERATOR_WORLD_SIZE) {
+    private fun randomFillMap(
+        map: Array<BooleanArray>,
+        random: Random,
+        width: Int,
+        height: Int
+    ) {
+        for (y in 0 until height) {
+            for (x in 0 until width) {
                 map[y][x] = random.nextBoolean()
             }
         }
     }
 
-    private fun simulateDayNightCycle(map: Array<BooleanArray>) {
-        val tempMap = Array(GENERATOR_WORLD_SIZE) { BooleanArray(GENERATOR_WORLD_SIZE) }
-        for (y in 1 until GENERATOR_WORLD_SIZE - 1) {
-            for (x in 1 until GENERATOR_WORLD_SIZE - 1) {
-                val aliveNeighbors = countAliveNeighbors(x, y, map)
+    private fun simulateDayNightCycle(
+        map: Array<BooleanArray>,
+        width: Int,
+        height: Int
+    ) {
+        val tempMap = Array(height) { BooleanArray(width) }
+        for (y in 1 until height - 1) {
+            for (x in 1 until width - 1) {
+                val aliveNeighbors = countAliveNeighbors(x, y, map, width, height)
                 tempMap[y][x] = if (map[y][x]) aliveNeighbors >= 4 else aliveNeighbors >= 5
             }
         }
-        for (y in 1 until GENERATOR_WORLD_SIZE - 1) {
-            for (x in 1 until GENERATOR_WORLD_SIZE - 1) {
-                map[y][x] = tempMap[y][x]
-            }
-        }
+        copyTempToMap(tempMap, map, width, height)
     }
 
-    private fun interpolateMap(map: Array<BooleanArray>) {
-        val tempMap = Array(GENERATOR_WORLD_SIZE) { BooleanArray(GENERATOR_WORLD_SIZE) }
-        for (y in 1 until GENERATOR_WORLD_SIZE - 1) {
-            for (x in 1 until GENERATOR_WORLD_SIZE - 1) {
-                val aliveNeighbors = countAliveNeighbors(x, y, map)
+    private fun interpolateMap(
+        map: Array<BooleanArray>,
+        width: Int,
+        height: Int
+    ) {
+        val tempMap = Array(height) { BooleanArray(width) }
+        for (y in 1 until height - 1) {
+            for (x in 1 until width - 1) {
+                val aliveNeighbors = countAliveNeighbors(x, y, map, width, height)
                 tempMap[y][x] = aliveNeighbors > 4
             }
         }
-        for (y in 1 until GENERATOR_WORLD_SIZE - 1) {
-            for (x in 1 until GENERATOR_WORLD_SIZE - 1) {
+        copyTempToMap(tempMap, map, width, height)
+    }
+
+    private fun copyTempToMap(
+        tempMap: Array<BooleanArray>,
+        map: Array<BooleanArray>,
+        width: Int,
+        height: Int
+    ) {
+        for (y in 1 until height - 1) {
+            for (x in 1 until width - 1) {
                 map[y][x] = tempMap[y][x]
             }
         }
     }
 
-    private fun countAliveNeighbors(x: Int, y: Int, map: Array<BooleanArray>): Int {
+    private fun countAliveNeighbors(
+        x: Int,
+        y: Int,
+        map: Array<BooleanArray>,
+        width: Int,
+        height: Int
+    ): Int {
         var count = 0
         for (j in -1..1) {
             for (i in -1..1) {
                 if (i == 0 && j == 0) continue
-                if (map[y + j][x + i]) count++
+                val ny = y + j
+                val nx = x + i
+                if (ny in 0 until height && nx in 0 until width && map[ny][nx]) {
+                    count++
+                }
             }
         }
         return count
     }
 }
-
-

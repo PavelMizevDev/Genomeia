@@ -1,7 +1,5 @@
 package io.github.some_example_name.old.systems.simulation
 
-import java.util.TreeMap
-
 class SimulationData {
     var isRestart = false
     var isFinish = false
@@ -21,8 +19,8 @@ class SimulationData {
     var ups = 60
     var selectedCellIndex = -1
 
-    //TODO подумать как сделать лучше
-    val controllerIndexesLol = TreeMap<Int, Boolean>()
+    var showControllerKeys = false
+    val controllerKeyTouched = BooleanArray(19)
 
     fun clear() {
         isRestart = false

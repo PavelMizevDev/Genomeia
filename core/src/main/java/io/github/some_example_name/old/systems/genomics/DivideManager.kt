@@ -2,6 +2,9 @@ package io.github.some_example_name.old.systems.genomics
 
 import com.badlogic.gdx.graphics.Color
 import io.github.some_example_name.old.cells.Cell
+import io.github.some_example_name.old.cells.NonWorkingCell1
+import io.github.some_example_name.old.cells.ControllerData
+import io.github.some_example_name.old.cells.Zygote
 import io.github.some_example_name.old.commands.WorldCommandType
 import io.github.some_example_name.old.commands.WorldCommandsManager
 import io.github.some_example_name.old.core.utils.collectParticles
@@ -34,8 +37,16 @@ class DivideManager(
             val parentCos = angleCos[index] * angleDirectedCos[index] + angleSin[index] * angleDirectedSin[index]
             val parentSin = angleSin[index] * angleDirectedCos[index] - angleCos[index] * angleDirectedSin[index]
 
-            val finalCos = parentCos * divideAngleCos - parentSin * divideAngleSin
-            val finalSin = parentSin * divideAngleCos + parentCos * divideAngleSin
+            var finalCos = parentCos * divideAngleCos - parentSin * divideAngleSin
+            var finalSin = parentSin * divideAngleCos + parentCos * divideAngleSin
+
+            if (cellList[cellType[index].toInt()] is Zygote) {
+                val finalZygoteCos = finalCos * angleDirectedCos[index] - finalSin * angleDirectedSin[index]
+                val finalZygoteSin = finalSin * angleDirectedCos[index] + finalCos * angleDirectedSin[index]
+
+                finalCos = finalZygoteCos
+                finalSin = finalZygoteSin
+            }
 
             var x = getX(index) + finalCos * parentLinkLength
             var y = getY(index) + finalSin * parentLinkLength
@@ -81,9 +92,26 @@ class DivideManager(
                 val isSum: Boolean = action.isSum ?: true
                 val activationFuncType: Int = action.funActivation ?: 0
 
+                val isMorphogenesis = false
+                val pheromoneType = action.pheromoneType ?: -1
+
+//                val cell = cellList[cellType]
+//                val specialModDataIndex = when(cell) {
+//                    is NonWorkingCell1 -> {
+//                        if (action.specialData?.attachedKey != null) {
+//                            worldCommandsManager.worldCommandSpecialModDataBuffer[threadId].add(
+//                                ControllerData(action.specialData.attachedKey)
+//                            )
+//                            worldCommandsManager.worldCommandSpecialModDataBuffer[threadId].size - 1
+//                        } else -1
+//                    }
+//                    else -> -1
+//                }
+
+
                 worldCommandsManager.worldCommandBuffer[threadId].push(
                     type = WorldCommandType.ADD_CELL,
-                    booleans = booleanArrayOf(isSum),
+                    booleans = booleanArrayOf(isSum, isMorphogenesis),
                     floats = floatArrayOf(x, y, radius, finalCos, finalSin, angleDiffCos, angleDiffSin, visibilityRange, a, b, c),
                     ints = intArrayOf(
                         color,
@@ -92,7 +120,10 @@ class DivideManager(
                         parentOrganIndex,
                         parentIndex,
                         colorDifferentiation,
-                        activationFuncType
+                        activationFuncType,
+                        pheromoneType,
+                        -1
+//                        specialModDataIndex
                     )
                 )
 
@@ -114,14 +145,15 @@ class DivideManager(
 
                 action.physicalLink.forEach { (cellGenomeIdToConnectWith, linkData) ->
                     val otherCellIndex = idToIndexAssociation[cellGenomeIdToConnectWith]
-                    if (linkData != null && linkData.length != null) {
+                    if (linkData != null) {
 
                         val cellIndex: Int = -1
-                        val linksLength: Float = linkData.length
+                        val linksLength: Float = linkData.length ?: -1f
                         val degreeOfShortening: Float = 1f
                         val isStickyLink: Boolean = false
                         val isNeuronLink: Boolean = linkData.isNeuronal
                         val isLink1NeuralDirected: Boolean = linkData.directedNeuronLink == action.id
+                        val linkColor = (linkData.color ?: if (linkData.isNeuronal) Color.CYAN else Color.RED).toIntBits()
 
                         if (otherCellIndex != null) {
                             if (linkData.isNeuronal && linkData.directedNeuronLink != action.id
@@ -138,7 +170,7 @@ class DivideManager(
                                     isLink1NeuralDirected
                                 ),
                                 floats = floatArrayOf(linksLength, degreeOfShortening),
-                                ints = intArrayOf(cellIndex, otherCellIndex)
+                                ints = intArrayOf(cellIndex, otherCellIndex, linkColor)
                             )
                         } else {
                             val cellId: Int = cellGenomeId
@@ -148,7 +180,7 @@ class DivideManager(
                                 type = WorldCommandType.ADD_LINK_BY_ID,
                                 booleans = booleanArrayOf(isNeuronLink, isLink1NeuralDirected),
                                 floats = floatArrayOf(linksLength),
-                                ints = intArrayOf(cellId, otherCellId, parentOrganIndex)
+                                ints = intArrayOf(cellId, otherCellId, parentOrganIndex, linkColor)
                             )
                         }
                     }

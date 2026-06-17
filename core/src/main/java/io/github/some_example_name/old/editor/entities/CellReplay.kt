@@ -8,7 +8,8 @@ class CellReplay(
     startCapacity: Int,
     val particleEntity: ParticleEntity,
     val cellEntity: CellEntity
-) {
+): EditorReplay {
+    private val initialCapacity = startCapacity
     var capacity = startCapacity
     var size = 0
 
@@ -20,6 +21,7 @@ class CellReplay(
     var specialTypeIndexes = IntArray(startCapacity)
     var neuralIndexes = IntArray(startCapacity)
     var color = IntArray(startCapacity)
+    var pheromoneType = IntArray(startCapacity)
 
     val replayCellsCounterInTick = IntArrayList(10)
     val tickStartIndices = IntArrayList(10)   // ← НОВОЕ: стартовые индексы для каждого тика
@@ -35,11 +37,19 @@ class CellReplay(
             specialTypeIndexes = specialTypeIndexes.copyOf(newCapacity)
             neuralIndexes = neuralIndexes.copyOf(newCapacity)
             color = color.copyOf(newCapacity)
+            pheromoneType = pheromoneType.copyOf(newCapacity)
             capacity = newCapacity
         }
     }
 
-    fun copy() {
+    override fun reset() {
+        size = 0
+        capacity = initialCapacity
+        replayCellsCounterInTick.clear()
+        tickStartIndices.clear()
+    }
+
+    override fun copy() {
         val cellsAmount = particleEntity.aliveList.size
 
         // Запоминаем количество клеток и стартовую позицию этого тика
@@ -56,6 +66,7 @@ class CellReplay(
         System.arraycopy(cellEntity.specialEntity.specialTypeIndexes, 0, specialTypeIndexes, size, cellsAmount)
         System.arraycopy(cellEntity.neuralIndexes, 0, neuralIndexes, size, cellsAmount)
         System.arraycopy(particleEntity.color, 0, color, size, cellsAmount)
+        System.arraycopy(cellEntity.pheromoneType, 0, pheromoneType, size, cellsAmount)
 
 
         size += cellsAmount
@@ -122,5 +133,9 @@ class CellReplay(
     fun getColor(tick: Int, indexInTick: Int): Int {
         val index = getPositionInReplay(tick, indexInTick)
         return index?.let { this.color[it] } ?: throw Exception("clickedIndex out of range")
+    }
+    fun getPheromone(tick: Int, indexInTick: Int): Int {
+        val index = getPositionInReplay(tick, indexInTick)
+        return index?.let { this.pheromoneType[it] } ?: throw Exception("clickedIndex out of range")
     }
 }

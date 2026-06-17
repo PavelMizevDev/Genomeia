@@ -17,18 +17,21 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import io.github.some_example_name.old.core.DIGameGlobalContainer
-import io.github.some_example_name.old.core.DIGenomeEditorContainer
-import io.github.some_example_name.old.core.DIGenomeEditorContainer.symmetryManager
-import io.github.some_example_name.old.editor.commands.CtrlY
-import io.github.some_example_name.old.editor.commands.CtrlZ
-import io.github.some_example_name.old.editor.commands.FlingScreen
-import io.github.some_example_name.old.editor.commands.GoToEndOfTimeLine
-import io.github.some_example_name.old.editor.commands.PanScreen
-import io.github.some_example_name.old.editor.commands.TapScreen
-import io.github.some_example_name.old.editor.commands.TouchDown
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.symmetryManager
+import io.github.some_example_name.old.editor.system.logic.CtrlY
+import io.github.some_example_name.old.editor.system.logic.CtrlZ
+import io.github.some_example_name.old.editor.system.logic.FlingScreen
+import io.github.some_example_name.old.editor.system.logic.GoToEndOfTimeLine
+import io.github.some_example_name.old.editor.system.logic.PanScreen
+import io.github.some_example_name.old.editor.system.logic.TapScreen
+import io.github.some_example_name.old.editor.system.logic.TouchDown
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.currentStage
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.currentTick
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.lastTick
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.previousCtrlClicked
 import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
 import io.github.some_example_name.old.ui.screens.MyGame
-
 
 data class GenomeEditorData(
     var currentTick: Int,
@@ -41,7 +44,6 @@ class GenomeEditorScreen(
     val genomeName: String?
 ) : Screen, GestureListener {
 
-    val replayEntity = DIGenomeEditorContainer.cellReplay
     val renderSystem = DIGenomeEditorContainer.editorRenderSystem
     val editorLogicSystem = DIGenomeEditorContainer.editorLogicSystem
     val fileProvider = DIGameGlobalContainer.fileProvider
@@ -73,16 +75,15 @@ class GenomeEditorScreen(
     override fun show() {
         DIGenomeEditorContainer.genomeManager.load("$genomeName.json")
         editorSimulationSystem.genome = DIGenomeEditorContainer.genomeManager.genomes[0]
-        editorLogicSystem.currentTick = 0
-        editorLogicSystem.currentTick = 0
-        editorLogicSystem.currentStage = 0
-
+        currentTick = 0
+        currentStage = 0
 
         camera = OrthographicCamera().apply {
             setToOrtho(false, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
         }
         shape = ShapeRenderer()
 
+        //TODO через команду
         editorLogicSystem.restartSimulation()
 
         virtualWidth = Gdx.graphics.width.toFloat()
@@ -138,26 +139,28 @@ class GenomeEditorScreen(
     }
 
     override fun render(delta: Float) {
-        Gdx.gl.glClearColor(0.50f, 0.62f, 0.64f, 1f)
+        Gdx.gl.glClearColor(0.10f, 0.12f, 0.14f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-        if (state.currentTick != editorLogicSystem.currentTick || state.currentStage != editorLogicSystem.currentStage) {
-            state.currentTick = editorLogicSystem.currentTick
-            state.currentStage = editorLogicSystem.currentStage
+        if (state.currentTick != currentTick || state.currentStage != currentStage) {
+            state.currentTick = currentTick
+            state.currentStage = currentStage
 
-            menuUiBuilder.stageText.setText(editorLogicSystem.currentStage.toString())
-            menuUiBuilder.tickText.setText(editorLogicSystem.currentTick.toString())
+            menuUiBuilder.stageText.setText(currentStage.toString())
+            menuUiBuilder.tickText.setText(currentTick.toString())
 
-            menuUiBuilder.setSliderValueProgrammatically(editorLogicSystem.currentTick.toFloat())
+            menuUiBuilder.setSliderValueProgrammatically(currentTick.toFloat())
             renderSystem.isUpdateBuffer = true
         }
 
-        if (state.lastTick != editorLogicSystem.lastTick) {
-            menuUiBuilder.timeSlider.setRange(0f, editorLogicSystem.lastTick.toFloat())
-            state.lastTick = editorLogicSystem.lastTick
+        if (state.lastTick != lastTick) {
+            menuUiBuilder.timeSlider.setRange(0f, lastTick.toFloat())
+            state.lastTick = lastTick
         }
 
         camera.update()
-        renderSystem.render()
+
+        val (touchedCellX, touchedCellY) = screenToWorld(Gdx.input.x.toFloat(), Gdx.input.y.toFloat())
+        renderSystem.render(touchedCellX, touchedCellY)
 
         isRestartSimulation = false
 
@@ -170,7 +173,7 @@ class GenomeEditorScreen(
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             menuUiBuilder.isCtrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
-            if (!menuUiBuilder.isCtrl) editorLogicSystem.previousCtrlClicked = -1
+            if (!menuUiBuilder.isCtrl) previousCtrlClicked = -1
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {

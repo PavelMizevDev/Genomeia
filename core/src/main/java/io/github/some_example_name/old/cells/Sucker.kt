@@ -1,6 +1,7 @@
 package io.github.some_example_name.old.cells
 
 import io.github.some_example_name.old.commands.WorldCommandType
+import io.github.some_example_name.old.core.DIGameGlobalContainer.substrateSettings
 import io.github.some_example_name.old.core.utils.orangeColors
 
 class Sucker(cellTypeId: Int) : Cell(
@@ -12,7 +13,7 @@ class Sucker(cellTypeId: Int) : Cell(
 
     override fun onContact(cellIndex: Int, particleIndexCollided: Int, distance: Float, threadId: Int) {
 
-        if (!particleEntity.isCell[particleIndexCollided]) {
+        if (!particleEntity.isCell[particleIndexCollided] && particleEntity.isSub[particleIndexCollided]) {
             val cellRadius = cellEntity.getRadius(cellIndex)
             val subRadius = particleEntity.radius[particleIndexCollided]
 

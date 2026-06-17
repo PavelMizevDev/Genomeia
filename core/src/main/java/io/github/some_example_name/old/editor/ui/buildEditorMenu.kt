@@ -3,6 +3,7 @@ package io.github.some_example_name.old.editor.ui
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Table
@@ -15,20 +16,26 @@ import com.kotcrab.vis.ui.widget.VisSlider
 import com.kotcrab.vis.ui.widget.VisTextButton
 import io.github.some_example_name.old.ui.screens.makeStyledButton
 import io.github.some_example_name.old.ui.screens.makeStyledSlider
+import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
 import io.github.some_example_name.old.core.DIGameGlobalContainer.bundle
 import io.github.some_example_name.old.core.DISimulationContainer
 import io.github.some_example_name.old.core.FileProvider
-import io.github.some_example_name.old.editor.commands.CtrlY
-import io.github.some_example_name.old.editor.commands.CtrlZ
-import io.github.some_example_name.old.editor.commands.NextStageButtonTap
-import io.github.some_example_name.old.editor.commands.NextTickButtonClamped
-import io.github.some_example_name.old.editor.commands.NextTickButtonTap
-import io.github.some_example_name.old.editor.commands.PrevStageButtonTap
-import io.github.some_example_name.old.editor.commands.PrevTickButtonTap
-import io.github.some_example_name.old.editor.commands.TimeSlider
-import io.github.some_example_name.old.editor.system.EditorLogicSystem
-import io.github.some_example_name.old.editor.system.EditorRenderSystem
-import io.github.some_example_name.old.editor.system.EditorSimulationSystem
+import io.github.some_example_name.old.core.color_picker.ColorPicker
+import io.github.some_example_name.old.editor.system.logic.CtrlY
+import io.github.some_example_name.old.editor.system.logic.CtrlZ
+import io.github.some_example_name.old.editor.system.logic.NextStageButtonTap
+import io.github.some_example_name.old.editor.system.logic.NextTickButtonClamped
+import io.github.some_example_name.old.editor.system.logic.NextTickButtonTap
+import io.github.some_example_name.old.editor.system.logic.PrevStageButtonTap
+import io.github.some_example_name.old.editor.system.logic.PrevTickButtonTap
+import io.github.some_example_name.old.editor.system.logic.TimeSlider
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.isRightClick
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.lastTick
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.linkColor
+import io.github.some_example_name.old.editor.di.DIGenomeEditorContainer.previousCtrlClicked
+import io.github.some_example_name.old.editor.system.logic.EditorLogicSystem
+import io.github.some_example_name.old.editor.system.render.EditorRenderSystem
+import io.github.some_example_name.old.editor.system.simulation.EditorSimulationSystem
 import io.github.some_example_name.old.editor.system.SymmetryManager
 import io.github.some_example_name.old.editor.ui.dialog.SymmetryDialog
 import io.github.some_example_name.old.systems.genomics.genome.GenomeJsonReader
@@ -129,6 +136,34 @@ class MenuUiBuilder(
             }
         })
 
+        val colorPicker = ColorPicker(
+            game = game,
+            title = bundle.get("button.chooseColorDialog"),
+            listener = object : ColorPickerAdapter() {
+                override fun changed(newColor: Color) {
+                    val newColor = newColor.cpy()
+                }
+
+                override fun finished(newColor: Color?) {
+                    super.finished(newColor)
+                    if (newColor == null) return
+                    val newColor = newColor.cpy()
+                    linkColor = newColor
+                }
+            },
+            colorInit = linkColor.cpy()
+        )
+
+        val neuralColorLinkButton = makeStyledButton("Neural link color")
+
+        // Toggle кнопка
+        neuralColorLinkButton.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                stage.addActor(colorPicker)
+                colorPicker.fadeIn()
+            }
+        })
+
         val symmetryButton = makeStyledButton("Symmetry", game, textures)
         symmetryButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -155,20 +190,20 @@ class MenuUiBuilder(
         ctrl.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 isCtrl = ctrl.isChecked
-                if (!isCtrl) editorLogicSystem.previousCtrlClicked = -1
+                if (!isCtrl) previousCtrlClicked = -1
             }
         })
 
         val rightClick = makeStyledButton(bundle.get("button.performLastAction"), game, textures, toggle = true)
-        rightClick.isChecked = editorLogicSystem.isRightClick
+        rightClick.isChecked = isRightClick
         rightClick.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                editorLogicSystem.isRightClick = rightClick.isChecked
+                isRightClick = rightClick.isChecked
             }
         })
 
         val buttons = mutableListOf(
-            goToMenuButton, chooseColorButton, showPhysicalLinkButton, usePostProcessLinkButton, symmetryButton
+            goToMenuButton, chooseColorButton, showPhysicalLinkButton, neuralColorLinkButton, usePostProcessLinkButton, symmetryButton
         )
         if (Gdx.app.type == Application.ApplicationType.Android) {
             buttons.add(ctrlZ)
